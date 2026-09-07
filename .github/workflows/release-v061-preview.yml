@@ -1,0 +1,55 @@
+name: release-v061-preview
+
+on:
+  push:
+    branches:
+      - release/v0.6.1-cadence-cleanup
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Require Vercel credential
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN repository secret is not configured"
+            exit 1
+          fi
+      - name: Install pinned deployment CLI
+        run: npm install --global vercel@latest
+      - name: Pull preview project settings
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+      - name: Build exact commit
+        run: vercel build --token="$VERCEL_TOKEN"
+      - name: Deploy exact prebuilt preview
+        id: deploy
+        shell: bash
+        run: |
+          URL="$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "PREVIEW_URL=$URL"
+      - name: Read back preview shell markers
+        shell: bash
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+          for i in 1 2 3 4 5; do
+            HTML="$(curl -fsS "$URL" || true)"
+            if printf '%s' "$HTML" | grep -q '2026-09-07-v0.6.1'; then break; fi
+            sleep 3
+          done
+          printf '%s' "$HTML" | grep -q '2026-09-07-v0.6.1'
+          JS="$(curl -fsS "$URL/assets/app.js")"
+          printf '%s' "$JS" | grep -q "SHELL_VERSION='0.6.1'"
+          printf '%s' "$JS" | grep -q 'SCHEDULE_SAST=\[6,20\]'
+          if printf '%s' "$HTML$JS" | grep -q '13:00'; then
+            echo "::error::stale 13:00 marker found in preview shell"
+            exit 1
+          fi
