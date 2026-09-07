@@ -31,7 +31,8 @@ fs.writeFileSync(path.join(DIST,'index.html'),html);
 let app=fs.readFileSync(path.join(DIST,'assets/app.js'),'utf8');
 const helperAnchor="function addSvgEl(svg,name,attrs){";
 if(!app.includes(helperAnchor)) throw new Error('Touch patch helper anchor missing');
-app=app.replace(helperAnchor,"function touchEventPoint(ev){const t=ev.touches?.[0]||ev.changedTouches?.[0];return t?{clientX:t.clientX,clientY:t.clientY,pointerType:'touch'}:null}\\n"+helperAnchor);
+app=app.replace(helperAnchor,`function touchEventPoint(ev){const t=ev.touches?.[0]||ev.changedTouches?.[0];return t?{clientX:t.clientX,clientY:t.clientY,pointerType:'touch'}:null}
+`+helperAnchor);
 const indexAnchor="container.addEventListener('pointerdown',ev=>{if(ev.pointerType==='touch')container.setPointerCapture?.(ev.pointerId);move(ev)});container.addEventListener('pointerleave'";
 const indexReplacement="container.addEventListener('pointerdown',ev=>{if(ev.pointerType==='touch')container.setPointerCapture?.(ev.pointerId);move(ev)});container.addEventListener('touchstart',ev=>{const p=touchEventPoint(ev);if(p)move(p)},{passive:true});container.addEventListener('touchmove',ev=>{const p=touchEventPoint(ev);if(p)move(p)},{passive:true});container.addEventListener('pointerleave'";
 if(!app.includes(indexAnchor)) throw new Error('Index scrub touch patch anchor missing');
@@ -42,7 +43,7 @@ if(!app.includes(scatterAnchor)) throw new Error('Scatter scrub touch patch anch
 app=app.replace(scatterAnchor,scatterReplacement);
 fs.writeFileSync(path.join(DIST,'assets/app.js'),app);
 
-const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'9b27d69d3e7d4efc794fec5269f6b3c886dd36bcb2312057b716439bf90e900b'};
+const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'__PIN_AFTER_VALID_BUILD__'};
 for(const [rel,want] of Object.entries(expected)){const got=createHash('sha256').update(fs.readFileSync(path.join(DIST,rel))).digest('hex'); if(got!==want) throw new Error(`Release hash mismatch for ${rel}: ${got}`); console.log(`PASS hash ${rel} ${got}`)}
 fs.rmSync(TMP,{recursive:true,force:true});
 console.log('FZ v0.5.1 deterministic release build complete');
