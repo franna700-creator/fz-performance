@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/event-context.schema.json",
+  "title": "FZ Event Context",
+  "type": "object",
+  "required": ["eventId","name","date","priority","status"],
+  "properties": {
+    "eventId":{"type":"string","minLength":1},
+    "name":{"type":"string"},
+    "date":{"type":"string","format":"date"},
+    "type":{"type":["string","null"]},
+    "priority":{"enum":["PRIMARY","SECONDARY","DEVELOPMENTAL","LOW"]},
+    "phase":{"type":["string","null"]},
+    "capabilityRequirements":{"type":"array","items":{"type":"string"}},
+    "requiredFutureExposures":{"type":"array","items":{"type":"string"}},
+    "taperConstraints":{"type":["string","null"]},
+    "status":{"enum":["UPCOMING","COMPLETED","CANCELLED"]},
+    "version":{"type":"string"},
+    "provenanceNote":{"type":["string","null"]}
+  },
+  "additionalProperties": false
+}
