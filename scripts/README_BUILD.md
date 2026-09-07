@@ -1,0 +1,1 @@
+The large v0.5 shell is reconstructed at build time from the immutable validated release payload because the chat GitHub transport is optimized for small text writes. This packaging layer exists only at build time. Browsers receive ordinary static index.html, app.css and app.js plus the same-origin /api/runtime-state endpoint.
