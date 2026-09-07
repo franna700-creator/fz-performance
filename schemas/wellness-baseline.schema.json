@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/wellness-baseline.schema.json",
+  "title": "FZ Wellness Baseline",
+  "type": "object",
+  "required": ["baselineId","metric","grain","source","windowStart","windowEnd","validN","maturity","logicVersion"],
+  "properties": {
+    "baselineId":{"type":"string","minLength":1},
+    "metric":{"type":"string","minLength":1},
+    "grain":{"type":"string","minLength":1},
+    "source":{"type":"string","minLength":1},
+    "windowStart":{"type":"string","format":"date"},
+    "windowEnd":{"type":"string","format":"date"},
+    "validN":{"type":"integer","minimum":1},
+    "maturity":{"enum":["IMMATURE","PROVISIONAL","ESTABLISHED","MATURE"]},
+    "mean":{"type":["number","null"]},
+    "median":{"type":["number","null"]},
+    "sd":{"type":["number","null"]},
+    "cvPct":{"type":["number","null"]},
+    "latestComparableDate":{"type":["string","null"],"format":"date"},
+    "latestValue":{"type":["number","null"]},
+    "absoluteDeviation":{"type":["number","null"]},
+    "deviationPct":{"type":["number","null"]},
+    "zScore":{"type":["number","null"]},
+    "signal":{"type":["string","null"]},
+    "interpretation":{"type":["string","null"]},
+    "confidence":{"type":["string","null"]},
+    "logicVersion":{"type":"string","minLength":1}
+  },
+  "allOf": [
+    {"if":{"properties":{"validN":{"maximum":9}}},"then":{"properties":{"maturity":{"const":"IMMATURE"}}}},
+    {"if":{"properties":{"validN":{"minimum":10,"maximum":27}}},"then":{"properties":{"maturity":{"const":"PROVISIONAL"}}}},
+    {"if":{"properties":{"validN":{"minimum":28,"maximum":41}}},"then":{"properties":{"maturity":{"const":"ESTABLISHED"}}}},
+    {"if":{"properties":{"validN":{"minimum":42}}},"then":{"properties":{"maturity":{"const":"MATURE"}}}}
+  ],
+  "additionalProperties": false
+}
