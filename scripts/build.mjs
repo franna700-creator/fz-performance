@@ -25,7 +25,24 @@ html=html.replace('<!doctype html>\n<!DOCTYPE html>\n','<!doctype html>\n')
  .replace('FZ Performance PWA · full content-parity production build · canonical master → validated PWA State → complete four-page PWA · TODAY / TRENDS / TRAIN / SYSTEM · motion for comprehension only · reduced-motion aware.','FZ Performance PWA · v0.5 reliability shell · canonical master → validated runtime state → TODAY / TRENDS / TRAIN / SYSTEM · graph scrubbing · fail-stale recovery · reduced-motion aware.');
 if(/hourly reconciled refresh|07:00–22:00|FULL PRODUCTION REBUILD · 07 SEP 07:11/.test(html)) throw new Error('Legacy refresh/product copy remains');
 fs.writeFileSync(path.join(DIST,'index.html'),html);
+
+// v0.5.1 interaction hardening: explicit Touch Events fallback in addition to Pointer Events.
+// This is build-time source transformation only; the browser receives one ordinary static app.js.
+let app=fs.readFileSync(path.join(DIST,'assets/app.js'),'utf8');
+const helperAnchor="function addSvgEl(svg,name,attrs){";
+if(!app.includes(helperAnchor)) throw new Error('Touch patch helper anchor missing');
+app=app.replace(helperAnchor,"function touchEventPoint(ev){const t=ev.touches?.[0]||ev.changedTouches?.[0];return t?{clientX:t.clientX,clientY:t.clientY,pointerType:'touch'}:null}\\n"+helperAnchor);
+const indexAnchor="container.addEventListener('pointerdown',ev=>{if(ev.pointerType==='touch')container.setPointerCapture?.(ev.pointerId);move(ev)});container.addEventListener('pointerleave'";
+const indexReplacement="container.addEventListener('pointerdown',ev=>{if(ev.pointerType==='touch')container.setPointerCapture?.(ev.pointerId);move(ev)});container.addEventListener('touchstart',ev=>{const p=touchEventPoint(ev);if(p)move(p)},{passive:true});container.addEventListener('touchmove',ev=>{const p=touchEventPoint(ev);if(p)move(p)},{passive:true});container.addEventListener('pointerleave'";
+if(!app.includes(indexAnchor)) throw new Error('Index scrub touch patch anchor missing');
+app=app.replace(indexAnchor,indexReplacement);
+const scatterAnchor="container.addEventListener('pointerdown',move);container.addEventListener('pointerleave'";
+const scatterReplacement="container.addEventListener('pointerdown',move);container.addEventListener('touchstart',ev=>{const p=touchEventPoint(ev);if(p)move(p)},{passive:true});container.addEventListener('touchmove',ev=>{const p=touchEventPoint(ev);if(p)move(p)},{passive:true});container.addEventListener('pointerleave'";
+if(!app.includes(scatterAnchor)) throw new Error('Scatter scrub touch patch anchor missing');
+app=app.replace(scatterAnchor,scatterReplacement);
+fs.writeFileSync(path.join(DIST,'assets/app.js'),app);
+
 const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'cde72b4337c89eb3089c7ad8f80febba8809d4e42463b3b85acb88c3057b4e21'};
 for(const [rel,want] of Object.entries(expected)){const got=createHash('sha256').update(fs.readFileSync(path.join(DIST,rel))).digest('hex'); if(got!==want) throw new Error(`Release hash mismatch for ${rel}: ${got}`); console.log(`PASS hash ${rel} ${got}`)}
 fs.rmSync(TMP,{recursive:true,force:true});
-console.log('FZ v0.5 deterministic release build complete');
+console.log('FZ v0.5.1 deterministic release build complete');
