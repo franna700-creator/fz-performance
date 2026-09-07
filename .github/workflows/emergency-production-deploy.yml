@@ -1,4 +1,4 @@
-name: emergency-production-deploy
+name: production-deploy
 
 on:
   push:
@@ -7,9 +7,10 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
-  group: fz-emergency-production-deploy
+  group: fz-production-deploy
   cancel-in-progress: false
 
 jobs:
@@ -19,40 +20,48 @@ jobs:
     env:
       VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
       VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
-      VERCEL_TOKEN_PRIMARY: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_TOKEN_ALT: ${{ secrets.VERCEL_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Select Vercel authentication path
+
+      - name: Acquire GitHub OIDC identity
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken();
+            core.setSecret(token);
+            core.exportVariable('GITHUB_OIDC_TOKEN', token);
+
+      - name: Exchange OIDC identity for short-lived Vercel access
         shell: bash
         run: |
-          if [ -n "$VERCEL_TOKEN_PRIMARY" ]; then
-            echo "VERCEL_TOKEN=$VERCEL_TOKEN_PRIMARY" >> "$GITHUB_ENV"
-            echo "AUTH_MODE=token" >> "$GITHUB_ENV"
-            echo "Using configured VERCEL_TOKEN"
-          elif [ -n "$VERCEL_TOKEN_ALT" ]; then
-            echo "VERCEL_TOKEN=$VERCEL_TOKEN_ALT" >> "$GITHUB_ENV"
-            echo "AUTH_MODE=token" >> "$GITHUB_ENV"
-            echo "Using configured VERCEL_ACCESS_TOKEN"
-          else
-            echo "AUTH_MODE=device" >> "$GITHUB_ENV"
-            echo "No stored Vercel token; starting one-time OAuth device approval."
-          fi
-      - name: One-time Vercel device login
-        if: env.AUTH_MODE == 'device'
-        shell: bash
-        run: |
-          echo "Approve the Vercel device request shown below. This runner will continue automatically after approval."
-          script -q -e -c "npx --yes vercel@59.11.7 login --no-color" /dev/null
-      - name: Pin project identity
+          set -euo pipefail
+          response=$(curl -sS -f -X POST https://api.vercel.com/login/oauth/token \
+            --data "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+            --data "client_id=cl_kyUx2zVvA4MGptBohkmtYHJly2XltXzD" \
+            --data "subject_token_type=urn:ietf:params:oauth:token-type:id_token" \
+            --data "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+            --data-urlencode "team_id_or_slug=$VERCEL_ORG_ID" \
+            --data-urlencode "subject_token=$GITHUB_OIDC_TOKEN")
+          token=$(printf '%s' "$response" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);process.stdout.write(j.access_token||'')})")
+          test -n "$token"
+          echo "::add-mask::$token"
+          echo "VERCEL_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Verify Vercel authentication
+        run: npx --yes vercel@59.11.7 whoami --token="$VERCEL_TOKEN"
+
+      - name: Pin Vercel project identity
         shell: bash
         run: |
           mkdir -p .vercel
           printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
-      - name: Validate exact v0.6 source
+
+      - name: Validate exact source
         run: |
           node scripts/build.mjs
           node scripts/longitudinal-trends-v2.mjs
@@ -62,35 +71,31 @@ jobs:
           node --check api/runtime-state.js
           node scripts/schema-smoke.mjs
           node scripts/smoke.mjs
-      - name: Build Vercel output
-        shell: bash
-        run: |
-          if [ "$AUTH_MODE" = "token" ]; then
-            npx --yes vercel@59.11.7 build --prod --token="$VERCEL_TOKEN"
-          else
-            npx --yes vercel@59.11.7 build --prod
-          fi
+
+      - name: Build exact Vercel output
+        run: npx --yes vercel@59.11.7 build --prod --token="$VERCEL_TOKEN"
+
       - name: Deploy exact prebuilt output to production
+        run: npx --yes vercel@59.11.7 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      - name: Verify public production alias
         shell: bash
         run: |
-          if [ "$AUTH_MODE" = "token" ]; then
-            npx --yes vercel@59.11.7 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-          else
-            npx --yes vercel@59.11.7 deploy --prebuilt --prod
-          fi
-      - name: Verify public root and runtime state
-        shell: bash
-        run: |
+          set -euo pipefail
           code=""
           for i in {1..30}; do
             code=$(curl -sS -o /tmp/fz-root -w '%{http_code}' https://fz-performance-mvp.vercel.app/ || true)
-            if [ "$code" = "200" ] && grep -q 'FZ Performance' /tmp/fz-root; then break; fi
+            if [ "$code" = "200" ] && grep -q 'FZ Performance' /tmp/fz-root; then
+              break
+            fi
             sleep 5
           done
           test "$code" = "200"
           grep -q 'FZ Performance' /tmp/fz-root
+
           api_code=$(curl -sS -o /tmp/fz-state -w '%{http_code}' https://fz-performance-mvp.vercel.app/api/runtime-state || true)
           test "$api_code" = "200"
           grep -q '"masterValidated":true' /tmp/fz-state
+
           echo "PUBLIC ROOT PASS"
           echo "RUNTIME STATE PASS"
