@@ -16,9 +16,9 @@
     "nextRefreshAt": {"type": "string", "minLength": 8},
     "scheduleSAST": {
       "type": "array",
-      "prefixItems": [{"const": 6}, {"const": 13}, {"const": 20}],
-      "minItems": 3,
-      "maxItems": 3
+      "prefixItems": [{"const": 6}, {"const": 20}],
+      "minItems": 2,
+      "maxItems": 2
     },
     "pages": {
       "type": "object",

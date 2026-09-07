@@ -1,6 +1,6 @@
 # FZ Performance Atomic Runtime-State Publication Protocol
 
-This protocol governs the 06:00, 13:00 and 20:00 SAST state-only refreshes.
+This protocol governs the separated 06:30 and 20:30 SAST state publish/verify runs that follow the 06:00 and 20:00 intelligence/reconciliation cycles.
 
 ## Invariants
 
@@ -12,6 +12,14 @@ This protocol governs the 06:00, 13:00 and 20:00 SAST state-only refreshes.
 6. Production changes only through a complete validated Vercel deployment. Never replace live generation files one-by-one.
 7. A competing/newer publisher wins. If the live base generation changes while a run is preparing, the older run aborts and restarts.
 8. Failure preserves the previous production deployment and last-known-good state.
+9. Routine publication never deploys or mutates the PWA shell.
+
+## Cadence
+
+- 06:00 SAST intelligence/reconciliation → 06:30 SAST publish/verify
+- 20:00 SAST intelligence/reconciliation → 20:30 SAST publish/verify
+
+`nextRefreshAt` points to the next intelligence cycle: 20:00 after the morning publication and 06:00 next day after the evening publication. There is no 13:00 cycle.
 
 ## Package layout
 
@@ -34,8 +42,8 @@ The package should retain the immediately previous validated generation whenever
 
 ## Generation build
 
-1. Reconcile and validate the master.
-2. Produce the complete runtime JSON state.
+1. Require a publication-ready state from the preceding intelligence run.
+2. Produce the complete runtime JSON state solely from validated `PWA State`.
 3. Validate the state against `schemas/runtime-state.schema.json` and product content-parity requirements.
 4. Serialize once; compute uncompressed SHA-256.
 5. Gzip; compute compressed SHA-256. This is `generationId`.
@@ -49,7 +57,7 @@ The package should retain the immediately previous validated generation whenever
 
 At run start, read live `current.json` and record `baseGenerationId`, `pointerVersion` and live `stateId`.
 
-Immediately before publication, read the live pointer again. Abort/restart if any of those base values changed. This prevents a delayed 13:00 run from overwriting a newer generation produced by another publisher.
+Immediately before publication, read the live pointer again. Abort/restart if any of those base values changed. This prevents a delayed publisher from overwriting a newer generation produced by another publisher.
 
 The new pointer uses `pointerVersion = old.pointerVersion + 1`, records `baseGenerationId`, sets the new generation as `current`, and carries the old current generation as `previous`.
 
@@ -63,6 +71,7 @@ After READY:
 2. Fetch and validate the immutable current manifest/chunks.
 3. Fetch `https://fz-performance-mvp.vercel.app/api/runtime-state`.
 4. Require HTTP 200, matching `X-FZ-State-Id`, `X-FZ-State-SHA256`, `X-FZ-State-Generation` and `X-FZ-State-Source=current`.
-5. Record the publication ledger entry.
+5. Confirm `masterValidated=true`, shell/runtime compatibility, and required TODAY/TRENDS/TRAIN/SYSTEM plus longitudinal TRENDS content.
+6. Record the publication ledger entry.
 
 If verification fails, restore the last-known-good state-project deployment/alias and do not modify the PWA shell.
