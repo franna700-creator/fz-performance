@@ -1,0 +1,73 @@
+name: emergency-production-deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-emergency-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_TOKEN_PRIMARY: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TOKEN_ALT: ${{ secrets.VERCEL_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Resolve Vercel credential
+        shell: bash
+        run: |
+          if [ -n "$VERCEL_TOKEN_PRIMARY" ]; then
+            echo "VERCEL_TOKEN=$VERCEL_TOKEN_PRIMARY" >> "$GITHUB_ENV"
+            echo "Vercel credential available via VERCEL_TOKEN"
+          elif [ -n "$VERCEL_TOKEN_ALT" ]; then
+            echo "VERCEL_TOKEN=$VERCEL_TOKEN_ALT" >> "$GITHUB_ENV"
+            echo "Vercel credential available via VERCEL_ACCESS_TOKEN"
+          else
+            echo "No Vercel deployment credential is configured in GitHub Actions secrets."
+            exit 42
+          fi
+      - name: Pin project identity
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+      - name: Build exact v0.6 source
+        run: |
+          node scripts/build.mjs
+          node scripts/longitudinal-trends-v2.mjs
+          node scripts/longitudinal-trends-v3.mjs
+          node scripts/longitudinal-trends-v4.mjs
+          node --check dist/assets/app.js
+          node --check api/runtime-state.js
+          node scripts/schema-smoke.mjs
+          node scripts/smoke.mjs
+      - name: Build Vercel output
+        run: npx --yes vercel@59.11.7 build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy prebuilt output to production
+        run: npx --yes vercel@59.11.7 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Verify public root and runtime state
+        shell: bash
+        run: |
+          for i in {1..24}; do
+            code=$(curl -sS -o /tmp/fz-root -w '%{http_code}' https://fz-performance-mvp.vercel.app/ || true)
+            if [ "$code" = "200" ] && grep -q 'FZ Performance' /tmp/fz-root; then break; fi
+            sleep 5
+          done
+          test "$code" = "200"
+          grep -q 'FZ Performance' /tmp/fz-root
+          api_code=$(curl -sS -o /tmp/fz-state -w '%{http_code}' https://fz-performance-mvp.vercel.app/api/runtime-state || true)
+          test "$api_code" = "200"
+          grep -q '"masterValidated":true' /tmp/fz-state
