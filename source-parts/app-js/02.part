@@ -1,0 +1,37 @@
+NTAIN',evidence:'MODERATE',summary:'Strength remains supportive, but no new standardized strength benchmark currently deserves dashboard dominance.',obs:'5 Sep added dedicated strength; no repeated standardized strength marker has been captured since.',inf:'Reserve is likely adequate as a support quality but the evidence is not strong enough for a hard trend claim.',decision:'Maintain race-relevant strength without compromising running/station quality density.',next:'Use stable race-relevant strength markers when they can be captured without turning the block into strength testing.'},
+{id:'integration',name:'Race Integration',priority:'Outcome',status:'BUILDING',evidence:'MODERATE',summary:'Mixed work is building interaction, but a repeatable full race-simulation benchmark is still ahead.',obs:'Mixed-running and controlled HYROX work provide pieces of the interaction problem, not a full standardized simulation series.',inf:'Capabilities are beginning to interact, but integration evidence remains incomplete.',decision:'Progress toward fixed compromised blocks and later race simulation as specificity increases.',next:'Create repeatable mixed blocks before using full simulation as the main integration checkpoint.'}
+];
+
+
+const $=id=>document.getElementById(id);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let runtimeState=null,runtimeSource='embedded';
+let AET=DEFAULT_AET,WELL=DEFAULT_WELL,LOAD=DEFAULT_LOAD,RUNS=DEFAULT_RUNS,CAP=DEFAULT_CAP;
+
+function validState(s){return !!(s&&s.masterValidated===true&&s.pages&&['today','trends','train','system'].every(k=>typeof s.pages[k]==='string')&&s.datasets)}
+async function loadRuntimeState(){
+  try{
+    const r=await fetch('/api/runtime-state',{cache:'no-store',headers:{accept:'application/json'}});
+    if(!r.ok)throw new Error('runtime '+r.status);
+    const s=await r.json();
+    if(!validState(s))throw new Error('invalid runtime state');
+    localStorage.setItem('fz:last-known-good-state',JSON.stringify(s));
+    return {state:s,source:'live'};
+  }catch(err){
+    console.warn('FZ runtime state unavailable; using fallback',err);
+    try{const s=JSON.parse(localStorage.getItem('fz:last-known-good-state')||'null');if(validState(s))return {state:s,source:'fallback'}}catch(_){ }
+    return {state:null,source:'embedded'};
+  }
+}
+function applyRuntimeState(s){
+  if(!s)return;
+  runtimeState=s;
+  for(const id of ['today','trends','train','system']){const el=$(id);if(el&&s.pages[id])el.innerHTML=s.pages[id]}
+  AET=s.datasets.AET||DEFAULT_AET;WELL=s.datasets.WELL||DEFAULT_WELL;LOAD=s.datasets.LOAD||DEFAULT_LOAD;RUNS=s.datasets.RUNS||DEFAULT_RUNS;CAP=s.datasets.CAP||DEFAULT_CAP;
+}
+function sastParts(now=Date.now()){const z=new Date(now+7200000);return {y:z.getUTCFullYear(),m:z.getUTCMonth(),d:z.getUTCDate(),h:z.getUTCHours()}}
+function nextRefreshInfo(now=Date.now()){const {y,m,d}=sastParts(now);for(const hour of SCHEDULE_SAST){const ms=Date.UTC(y,m,d,hour)-7200000;if(ms>now)return{ms,hour}}return{ms:Date.UTC(y,m,d+1,6)-7200000,hour:6}}
+function renderTodayDate(){const el=$('todayDate');if(!el)return;const z=new Date(Date.now()+7200000);el.textContent=new Intl.DateTimeFormat('en-ZA',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(z)}
+function tick(){const now=Date.now(),info=nextRefreshInfo(now);let sec=Math.max(0,Math.floor((info.ms-now)/1000)),h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;const c=$('countdown');if(c)c.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const ns=$('nextSlot');if(ns)ns.textContent='Next scheduled refresh · '+String(info.hour).padStart(2,'0')+':00 SAST'}
+function formatStateTime(v){if(!v)return'—';const d=new Date(v);if(Number.isNaN(+d))return String(v);return new Intl.DateTimeFormat('en-ZA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Africa/Johannesburg'}).format(d)+' SAST'}
+function installHealthPanel(){const sys=$('system');if(!sys||$('runtimeHealthPanel'))return;const dataStatus=runtimeState?.masterValidated?'VALIDATED':runtimeSource==='fallback'?'FALLBACK':'EMBEDDED';const stateId=runtimeState?.stateId||'Built-in';const stateAt=runtimeState?.runtimePublishedAt||runtimeState?.stateId||null;const p=document.createElement('div');p.id='runtimeHealthPanel';p.className='reliability-panel';p.innerHTML=`<div class="eyebrow">Reliability Control</div><div class="health-grid"><div class="health-cell"><small>Platform</small><b class="health-ok">ONLINE</b></div><div class="health-cell"><small>Application</small><b class="health-ok">HEALTHY</b></div><div class="health-cell"><small>Data</small><b class="${runtimeState?.masterValidated?'health-ok':'health-warn'}">${dataStatus}</b></div><div class="health-cell"><small>State</small><b>${formatStateTime(stateAt)}</b></div><div class="health-cell"><small>Shell</small><b>v${SHELL_VERSION}</b></div></div><div class="m-note" style="margin-top:9px">State source: 
