@@ -1,0 +1,42 @@
+name: production-smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-production-smoke
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      FZ_PROD_URL: https://fz-performance-mvp.vercel.app
+      FZ_ARTIFACT_DIR: artifacts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise production in a real browser
+        run: node scripts/production-smoke.mjs
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-production-smoke-failure
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
