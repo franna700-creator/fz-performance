@@ -11,6 +11,7 @@
     "capturedAt": {"type":["string","null"],"format":"date-time"},
     "recordStatus": {"enum":["LIVE_PARTIAL","HISTORICAL_COMPLETE","BACKFILLED","SUPERSEDED"]},
     "sourceCoverage": {"type":"string"},
+    "priorDayGarminClosureStatus": {"enum":["HISTORICAL_COMPLETE","NOT_APPLICABLE_LEGACY"]},
     "physiology": {
       "type":"object",
       "properties": {
@@ -63,5 +64,30 @@
     "provenanceNote":{"type":["string","null"]},
     "supersedesSnapshotId":{"type":["string","null"]}
   },
+  "allOf": [
+    {
+      "if": {"properties":{"snapshotClass":{"enum":["LIVE_CAPTURE","DAILY_CLOSE"]}},"required":["snapshotClass"]},
+      "then": {
+        "required":["capturedAt","priorDayGarminClosureStatus","decision","logicVersion"],
+        "properties": {
+          "priorDayGarminClosureStatus":{"const":"HISTORICAL_COMPLETE"},
+          "capturedAt":{"type":"string","format":"date-time"},
+          "logicVersion":{"type":"string","minLength":1},
+          "decision": {
+            "type":"object",
+            "required":["readiness","readinessBand"],
+            "properties": {
+              "readiness":{"type":"number","minimum":0,"maximum":100},
+              "readinessBand":{"type":"string","minLength":1},
+              "primaryLimiter":{"type":["string","null"]},
+              "recommendationSummary":{"type":["string","null"]},
+              "confidence":{"type":["string","null"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ],
   "additionalProperties": false
 }
