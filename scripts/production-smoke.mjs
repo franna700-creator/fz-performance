@@ -47,6 +47,19 @@ async function bootAndNavigate(page, label) {
   assert.deepEqual(consoleErrors, [], `${label}: no console errors allowed`);
 }
 
+async function scrubSnapshot(page, selector) {
+  return page.locator(selector).evaluate(el => {
+    const style = getComputedStyle(el);
+    return {
+      className: el.className,
+      opacity: style.opacity,
+      visibility: style.visibility,
+      display: style.display,
+      text: el.textContent?.trim() || ''
+    };
+  });
+}
+
 async function desktopSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const state = await assertGateway(context);
@@ -62,14 +75,19 @@ async function desktopSmoke(browser) {
     const chart = page.locator('#recoveryChart');
     const box = await chart.boundingBox();
     assert.ok(box && box.width > 100 && box.height > 100, 'desktop: recovery chart must have a real rendered box');
-    await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.45);
-    await page.waitForSelector('#recoveryChart .chart-scrub-tooltip.show', { timeout: 3000 });
-    const pointerTip = (await page.locator('#recoveryChart .chart-scrub-tooltip.show').innerText()).trim();
-    assert.ok(pointerTip.length > 8, 'desktop: pointer scrub tooltip must contain observation data');
+    await chart.hover({ position: { x: Math.round(box.width * 0.45), y: Math.round(box.height * 0.45) } });
+    await page.waitForTimeout(250);
+    const pointer = await scrubSnapshot(page, '#recoveryChart .chart-scrub-tooltip');
+    console.log('DESKTOP_SCRUB', JSON.stringify(pointer));
+    assert.ok(pointer.className.includes('show'), 'desktop: pointer scrub must activate tooltip class');
+    assert.notEqual(pointer.opacity, '0', 'desktop: pointer scrub tooltip must be visually visible');
+    assert.ok(pointer.text.length > 8, 'desktop: pointer scrub tooltip must contain observation data');
 
     await chart.focus();
     await page.keyboard.press('ArrowRight');
-    await page.waitForSelector('#recoveryChart .chart-scrub-tooltip.show', { timeout: 3000 });
+    await page.waitForTimeout(100);
+    const keyboard = await scrubSnapshot(page, '#recoveryChart .chart-scrub-tooltip');
+    assert.ok(keyboard.className.includes('show') && keyboard.text.length > 8, 'desktop: keyboard scrub must show observation data');
 
     await page.locator('.nav button[data-page="system"]').click();
     await page.waitForSelector('#runtimeHealthPanel');
@@ -95,9 +113,12 @@ async function mobileSmoke(browser) {
     const box = await chart.boundingBox();
     assert.ok(box && box.width > 100, 'mobile: chart must render');
     await page.touchscreen.tap(box.x + box.width * 0.5, box.y + Math.min(box.height * 0.45, 120));
-    await page.waitForSelector('#recoveryChart .chart-scrub-tooltip.show', { timeout: 3000 });
-    const touchTip = (await page.locator('#recoveryChart .chart-scrub-tooltip.show').innerText()).trim();
-    assert.ok(touchTip.length > 8, 'mobile: touch scrub tooltip must contain observation data');
+    await page.waitForTimeout(250);
+    const touch = await scrubSnapshot(page, '#recoveryChart .chart-scrub-tooltip');
+    console.log('MOBILE_SCRUB', JSON.stringify(touch));
+    assert.ok(touch.className.includes('show'), 'mobile: touch scrub must activate tooltip class');
+    assert.notEqual(touch.opacity, '0', 'mobile: touch scrub tooltip must be visually visible');
+    assert.ok(touch.text.length > 8, 'mobile: touch scrub tooltip must contain observation data');
   } catch (error) {
     await page.screenshot({ path: `${ARTIFACT_DIR}/mobile-failure.png`, fullPage: true }).catch(() => {});
     throw error;
