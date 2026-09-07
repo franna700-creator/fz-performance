@@ -13,5 +13,7 @@ jobs:
       - run: node --check api/runtime-state.js
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
+      - run: node --check scripts/longitudinal-schema-smoke.mjs
       - run: node scripts/schema-smoke.mjs
+      - run: node scripts/longitudinal-schema-smoke.mjs
       - run: node scripts/smoke.mjs
