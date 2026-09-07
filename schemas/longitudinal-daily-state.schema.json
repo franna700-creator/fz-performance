@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/longitudinal-daily-state.schema.json",
+  "title": "FZ Longitudinal Daily State",
+  "type": "object",
+  "required": ["snapshotId","date","snapshotClass","recordStatus","sourceCoverage"],
+  "properties": {
+    "snapshotId": {"type":"string","minLength":1},
+    "date": {"type":"string","format":"date"},
+    "snapshotClass": {"enum":["LIVE_CAPTURE","DAILY_CLOSE","HISTORICAL_BACKFILL","CORRECTION"]},
+    "capturedAt": {"type":["string","null"],"format":"date-time"},
+    "recordStatus": {"enum":["LIVE_PARTIAL","HISTORICAL_COMPLETE","BACKFILLED","SUPERSEDED"]},
+    "sourceCoverage": {"type":"string"},
+    "physiology": {
+      "type":"object",
+      "properties": {
+        "hrvMs":{"type":["number","null"]},
+        "rhrBpm":{"type":["number","null"]},
+        "sleepHours":{"type":["number","null"]},
+        "sleepScore":{"type":["number","null"]},
+        "bodyBatteryHigh":{"type":["number","null"]},
+        "stressAvg":{"type":["number","null"]},
+        "steps":{"type":["number","null"]},
+        "activeEnergyKcal":{"type":["number","null"]}
+      },
+      "additionalProperties": false
+    },
+    "loadContext": {
+      "type":"object",
+      "properties": {
+        "priorDayNcl":{"type":["number","null"]},
+        "priorDayHrEffort":{"type":["number","null"]},
+        "priorDayTrainingMin":{"type":["number","null"]},
+        "rolling7dNcl":{"type":["number","null"]},
+        "rolling28dNcl":{"type":["number","null"]},
+        "acuteChronic":{"type":["number","null"]}
+      },
+      "additionalProperties": false
+    },
+    "subjective": {
+      "type":"object",
+      "properties": {
+        "localState":{"type":["string","null"]},
+        "systemicState":{"type":["string","null"]},
+        "notes":{"type":["string","null"]}
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "type":"object",
+      "properties": {
+        "readiness":{"type":["number","null"],"minimum":0,"maximum":100},
+        "readinessBand":{"type":["string","null"]},
+        "primaryLimiter":{"type":["string","null"]},
+        "recommendationSummary":{"type":["string","null"]},
+        "confidence":{"type":["string","null"]}
+      },
+      "additionalProperties": false
+    },
+    "logicVersion":{"type":["string","null"]},
+    "eventContextVersion":{"type":["string","null"]},
+    "runtimeStateId":{"type":["string","null"]},
+    "provenanceNote":{"type":["string","null"]},
+    "supersedesSnapshotId":{"type":["string","null"]}
+  },
+  "additionalProperties": false
+}
