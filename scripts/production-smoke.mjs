@@ -102,7 +102,8 @@ async function desktopSmoke(browser) {
 }
 
 async function mobileSmoke(browser) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const viewport = { width: 390, height: 844 };
+  const context = await browser.newContext({ viewport, isMobile: true, hasTouch: true });
   await assertGateway(context);
   const page = await context.newPage();
   try {
@@ -110,12 +111,18 @@ async function mobileSmoke(browser) {
     await page.locator('.bottom button[data-page="trends"]').click();
     await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
     const chart = page.locator('#recoveryChart');
+    await chart.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(100);
     const box = await chart.boundingBox();
-    assert.ok(box && box.width > 100, 'mobile: chart must render');
-    await page.touchscreen.tap(box.x + box.width * 0.5, box.y + Math.min(box.height * 0.45, 120));
+    assert.ok(box && box.width > 100 && box.height > 100, 'mobile: chart must render');
+    assert.ok(box.y < viewport.height && box.y + box.height > 0, 'mobile: chart must be inside the touch viewport before interaction');
+
+    const tapX = Math.max(1, Math.min(viewport.width - 2, box.x + box.width * 0.5));
+    const tapY = Math.max(1, Math.min(viewport.height - 2, box.y + Math.min(box.height * 0.45, 120)));
+    await page.touchscreen.tap(tapX, tapY);
     await page.waitForTimeout(250);
     const touch = await scrubSnapshot(page, '#recoveryChart .chart-scrub-tooltip');
-    console.log('MOBILE_SCRUB', JSON.stringify(touch));
+    console.log('MOBILE_SCRUB', JSON.stringify({ ...touch, tapX, tapY, box }));
     assert.ok(touch.className.includes('show'), 'mobile: touch scrub must activate tooltip class');
     assert.notEqual(touch.opacity, '0', 'mobile: touch scrub tooltip must be visually visible');
     assert.ok(touch.text.length > 8, 'mobile: touch scrub tooltip must contain observation data');
