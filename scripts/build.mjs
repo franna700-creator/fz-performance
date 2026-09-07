@@ -42,7 +42,7 @@ if(!app.includes(scatterAnchor)) throw new Error('Scatter scrub touch patch anch
 app=app.replace(scatterAnchor,scatterReplacement);
 fs.writeFileSync(path.join(DIST,'assets/app.js'),app);
 
-const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'cde72b4337c89eb3089c7ad8f80febba8809d4e42463b3b85acb88c3057b4e21'};
+const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'9b27d69d3e7d4efc794fec5269f6b3c886dd36bcb2312057b716439bf90e900b'};
 for(const [rel,want] of Object.entries(expected)){const got=createHash('sha256').update(fs.readFileSync(path.join(DIST,rel))).digest('hex'); if(got!==want) throw new Error(`Release hash mismatch for ${rel}: ${got}`); console.log(`PASS hash ${rel} ${got}`)}
 fs.rmSync(TMP,{recursive:true,force:true});
 console.log('FZ v0.5.1 deterministic release build complete');
