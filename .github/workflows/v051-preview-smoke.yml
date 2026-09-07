@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
-      FZ_PROD_URL: https://fz-performance-cjjh1f5oj-franna700-2546.vercel.app
+      FZ_PROD_URL: https://fz-performance-boo8bwdpf-franna700-2546.vercel.app
       FZ_ARTIFACT_DIR: artifacts
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
         run: npm install --no-save playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Exercise corrected v0.5.1 preview in a real browser
+      - name: Exercise tap-safe v0.5.1 preview in a real browser
         run: node scripts/production-smoke.mjs
       - name: Upload failure screenshots
         if: failure()
