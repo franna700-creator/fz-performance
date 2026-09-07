@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/athlete-feedback.schema.json",
+  "title": "FZ Athlete Feedback",
+  "type": "object",
+  "required": ["feedbackId","date","feedbackType","captureSource","extractionClass","confidence"],
+  "properties": {
+    "feedbackId":{"type":"string","minLength":1},
+    "date":{"type":"string","format":"date"},
+    "timestamp":{"type":["string","null"],"format":"date-time"},
+    "feedbackType":{"type":"string","minLength":1},
+    "rawRetainedNote":{"type":["string","null"]},
+    "fzSummary":{"type":["string","null"]},
+    "overallFeeling":{"type":["string","null"]},
+    "freshnessEnergy":{"type":["string","null"]},
+    "bodyAreaLocalState":{"type":["string","null"]},
+    "severityRating":{"type":["string","number","null"]},
+    "functionGait":{"type":["string","null"]},
+    "motivationIntent":{"type":["string","null"]},
+    "sessionFeel":{"type":["string","null"]},
+    "rpe":{"type":["number","null"],"minimum":0,"maximum":10},
+    "cardiovascularFeel":{"type":["string","null"]},
+    "muscularFeel":{"type":["string","null"]},
+    "techniqueMechanics":{"type":["string","null"]},
+    "fuelingHydration":{"type":["string","null"]},
+    "contextConfound":{"type":["string","null"]},
+    "snapshotId":{"type":["string","null"]},
+    "decisionId":{"type":["string","null"]},
+    "exposureId":{"type":["string","null"]},
+    "captureSource":{"type":"string","minLength":1},
+    "extractionClass":{"enum":["EXPLICIT_RAW","PARAPHRASED_EXPLICIT","MASTER_RETAINED_ATHLETE_FEEDBACK","FZ_STRUCTURED_SUMMARY"]},
+    "confidence":{"enum":["VERY HIGH","HIGH","MODERATE-HIGH","MODERATE","LOW-MODERATE","LOW"]},
+    "provenanceNote":{"type":["string","null"]},
+    "supersedesFeedbackId":{"type":["string","null"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties":{"extractionClass":{"const":"FZ_STRUCTURED_SUMMARY"}}},
+      "then": {"required":["fzSummary"]}
+    }
+  ],
+  "additionalProperties": false
+}
