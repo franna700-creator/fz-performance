@@ -1,27 +1,24 @@
 {
-  "release": "0.6.0",
+  "release": "0.6.1",
   "releaseDate": "2026-09-07",
-  "classification": "PRODUCT RELEASE — LONGITUDINAL INTELLIGENCE / TRENDS",
-  "sourceModel": "v0.5.1 reliability foundation retained; existing TRENDS surface deepened with master-backed longitudinal intelligence after runtime hydration, with future datasets.LONGITUDINAL override support",
+  "classification": "PRODUCT RELEASE — CADENCE ALIGNMENT / SHELL LABEL CLEANUP",
+  "sourceModel": "v0.6.0 longitudinal TRENDS baseline retained; shell/countdown/runtime-state schedule aligned to the approved 06:00 and 20:00 intelligence cadence with 06:30 and 20:30 publish/verify separation",
   "generatedFiles": {
-    "index.html": "sha256:cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73",
-    "assets/app.css": "sha256:4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e",
-    "assets/app.js": "sha256:74a3ea843ce79979e1c2ced2d8c0a4bbe228b851def0e3290cfaa7177ceed81e",
+    "index.html": "sha256:07aec6f0c7e77334286a37bcfb232332fc832424f230daefe6a784007df68353",
+    "assets/app.css": "sha256:9494e1a74706c8083532a1a2b009c08f46bc57c4cafbce86cc7d991a90c6b637",
+    "assets/app.js": "sha256:8029f25df298bc2d311b061bde91184c706000b6ebcc762fbc05f8aefeb5e2b1",
     "api/runtime-state.js": "sha256:f0960cd9fde9ff92439502b2b1a547f1e86e2390ca70ac27a95f0ce4fdbb9d1f"
   },
   "features": [
-    "all v0.5.1 operational-hardening and fail-stale controls retained",
-    "existing TODAY / TRENDS / TRAIN / SYSTEM navigation retained",
-    "ATHLETE STATE personal wellness baseline layer",
-    "RECOVERY RESPONSE load-to-response interpretation",
-    "PERFORMANCE matched output plus subjective-cost interpretation",
-    "EXPOSURE COST systemic versus local recovery-cost interpretation",
-    "ATHLETE VOICE dated subjective evidence summaries",
-    "TRAJECTORY event-aware capability and measurement-gap interpretation",
-    "readiness history begins only from exact retained contemporaneous FZ values",
-    "baseline maturity and confidence explicitly surfaced",
-    "runtime datasets.LONGITUDINAL can supersede embedded master-backed initial cohort",
-    "existing recovery/load/AET charts and pointer/touch/keyboard scrubbing retained"
+    "v0.6 longitudinal TRENDS architecture retained",
+    "shell version marker advanced to v0.6.1",
+    "shell and countdown schedule aligned to 06:00 / 20:00 SAST",
+    "legacy 13:00 slot removed from generated shell and runtime-state schedule schema",
+    "stale v0.5 shell labels removed from generated HTML",
+    "06:00 / 06:30 and 20:00 / 20:30 intelligence-publisher separation documented",
+    "all immutable-generation, fail-stale and previous-generation fallback controls retained",
+    "TODAY / TRENDS / TRAIN / SYSTEM navigation and longitudinal interactions retained",
+    "pointer/touch/keyboard chart scrubbing retained"
   ],
   "releaseGate": {
     "deterministicBuild": "required",
