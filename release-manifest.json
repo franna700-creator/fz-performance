@@ -6,7 +6,7 @@
   "generatedFiles": {
     "index.html": "sha256:cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73",
     "assets/app.css": "sha256:4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e",
-    "assets/app.js": "sha256:c0b51889a139fd23a030196830f910c5ed1a055e4d5c02830dc40c6b61a1ffb8",
+    "assets/app.js": "sha256:74a3ea843ce79979e1c2ced2d8c0a4bbe228b851def0e3290cfaa7177ceed81e",
     "api/runtime-state.js": "sha256:f0960cd9fde9ff92439502b2b1a547f1e86e2390ca70ac27a95f0ce4fdbb9d1f"
   },
   "features": [
