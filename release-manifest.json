@@ -2,20 +2,17 @@
   "release": "0.5.0",
   "releaseDate": "2026-09-07",
   "classification": "PRODUCT + PLATFORM RELEASE",
-  "files": {
-    "index.html": "sha256:3af743ea3d889f2bd13b5c559311ac78125030864c9dd3211bbfc624273d3d81",
-    "assets/app.css": "sha256:9777f99901512992587a769202c013bc93fe06cd9f11bcf2c5aec0d8e56bfe29",
-    "assets/app.js": "sha256:518565affd1492d67443ccca9e2d5910aa379b84f11f054afdd79526e146502e",
-    "api/runtime-state.js": "sha256:124f13f956b63884a14a4f3ccf65f76bb5c4d72ff7b3df301b59e7c54d505fa5"
+  "sourceModel": "Deterministic build-time extraction from immutable validated source archive; no browser-side reconstruction",
+  "generatedFiles": {
+    "index.html": "sha256:cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73",
+    "assets/app.css": "sha256:4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e",
+    "assets/app.js": "sha256:cde72b4337c89eb3089c7ad8f80febba8809d4e42463b3b85acb88c3057b4e21",
+    "api/runtime-state.js": "sha256:86e90b74138e7e27f0934f87ec6c46accad1007bd1284d44af7ccdcfd8baaacb"
   },
   "sourceArchive": {
     "driveFileId": "1FHq53gcGST5DwL27j_OBvFZzsQo3PDJP",
-    "sha256": "e58fea4474414b1d9ba4a708b5caf18f2241b15f3c3a2a261a3571d0585ff6d5"
+    "sha256": "dbb17b11de14d680254280af6cf3a6aa46e47158fdfa8783b39d459a49419a49"
   },
-  "releaseGate": {
-    "staticChecks": "required",
-    "preview": "required",
-    "productionPromotion": "exact-tested-artifact-only",
-    "rollback": "required"
-  }
+  "features": ["same-origin runtime state","fail-stale fallback","06:00/13:00/20:00 SAST countdown","visible current date","pointer/touch/keyboard graph scrubbing"],
+  "releaseGate": {"staticChecks":"required","preview":"required","productionPromotion":"exact-tested-artifact-only","rollback":"required"}
 }
