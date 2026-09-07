@@ -1,0 +1,35 @@
+name: v051-preview-browser-smoke
+
+on:
+  push:
+    branches: [test/v051-preview-smoke]
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      FZ_PROD_URL: https://fz-performance-c8am1y11y-franna700-2546.vercel.app
+      FZ_ARTIFACT_DIR: artifacts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise v0.5.1 preview in a real browser
+        run: node scripts/production-smoke.mjs
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-v051-preview-smoke-failure
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
