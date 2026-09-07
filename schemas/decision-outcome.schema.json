@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/decision-outcome.schema.json",
+  "title": "FZ Decision Outcome",
+  "type": "object",
+  "required": ["decisionId","date","snapshotId","recordStatus"],
+  "properties": {
+    "decisionId":{"type":"string","minLength":1},
+    "date":{"type":"string","format":"date"},
+    "snapshotId":{"type":"string"},
+    "optionsPresented":{"type":"array","items":{"type":"string"}},
+    "preferredPath":{"type":["string","null"]},
+    "confidence":{"type":["string","null"]},
+    "athleteSelection":{"type":["string","null"]},
+    "executionStatus":{"enum":["PLANNED","COMPLETED","MODIFIED","DIFFERENT_SESSION","RESTED","ABORTED","UNKNOWN",null]},
+    "exposureId":{"type":["string","null"]},
+    "rpe":{"type":["number","null"],"minimum":0,"maximum":10},
+    "limitingFactor":{"type":["string","null"]},
+    "immediateResponse":{"type":["string","null"]},
+    "nextMorningSnapshotId":{"type":["string","null"]},
+    "outcomeAssessment":{"type":["string","null"]},
+    "logicVersion":{"type":["string","null"]},
+    "recordStatus":{"enum":["OPEN","CLOSED","BACKFILLED","SUPERSEDED"]},
+    "provenanceNote":{"type":["string","null"]}
+  },
+  "additionalProperties": false
+}
