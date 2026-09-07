@@ -45,6 +45,17 @@ Minimum fields:
 - runtime state ID / provenance where applicable
 - correction lineage through `supersedesSnapshotId` rather than silent overwrite
 
+### Forward-capture invariants
+For every contemporaneous `LIVE_CAPTURE` or `DAILY_CLOSE` created after Longitudinal v1 activation:
+- FZ readiness score is mandatory;
+- readiness band/status is mandatory;
+- the producing decision-logic version is mandatory;
+- the immediately preceding completed Garmin Daily record must be confirmed `HISTORICAL_COMPLETE` before the new morning anchor is accepted;
+- a missing completed Garmin Daily record is a DATA HEALTH exception and must not be silently tolerated;
+- subjective/local state may still be missing if it was not explicitly captured, but must remain visibly missing rather than inferred from wearables.
+
+Historical backfills are different. A historical readiness score is populated only when the exact contemporaneous FZ score can be recovered from a dated FZ artifact or master record. Historical readiness must never be recreated retrospectively using a newer decision engine and then presented as if it were the original score.
+
 Historical records must preserve what was known at the time. Missing data remains missing. Historical backfill is labelled as reconstruction and must never be presented as an original contemporaneous decision snapshot.
 
 ### 2. Training exposure
@@ -112,7 +123,7 @@ The master gains five longitudinal tables:
 
 These tables are durable analytical memory, not browser state. The existing PWA State remains the render contract for current production.
 
-The approved PWA shell remains visually stable while the longitudinal layer matures. UI exposure of new history is a later PRODUCT RELEASE and must pass the locked v0.5.1 gate.
+The approved PWA shell remains visually stable while the longitudinal layer matures. The preferred future product direction is to deepen the existing TRENDS surface with longitudinal reconstruction, exposure-response and trajectory intelligence rather than adding a new top-level HISTORY destination unless later evidence justifies one. Any UI exposure remains a PRODUCT RELEASE and must pass the locked v0.5.1 gate.
 
 ## Historical integrity rules
 
@@ -124,6 +135,7 @@ The approved PWA shell remains visually stable while the longitudinal layer matu
 - Historical backfills must be labelled `HISTORICAL_BACKFILL`.
 - Contemporaneous daily records created by scheduled operation are labelled `LIVE_CAPTURE` or `DAILY_CLOSE` as appropriate.
 - Observation, Inference and Coaching Judgment remain distinct.
+- From Longitudinal v1 activation forward, readiness persistence and completed prior-day Garmin Daily closure are non-negotiable daily invariants.
 
 ## Initial cohort
 
@@ -138,8 +150,11 @@ Older Apple Health / Strava / integrated history remains valuable baseline conte
 
 06:00:
 - complete normal master-first reconciliation;
+- confirm the prior calendar day's Garmin Daily row is historically complete;
+- produce the FZ readiness score and readiness band under the active decision-logic version;
 - publish current runtime state under the locked production workflow;
 - append/finalise one new longitudinal morning state only after master validation passes;
+- reject the longitudinal morning capture if readiness/band/logic version or prior-day Garmin closure is absent;
 - never mutate prior longitudinal rows except via an explicit superseding correction record.
 
 13:00 / 20:00:
@@ -175,10 +190,11 @@ Next morning:
 
 ## Development sequence
 
-1. Persist trustworthy daily state.
+1. Persist trustworthy daily state, including readiness and source-completeness invariants.
 2. Persist training exposures.
 3. Record decision -> choice -> execution.
 4. Link next-state outcomes.
 5. Build individual baselines and temporal relationships.
-6. Add weekly/event trajectory reasoning.
-7. Only then consider adaptive individual weighting.
+6. Deepen TRENDS with longitudinal reconstruction and exposure-response interpretation.
+7. Add weekly/event trajectory reasoning.
+8. Only then consider adaptive individual weighting.
