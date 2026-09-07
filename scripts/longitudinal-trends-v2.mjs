@@ -22,12 +22,14 @@ function fzActivateLens(wrap,lens){wrap.querySelectorAll('[data-long-lens]').for
 
 ensureLongitudinalTrends=function(){
   const trends=$('trends');if(!trends||$('longitudinalLayer'))return;
+  const legacy=new Set(['ATHLETE STATE','RECOVERY RESPONSE','PERFORMANCE','EXPOSURE COST','ATHLETE VOICE','TRAJECTORY']);
+  [...trends.querySelectorAll(':scope > .section')].forEach(section=>{const title=(section.querySelector('.section-head h2')?.textContent||'').trim();if(legacy.has(title))section.remove()});
   const d=(runtimeState&&runtimeState.datasets&&runtimeState.datasets.LONGITUDINAL)||DEFAULT_LONGITUDINAL;
 
   const recovery=fzTrendSection('Recovery & Load Trend');
   if(recovery&&!$('wellnessBaselineStrip')){
     const block=document.createElement('div');block.id='wellnessBaselineStrip';block.className='long-integrated-block';
-    block.innerHTML='<div class="long-integrated-head"><div><div class="eyebrow">PERSONAL WELLNESS CONTEXT</div><h3>Current state against your own provisional baseline</h3></div><span class="pill">'+escLong(d.baselineMaturity)+'</span></div><div class="long-metric-strip">'+fzLongMetric(fzLongBase(d,'HRV'))+fzLongMetric(fzLongBase(d,'Resting HR'))+fzLongMetric(fzLongBase(d,'Sleep score'))+fzLongMetric(fzLongBase(d,'Body Battery high'))+fzLongMetric(fzLongBase(d,'Completed-day stress'),'Prior-day stress')+'</div><p class="long-integrated-note"><strong>Interpretation:</strong> current recovery should be read as a multi-signal position relative to personal history, not as isolated Garmin greens. Completed-day stress remains a separate grain from live current-day stress.</p>';
+    block.innerHTML='<div class="long-integrated-head"><div><div class="eyebrow">PERSONAL WELLNESS CONTEXT</div><h3>Current state against your own provisional baseline</h3></div><span class="pill">'+escLong(d.baselineMaturity)+'</span></div><div class="long-metric-strip">'+fzLongMetric(fzLongBase(d,'HRV'))+fzLongMetric(fzLongBase(d,'Resting HR'))+fzLongMetric(fzLongBase(d,'Sleep score'))+fzLongMetric(fzLongBase(d,'Body Battery high'))+fzLongMetric(fzLongBase(d,'Completed-day stress'),'Prior-day stress')+'</div><p class="long-integrated-note"><strong>Interpretation:</strong> current recovery is read as a multi-signal position relative to personal history, not as isolated Garmin greens. Completed-day stress remains a separate grain from live current-day stress.</p>';
     recovery.querySelector('.section-head')?.after(block);
   }
 
@@ -70,11 +72,12 @@ css += String.raw`
 @media(max-width:520px){.long-metric-strip{grid-template-columns:1fr 1fr}.long-row{grid-template-columns:1.2fr .8fr .9fr;padding:9px}.long-watch{grid-template-columns:1fr}.long-voice-list article{grid-template-columns:62px 1fr}}
 `;
 
+if(!app.includes("legacy=new Set(['ATHLETE STATE'")) throw new Error('Legacy longitudinal removal guard missing');
 if(!app.includes('fzActivateLens')||!app.includes('wellnessBaselineStrip')||!app.includes('performanceCostIntegration')) throw new Error('Longitudinal v2 JS patch failed');
 if(!css.includes('.long-filter')||!css.includes('.long-metric-strip')) throw new Error('Longitudinal v2 CSS patch failed');
 fs.writeFileSync(appPath,app);
 fs.writeFileSync(cssPath,css);
 const sha=v=>createHash('sha256').update(v).digest('hex');
-console.log('PASS longitudinal TRENDS v2: integrated metrics + filtered depth layer');
+console.log('PASS longitudinal TRENDS v2: legacy stack removed + integrated metrics + filtered bottom layer');
 console.log('FINAL app.js sha256',sha(app));
 console.log('FINAL app.css sha256',sha(css));
