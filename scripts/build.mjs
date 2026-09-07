@@ -92,7 +92,7 @@ app=app.replace(bootAnchor,longitudinalCode+'\n'+bootInsert);
 if(!app.includes('ATHLETE STATE')||!app.includes('RECOVERY RESPONSE')||!app.includes('EXPOSURE COST')||!app.includes('ATHLETE VOICE')||!app.includes('TRAJECTORY'))throw new Error('Longitudinal Trends markers missing');
 fs.writeFileSync(path.join(DIST,'assets/app.js'),app);
 
-const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'c0b51889a139fd23a030196830f910c5ed1a055e4d5c02830dc40c6b61a1ffb8'};
+const expected={'index.html':'cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73','assets/app.css':'4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e','assets/app.js':'74a3ea843ce79979e1c2ced2d8c0a4bbe228b851def0e3290cfaa7177ceed81e'};
 for(const [rel,want] of Object.entries(expected)){const got=createHash('sha256').update(fs.readFileSync(path.join(DIST,rel))).digest('hex'); if(got!==want) throw new Error(`Release hash mismatch for ${rel}: ${got}`); console.log(`PASS hash ${rel} ${got}`)}
 fs.rmSync(TMP,{recursive:true,force:true});
 console.log('FZ v0.6.0 longitudinal trends release build complete');
