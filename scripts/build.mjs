@@ -9,7 +9,6 @@ if(parts.length!==6) throw new Error(`Expected 6 release payload parts; found ${
 const zip=Buffer.from(parts.map(f=>fs.readFileSync(path.join(PAYLOAD,f),'utf8').trim()).join(''),'base64');
 fs.rmSync(TMP,{recursive:true,force:true}); fs.mkdirSync(TMP,{recursive:true});
 const zipPath=path.join(TMP,'release.zip'); fs.writeFileSync(zipPath,zip);
-execFileSync('tar',['-tf',zipPath],{stdio:'ignore'});
 execFileSync('unzip',['-q',zipPath,'-d',TMP],{stdio:'inherit'});
 fs.rmSync(DIST,{recursive:true,force:true}); fs.mkdirSync(path.join(DIST,'assets'),{recursive:true});
 for(const rel of ['index.html','assets/app.css','assets/app.js','manifest.webmanifest','icon.svg']){
