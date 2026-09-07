@@ -21,6 +21,10 @@ for (const page of ['today', 'trends', 'train', 'system']) {
 for (const dataset of ['AET', 'WELL', 'LOAD', 'RUNS', 'CAP']) {
   assert.ok(runtime.properties.datasets.required.includes(dataset), `runtime schema must require dataset ${dataset}`);
 }
+assert.equal(runtime.properties.scheduleSAST.minItems, 2);
+assert.equal(runtime.properties.scheduleSAST.maxItems, 2);
+assert.equal(runtime.properties.scheduleSAST.prefixItems[0].const, 6);
+assert.equal(runtime.properties.scheduleSAST.prefixItems[1].const, 20);
 
 const generation = schemas['schemas/state-generation-manifest.schema.json'];
 assert.equal(generation.properties.schemaVersion.const, '1.1');
@@ -36,4 +40,4 @@ assert.ok(pointer.required.includes('current'));
 assert.ok(pointer.properties.previous, 'pointer schema must support previous generation fallback');
 assert.match(pointer.$defs.ref.properties.manifestPath.pattern, /manifest/);
 
-console.log('PASS formal runtime state, generation manifest and atomic pointer schemas');
+console.log('PASS v0.6.1 runtime state cadence, generation manifest and atomic pointer schemas');
