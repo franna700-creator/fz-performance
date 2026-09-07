@@ -11,5 +11,6 @@ jobs:
       - run: node scripts/build.mjs
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
+      - run: node --check scripts/production-smoke.mjs
       - run: node scripts/schema-smoke.mjs
       - run: node scripts/smoke.mjs
