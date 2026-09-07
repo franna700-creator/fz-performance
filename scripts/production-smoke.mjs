@@ -60,6 +60,7 @@ async function desktopSmoke(browser) {
     await page.waitForSelector('#runScatter svg', { timeout: 10000 });
 
     const chart = page.locator('#recoveryChart');
+    await chart.scrollIntoViewIfNeeded();
     const box = await chart.boundingBox();
     assert.ok(box && box.width > 100 && box.height > 100, 'desktop: recovery chart must have a real rendered box');
     await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.45);
@@ -92,6 +93,7 @@ async function mobileSmoke(browser) {
     await page.locator('.bottom button[data-page="trends"]').click();
     await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
     const chart = page.locator('#recoveryChart');
+    await chart.scrollIntoViewIfNeeded();
     const box = await chart.boundingBox();
     assert.ok(box && box.width > 100, 'mobile: chart must render');
     await page.touchscreen.tap(box.x + box.width * 0.5, box.y + Math.min(box.height * 0.45, 120));
