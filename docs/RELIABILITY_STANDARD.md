@@ -1,4 +1,4 @@
-# FZ Performance Reliability & Release Standard v0.5.1
+# FZ Performance Reliability & Release Standard v0.6.1
 
 ## Core rule
 Tooling workarounds must never become browser runtime architecture. The browser receives the final static shell and one same-origin runtime-state endpoint.
@@ -39,11 +39,21 @@ The repository contains versioned JSON Schemas for:
 
 Schema/contract validation is part of CI and routine publication. Incompatible or incomplete state must never be rendered optimistically.
 
+## Operating cadence
+The user-approved production cadence is two intelligence cycles per day with a separated publisher/watchdog stage:
+
+- 06:00 SAST — intelligence/reconciliation
+- 06:30 SAST — state publish/verify
+- 20:00 SAST — intelligence/reconciliation
+- 20:30 SAST — state publish/verify
+
+The browser countdown reflects the next **intelligence** refresh slot: 06:00 or 20:00 SAST. There is no 13:00 slot.
+
 ## Release gate
 1. Build final assets.
 2. Syntax/static/schema validation.
 3. Deploy preview from a pinned Git commit/artifact.
-4. Browser smoke test: TODAY/TRENDS/TRAIN/SYSTEM, Africa/Johannesburg date, exact 06:00/13:00/20:00 countdown, validated state, charts, pointer/touch/keyboard scrubbing and no fatal JavaScript errors.
+4. Browser smoke test: TODAY/TRENDS/TRAIN/SYSTEM, Africa/Johannesburg date, exact 06:00/20:00 countdown, validated state, charts, pointer/touch/keyboard scrubbing and no fatal JavaScript errors.
 5. Record rollback deployment.
 6. Promote the exact tested artifact.
 7. Repeat production gateway and browser checks.
