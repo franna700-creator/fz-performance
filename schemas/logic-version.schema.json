@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/logic-version.schema.json",
+  "title": "FZ Logic Version Registry Entry",
+  "type": "object",
+  "required": ["logicVersion","effectiveFrom","status","description"],
+  "properties": {
+    "logicVersion":{"type":"string","minLength":1},
+    "effectiveFrom":{"type":"string","format":"date-time"},
+    "effectiveTo":{"type":["string","null"],"format":"date-time"},
+    "status":{"enum":["ACTIVE","RETIRED","EXPERIMENTAL"]},
+    "description":{"type":"string"},
+    "readinessBands":{"type":["string","null"]},
+    "hardSessionGate":{"type":["string","null"]},
+    "loadModel":{"type":["string","null"]},
+    "subjectiveOverrideRule":{"type":["string","null"]},
+    "eventContextRule":{"type":["string","null"]},
+    "sourceCommit":{"type":["string","null"]},
+    "notes":{"type":["string","null"]}
+  },
+  "additionalProperties": false
+}
