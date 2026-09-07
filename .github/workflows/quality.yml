@@ -10,6 +10,7 @@ jobs:
           node-version: 24
       - run: node scripts/build.mjs
       - run: node scripts/longitudinal-trends-v2.mjs
+      - run: node scripts/longitudinal-trends-v3.mjs
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
       - run: node --check scripts/smoke.mjs
