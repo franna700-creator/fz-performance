@@ -1,37 +1,37 @@
 {
-  "release": "0.5.1",
+  "release": "0.6.0",
   "releaseDate": "2026-09-07",
-  "classification": "PLATFORM + OPERATIONAL HARDENING RELEASE",
-  "sourceModel": "Deterministic v0.5 static shell retained; gateway and publication controls harden runtime-state delivery without browser-side reconstruction",
+  "classification": "PRODUCT RELEASE — LONGITUDINAL INTELLIGENCE / TRENDS",
+  "sourceModel": "v0.5.1 reliability foundation retained; existing TRENDS surface deepened with master-backed longitudinal intelligence after runtime hydration, with future datasets.LONGITUDINAL override support",
   "generatedFiles": {
     "index.html": "sha256:cd5e9667b4e4c3007b335dea0911864830c845ddb2a9f5430b4103dc50a69f73",
     "assets/app.css": "sha256:4c220f646f1e120745189488e322e54e8d92e884ef27506ab028851cadb9105e",
-    "assets/app.js": "sha256:9f89327d21bb50749fe2cbe10b0492cee44c11fe43c09d7d5f2c1fa3ecd1c6a5",
+    "assets/app.js": "sha256:c0b51889a139fd23a030196830f910c5ed1a055e4d5c02830dc40c6b61a1ffb8",
     "api/runtime-state.js": "sha256:f0960cd9fde9ff92439502b2b1a547f1e86e2390ca70ac27a95f0ce4fdbb9d1f"
   },
-  "sourceArchive": {
-    "driveFileId": "1FHq53gcGST5DwL27j_OBvFZzsQo3PDJP",
-    "sha256": "dbb17b11de14d680254280af6cf3a6aa46e47158fdfa8783b39d459a49419a49"
-  },
   "features": [
-    "immutable content-addressed runtime generations",
-    "atomic current/previous generation pointer",
-    "previous validated server-generation fallback",
-    "formal runtime/pointer/manifest JSON schemas",
-    "publisher monotonicity and optimistic lease protocol",
-    "hourly real-browser desktop/mobile production smoke monitoring",
-    "same-origin runtime state",
-    "browser fail-stale fallback",
-    "06:00/13:00/20:00 SAST countdown",
-    "pointer/touch/keyboard graph scrubbing",
-    "explicit mobile Touch Events plus pointer-up/click tap fallback"
+    "all v0.5.1 operational-hardening and fail-stale controls retained",
+    "existing TODAY / TRENDS / TRAIN / SYSTEM navigation retained",
+    "ATHLETE STATE personal wellness baseline layer",
+    "RECOVERY RESPONSE load-to-response interpretation",
+    "PERFORMANCE matched output plus subjective-cost interpretation",
+    "EXPOSURE COST systemic versus local recovery-cost interpretation",
+    "ATHLETE VOICE dated subjective evidence summaries",
+    "TRAJECTORY event-aware capability and measurement-gap interpretation",
+    "readiness history begins only from exact retained contemporaneous FZ values",
+    "baseline maturity and confidence explicitly surfaced",
+    "runtime datasets.LONGITUDINAL can supersede embedded master-backed initial cohort",
+    "existing recovery/load/AET charts and pointer/touch/keyboard scrubbing retained"
   ],
   "releaseGate": {
+    "deterministicBuild": "required",
     "staticChecks": "required",
     "schemaChecks": "required",
+    "longitudinalMarkerChecks": "required",
     "preview": "required",
-    "browserSmoke": "required",
+    "browserSmoke": "required where available",
     "productionPromotion": "exact-tested-artifact-only",
+    "productionReadback": "required",
     "rollback": "required"
   }
 }
