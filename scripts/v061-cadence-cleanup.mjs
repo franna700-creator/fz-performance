@@ -1,7 +1,9 @@
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const HTML_PATH='dist/index.html';
 const APP_PATH='dist/assets/app.js';
+const CSS_PATH='dist/assets/app.css';
 
 let html=fs.readFileSync(HTML_PATH,'utf8');
 html=html
@@ -29,4 +31,8 @@ if(!app.includes('const SCHEDULE_SAST=[6,20];')) throw new Error('06:00 / 20:00 
 if(app.includes('SCHEDULE_SAST=[6,13,20]')||app.includes('13:00')) throw new Error('Stale 13:00 schedule remains in app.js');
 fs.writeFileSync(APP_PATH,app);
 
+const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 console.log('PASS v0.6.1 shell/version/cadence cleanup');
+console.log(`ARTIFACT_SHA index.html ${sha(HTML_PATH)}`);
+console.log(`ARTIFACT_SHA assets/app.css ${sha(CSS_PATH)}`);
+console.log(`ARTIFACT_SHA assets/app.js ${sha(APP_PATH)}`);
