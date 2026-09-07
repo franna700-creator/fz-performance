@@ -12,8 +12,12 @@ const checks=[
  ['scrub tooltip styling',css.includes('.chart-scrub-tooltip')&&css.includes('.scrub-halo')],
  ['touch haptics',js.includes('navigator.vibrate')],
  ['same-origin runtime',js.includes("fetch('/api/runtime-state'")],
- ['runtime validation',api.includes('masterValidated===true')],
- ['fail stale fallback',js.includes('fz:last-known-good-state')],
+ ['runtime validation',/masterValidated\s*===\s*true/.test(api)],
+ ['immutable generation gateway',api.includes('validGenerationRef')&&api.includes('/generations/${ref.generationId}/manifest.json')],
+ ['previous server fallback',api.includes("['previous', pointerOrLegacy.previous]")&&api.includes("X-FZ-State-Source")),
+ ['payload integrity',api.includes('state chunk integrity failure')&&api.includes('state payload checksum failure')],
+ ['formal schema files',['runtime-state.schema.json','state-generation-manifest.schema.json','state-pointer.schema.json'].every(name=>fs.existsSync('schemas/'+name))],
+ ['fail stale browser fallback',js.includes('fz:last-known-good-state')],
  ['no legacy hourly copy',!html.includes('hourly reconciled refreshes')&&!html.includes('07:00–22:00')],
  ['four pages',['today','trends','train','system'].every(id=>html.includes(`id="${id}"`))]
 ];
