@@ -1,0 +1,11 @@
+{
+  "buildCommand": "node scripts/build.mjs && node scripts/smoke.mjs",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "headers": [
+    {"source":"/api/runtime-state","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/assets/(.*)","headers":[{"key":"Cache-Control","value":"public, max-age=0, must-revalidate"}]}
+  ]
+}
