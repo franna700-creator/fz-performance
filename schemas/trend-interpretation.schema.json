@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance/schemas/trend-interpretation.schema.json",
+  "title": "FZ Trend Interpretation",
+  "type": "object",
+  "required": ["insightId","asOf","domain","horizon","observation","interpretation","confidence","logicVersion","recordStatus","provenance"],
+  "properties": {
+    "insightId":{"type":"string","minLength":1},
+    "asOf":{"type":"string","format":"date-time"},
+    "domain":{"type":"string","minLength":1},
+    "horizon":{"type":"string","minLength":1},
+    "observation":{"type":"string","minLength":1},
+    "relationship":{"type":["string","null"]},
+    "athleteFeedback":{"type":["string","null"]},
+    "interpretation":{"type":"string","minLength":1},
+    "performanceConnection":{"type":["string","null"]},
+    "confidence":{"enum":["VERY HIGH","HIGH","MODERATE-HIGH","MODERATE","LOW-MODERATE","LOW"]},
+    "whatToWatch":{"type":["string","null"]},
+    "evidenceWindow":{"type":["string","null"]},
+    "logicVersion":{"type":"string","minLength":1},
+    "recordStatus":{"enum":["ACTIVE","SUPERSEDED","ARCHIVED"]},
+    "provenance":{"type":"string","minLength":1},
+    "supersedesInsightId":{"type":["string","null"]}
+  },
+  "additionalProperties": false
+}
