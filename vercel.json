@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node scripts/build.mjs && node scripts/longitudinal-trends-v2.mjs && node scripts/longitudinal-trends-v3.mjs && node scripts/longitudinal-trends-v4.mjs && node scripts/v061-cadence-cleanup.mjs && node scripts/smoke.mjs",
+  "buildCommand": "node scripts/build.mjs && node scripts/longitudinal-trends-v2.mjs && node scripts/longitudinal-trends-v3.mjs && node scripts/longitudinal-trends-v4.mjs && node scripts/trends-primary-surface.mjs && node scripts/v061-cadence-cleanup.mjs && node scripts/smoke.mjs",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "headers": [
