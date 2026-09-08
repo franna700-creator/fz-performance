@@ -1,0 +1,142 @@
+# FZ Performance Automation Operating Standard
+
+Status: ACTIVE
+Product baseline: v0.6.1
+Canonical ChatGPT environment: `FZ Performance Scheduled Prompt Environment`
+Timezone: Africa/Johannesburg
+
+## Purpose
+
+This document is the durable operating contract for the two production scheduled workflows that keep the FZ Performance PWA current. The scheduled prompts should orchestrate this contract rather than accumulating incident-specific logic indefinitely.
+
+## Canonical scheduled workflows
+
+### A. FZ Intelligence & Reconciliation
+Runs at 06:00 and 20:00 SAST.
+
+Responsibilities:
+- Use the highest available reasoning effort. This is a production-critical, multi-source reconciliation workflow and must not intentionally downgrade reasoning depth.
+- Run from the ChatGPT conversation titled `FZ Performance Scheduled Prompt Environment`.
+- Read Garmin/Fitness AI, Tredict, relevant athlete feedback, GitHub product contracts, and the canonical Google Drive master.
+- Reconcile `Francois Training Readiness Master` first.
+- Validate the master before producing a new state.
+- Maintain longitudinal tables and `PWA State.datasets.WELLNESS_HISTORY`.
+- Produce a complete publication-ready `PWA State` only after validation passes.
+- Never deploy to Vercel.
+
+06:00 branch:
+- Close yesterday from completed Garmin/master truth.
+- Yesterday becomes HISTORICAL when completed data are available.
+- Populate completed-day stress, steps and active calories.
+- Create/update today as LIVE / PARTIAL.
+- Pull overnight HRV, RHR, sleep and Body Battery data.
+- Rebuild chart-ready wellness history from the reconciled master.
+
+20:00 branch:
+- Reconcile material same-day deltas, workouts and athlete feedback.
+- Preserve completed historical rows unchanged unless correcting verified source data.
+- Keep current day LIVE / PARTIAL.
+- Never use partial-day stress, steps or active calories as completed-day baseline observations.
+
+### B. FZ Publish & Production Verify
+Primary runs at 06:30 and 20:30 SAST. Watchdog verification runs may occur at 07:30 and 21:30 SAST.
+
+Responsibilities:
+- Use the highest available reasoning effort.
+- Run from the ChatGPT conversation titled `FZ Performance Scheduled Prompt Environment`.
+- Never perform Garmin/Tredict intelligence or master repair.
+- Accept only a current-cycle `READY_FOR_PUBLISH`, `masterValidated=true` candidate from `PWA State`.
+- Validate schema, content parity, longitudinal history integrity and runtime compatibility.
+- Publish atomically only to `fz-performance-state`.
+- Never mutate or redeploy `fz-performance-mvp` during routine state refreshes.
+- Verify the production gateway and the real PWA before claiming success.
+
+Watchdog behavior:
+- If the current cycle has already been published and verified, no-op and report `ALREADY_CURRENT_VERIFIED`.
+- If the current-cycle candidate became ready after the primary publish slot, publish and verify it.
+- If it is still not publication-ready, preserve production and report the exact failing gate.
+
+## Pre-flight rules
+
+Before any write or deployment, confirm:
+1. Correct product baseline and canonical GitHub repository.
+2. Canonical master is reachable.
+3. Required connectors are reachable for the intelligence task.
+4. Current production state/pointer is readable.
+5. Current SAST cycle is resolved correctly.
+6. Required schemas and product contracts are readable.
+7. The workflow is operating in the canonical scheduled-prompt conversation context where available.
+
+If the execution environment explicitly reports a lower-than-required reasoning mode, missing required tools, missing canonical data, or an incompatible product contract, fail closed. Do not substitute a shortened or partial workflow.
+
+## State integrity invariants
+
+- Master first, always.
+- Exactly one intended daily wellness record per date/grain.
+- Only the current date may normally be LIVE / PARTIAL.
+- Completed historical days must not become thinner over time.
+- A completed historical row may not lose stress, steps, active calories, provenance or retained exact readiness values once validated.
+- `WELLNESS_HISTORY` is runtime data, not hard-coded shell history.
+- Preserve genuine gaps; do not fabricate missing Garmin data.
+- Readiness history is forward-only and uses exact retained contemporaneous values only.
+- Deduplicate Garmin/Tredict activity overlap.
+- Preserve Observation / Inference / Coaching Judgment separation.
+- Separate systemic/autonomic readiness from local tissue/function.
+
+## Regression / content-parity gate
+
+Before publication compare the candidate with the current validated production state. Reject unexpected loss of:
+- TODAY / TRENDS / TRAIN / SYSTEM content;
+- required datasets;
+- completed historical wellness fields;
+- longitudinal observations;
+- training exposures;
+- athlete feedback;
+- trend interpretations;
+- current-day decision context.
+
+A newer state may update or add data; it must not silently remove previously validated information.
+
+## Three-level production verification
+
+### Level 1 — transport
+Verify stateId, generation, checksum, pointer, schema, gateway headers and `masterValidated=true`.
+
+### Level 2 — semantic data
+Verify:
+- current date is correct;
+- current day is LIVE / PARTIAL;
+- yesterday is HISTORICAL after the morning close where source data are available;
+- yesterday's completed stress/steps/active calories are present;
+- latest overnight values match the reconciled master;
+- expected activities exist exactly once;
+- `WELLNESS_HISTORY` survived publication intact.
+
+### Level 3 — product behavior
+Exercise production as a user on desktop and mobile/touch:
+- TODAY, TRENDS, TRAIN and SYSTEM open;
+- TRENDS loads the longitudinal layer first;
+- wellness metric tabs work;
+- graph scrubbing works;
+- latest/current day is correct;
+- previous completed day can be selected and displays completed values;
+- STATE / RESPONSE / PERFORMANCE / COST / ATHLETE VOICE / TRAJECTORY lenses render;
+- required legacy supporting charts remain usable.
+
+Only after all required verification levels pass may the workflow report that the PWA is updated successfully.
+
+## Publication outcomes
+
+Use explicit outcomes only:
+- `PUBLISHED_AND_VERIFIED`
+- `ALREADY_CURRENT_VERIFIED`
+- `SKIPPED_NOT_PUBLICATION_READY`
+- `FAILED_PUBLISH_OR_VERIFY`
+
+## Core operating principle
+
+No inference without reconciliation.
+No state without validation.
+No publish without an explicit current-cycle handoff.
+No success without production verification.
+No historical data may silently disappear.
