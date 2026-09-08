@@ -24,6 +24,9 @@ const checks=[
  ['v0.6.1 shell',js.includes("SHELL_VERSION='0.6.1'")&&html.includes('2026-09-07-v0.6.1')],
  ['no stale v0.5 shell labels',!/v0\.5 reliability (architecture|shell)/i.test(html)],
  ['longitudinal injector',js.includes('ensureLongitudinalTrends')&&js.includes('datasets.LONGITUDINAL')],
+ ['longitudinal primary surface',js.includes('trends.prepend(wrap);')&&!js.includes('trends.append(wrap);')],
+ ['visual wellness explorer',js.includes('FZ_WELLNESS_HISTORY')&&js.includes('fzRenderWellnessChart')&&js.includes('fzWellnessChart')],
+ ['wellness metric tabs',['HRV','RHR','SLEEP','SLEEP SCORE','BODY BATTERY','STRESS','STEPS','ACTIVE KCAL','READINESS'].every(x=>js.includes(x))],
  ['longitudinal Trends domains',['ATHLETE STATE','RECOVERY RESPONSE','PERFORMANCE','EXPOSURE COST','ATHLETE VOICE','TRAJECTORY'].every(x=>js.includes(x))],
  ['readiness forward-only rule',js.includes('Readiness history begins from exact retained FZ scores going forward')],
  ['baseline maturity',js.includes('PROVISIONAL')&&js.includes('Personal baseline')]
