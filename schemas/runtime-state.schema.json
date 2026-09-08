@@ -39,7 +39,30 @@
         "WELL": {"type": "array"},
         "LOAD": {"type": "array"},
         "RUNS": {"type": "array"},
-        "CAP": {"type": "array", "minItems": 1}
+        "CAP": {"type": "array", "minItems": 1},
+        "WELLNESS_HISTORY": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "status"],
+            "properties": {
+              "date": {"type": "string", "minLength": 6},
+              "dateLabel": {"type": "string"},
+              "hrv": {"type": ["number", "null"]},
+              "rhr": {"type": ["number", "null"]},
+              "sleepHours": {"type": ["number", "null"]},
+              "sleepScore": {"type": ["number", "null"]},
+              "bodyBatteryHigh": {"type": ["number", "null"]},
+              "completedDayStress": {"type": ["number", "null"]},
+              "completedDaySteps": {"type": ["number", "null"]},
+              "completedDayActiveCalories": {"type": ["number", "null"]},
+              "fzReadiness": {"type": ["number", "null"]},
+              "status": {"enum": ["HISTORICAL", "LIVE / PARTIAL", "LEGACY GAP"]},
+              "provenance": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        }
       },
       "additionalProperties": true
     },
