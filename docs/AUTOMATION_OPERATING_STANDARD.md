@@ -21,6 +21,7 @@ Responsibilities:
 - Reconcile `Francois Training Readiness Master` first.
 - Validate the master before producing a new state.
 - Maintain longitudinal tables and `PWA State.datasets.WELLNESS_HISTORY`.
+- Maintain the five current deep-lens summary fields in `PWA State`: `runtime_trends_recovery`, `runtime_trends_performance`, `runtime_trends_exposure`, `runtime_trends_voice`, and `runtime_trends_trajectory`.
 - Produce a complete publication-ready `PWA State` only after validation passes.
 - Never deploy to Vercel.
 
@@ -47,6 +48,7 @@ Responsibilities:
 - Never perform Garmin/Tredict intelligence or master repair.
 - Accept only a `READY_FOR_PUBLISH`, `masterValidated=true` candidate from `PWA State` that is eligible for the resolved run type.
 - Validate schema, content parity, longitudinal history integrity and runtime compatibility.
+- Map the five canonical `runtime_trends_*` PWA State fields into `runtimeState.renderContract.trends` as `{recovery, performance, exposure, voice, trajectory}` without dropping or paraphrasing them. This object is required by the v0.6.1 interactive deep-lens runtime and production smoke contract.
 - Publish atomically only to `fz-performance-state`.
 - Never mutate or redeploy `fz-performance-mvp` during routine state refreshes.
 - Verify the production gateway and the real PWA before claiming success.
@@ -94,6 +96,7 @@ If the execution environment explicitly reports a lower-than-required reasoning 
 - Completed historical days must not become thinner over time.
 - A completed historical row may not lose stress, steps, active calories, provenance or retained exact readiness values once validated.
 - `WELLNESS_HISTORY` is runtime data, not hard-coded shell history.
+- `runtimeState.renderContract.trends` is required runtime data for v0.6.1 and must contain non-empty `recovery`, `performance`, `exposure`, `voice`, and `trajectory` strings sourced from the canonical `PWA State` deep-lens fields.
 - Preserve genuine gaps; do not fabricate missing Garmin data.
 - Readiness history is forward-only and uses exact retained contemporaneous values only.
 - Deduplicate Garmin/Tredict activity overlap.
@@ -110,7 +113,8 @@ Before publication compare the candidate with the current validated production s
 - training exposures;
 - athlete feedback;
 - trend interpretations;
-- current-day decision context.
+- current-day decision context;
+- the five deep-lens current-summary fields required to build `runtimeState.renderContract.trends`.
 
 A newer state may update or add data; it must not silently remove previously validated information.
 
@@ -127,7 +131,8 @@ Verify:
 - yesterday's completed stress/steps/active calories are present;
 - latest overnight values match the reconciled master;
 - expected activities exist exactly once;
-- `WELLNESS_HISTORY` survived publication intact.
+- `WELLNESS_HISTORY` survived publication intact;
+- `runtimeState.renderContract.trends` contains all five non-empty current deep-lens summaries.
 
 ### Level 3 — product behavior
 Exercise production as a user on desktop and mobile/touch:
@@ -138,6 +143,7 @@ Exercise production as a user on desktop and mobile/touch:
 - latest/current day is correct;
 - previous completed day can be selected and displays completed values;
 - STATE / RESPONSE / PERFORMANCE / COST / ATHLETE VOICE / TRAJECTORY lenses render;
+- RESPONSE / PERFORMANCE / COST / ATHLETE VOICE / TRAJECTORY contain the current master-validated runtime update card generated from `renderContract.trends`;
 - required legacy supporting charts remain usable.
 
 Only after all required verification levels pass may the workflow report that the PWA is updated successfully.
