@@ -1,0 +1,30 @@
+name: State Runtime Transport Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'state-runtime/**'
+      - '.github/workflows/state-runtime-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-noop-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build state runtime package
+        working-directory: state-runtime
+        run: npm run build
+      - name: Verify bootstrap output
+        working-directory: state-runtime
+        run: |
+          test -f dist/current.json
+          node -e "const p=require('./dist/current.json'); if(p.schemaVersion!=='1.1'||!p.current?.generationId) process.exit(1); console.log(JSON.stringify({pointerVersion:p.pointerVersion,stateId:p.current.stateId,generationId:p.current.generationId}))"
