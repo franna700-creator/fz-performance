@@ -35,7 +35,7 @@ async function bootAndNavigate(page, label) {
 
   assert.equal((await page.locator('#todayDate').innerText()).trim(), expectedSastDate(), `${label}: SAST date must be correct`);
   assert.match((await page.locator('#countdown').innerText()).trim(), /^\d{2}:\d{2}:\d{2}$/, `${label}: countdown must render`);
-  assert.match(await page.locator('#nextSlot').innerText(), /(06|13|20):00 SAST/, `${label}: next refresh must be one of the locked slots`);
+  assert.match(await page.locator('#nextSlot').innerText(), /(06|20):00 SAST/, `${label}: next refresh must be one of the locked slots`);
 
   for (const id of ['today', 'trends', 'train', 'system']) {
     const selector = label === 'mobile' ? `.bottom button[data-page="${id}"]` : `.nav button[data-page="${id}"]`;
@@ -47,6 +47,44 @@ async function bootAndNavigate(page, label) {
   assert.deepEqual(consoleErrors, [], `${label}: no console errors allowed`);
 }
 
+async function assertLongitudinalTrends(page, label) {
+  await page.waitForSelector('#longitudinalLayer', { timeout: 10000 });
+  const firstSectionId = await page.locator('#trends > .section').first().getAttribute('id');
+  assert.equal(firstSectionId, 'longitudinalLayer', `${label}: longitudinal Trends must be the primary/top Trends surface`);
+
+  await page.waitForSelector('#fzWellnessChart svg', { timeout: 10000 });
+  const wellness = page.locator('#fzWellnessChart');
+  await wellness.scrollIntoViewIfNeeded();
+  const box = await wellness.boundingBox();
+  assert.ok(box && box.width > 100 && box.height > 100, `${label}: wellness explorer must render with a real box`);
+
+  if (label === 'mobile') {
+    await page.touchscreen.tap(box.x + box.width * 0.28, box.y + Math.min(box.height * 0.48, 125));
+  } else {
+    await page.mouse.move(box.x + box.width * 0.28, box.y + box.height * 0.45);
+  }
+  await page.waitForTimeout(100);
+  const selected = (await page.locator('#wellSelectedDate').innerText()).trim();
+  assert.ok(selected && selected !== '07 Sep', `${label}: scrubbed wellness explorer must select historical days, not remain stuck on latest`);
+
+  await page.locator('[data-well-metric="sleepScore"]').click();
+  assert.match((await page.locator('#wellMetricTitle').innerText()).trim(), /Sleep score/i, `${label}: wellness metric tabs must change the chart`);
+
+  const lensChecks = [
+    ['response', '#fzResponseSvg'],
+    ['performance', '#fzAetDeepChart svg'],
+    ['cost', '#fzAcChart svg'],
+    ['voice', '#voiceDeepList'],
+    ['trajectory', '.deep-trajectory']
+  ];
+  for (const [lens, selector] of lensChecks) {
+    await page.locator(`[data-long-lens="${lens}"]`).click();
+    await page.waitForSelector(selector, { timeout: 5000 });
+  }
+  await page.locator('[data-long-lens="state"]').click();
+  await page.waitForSelector('#fzWellnessChart svg', { timeout: 5000 });
+}
+
 async function desktopSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const state = await assertGateway(context);
@@ -54,6 +92,8 @@ async function desktopSmoke(browser) {
   try {
     await bootAndNavigate(page, 'desktop');
     await page.locator('.nav button[data-page="trends"]').click();
+    await assertLongitudinalTrends(page, 'desktop');
+
     await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
     await page.waitForSelector('#loadChart svg', { timeout: 10000 });
     await page.waitForSelector('#aetChart svg', { timeout: 10000 });
@@ -91,6 +131,8 @@ async function mobileSmoke(browser) {
   try {
     await bootAndNavigate(page, 'mobile');
     await page.locator('.bottom button[data-page="trends"]').click();
+    await assertLongitudinalTrends(page, 'mobile');
+
     await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
     const chart = page.locator('#recoveryChart');
     await chart.scrollIntoViewIfNeeded();
@@ -112,7 +154,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   await desktopSmoke(browser);
   await mobileSmoke(browser);
-  console.log('PASS production browser smoke: desktop + mobile + runtime + navigation + chart scrubbing');
+  console.log('PASS production browser smoke: desktop + mobile + runtime + primary longitudinal Trends + wellness scrubbing + six lenses + legacy chart scrubbing');
 } finally {
   await browser.close();
 }
