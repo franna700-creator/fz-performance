@@ -53,14 +53,19 @@ async function bootAndNavigate(page, label) {
   assert.deepEqual(consoleErrors, [], `${label}: no console errors allowed`);
 }
 
-async function selectHistoricalMetric(page, metric, dateLabel) {
-  await page.evaluate(({metric,dateLabel}) => {
-    const rows = fzRuntimeWellnessHistory();
-    const index = rows.findIndex(row => row?.[0] === dateLabel);
-    if (index < 0) throw new Error(`Missing wellness history row ${dateLabel}`);
-    fzSetWellnessMetric(metric);
-    fzSelectWellnessPoint(metric, index, null, null, true);
-  }, {metric,dateLabel});
+async function selectPreviousDayOnWellness(page, label, metric) {
+  await page.locator(`[data-well-metric="${metric}"]`).click();
+  const wellness = page.locator('#fzWellnessChart');
+  await wellness.scrollIntoViewIfNeeded();
+  const box = await wellness.boundingBox();
+  assert.ok(box && box.width > 100 && box.height > 100, `${label}: wellness chart must have a real box`);
+  // Current runtime adds 8 Sep after the retained 17 Aug → 7 Sep history. 7 Sep is the
+  // penultimate observation, so interact just left of the latest point through the public UI.
+  const x = box.x + box.width * 0.955;
+  const y = box.y + box.height * 0.46;
+  if (label === 'mobile') await page.touchscreen.tap(x, y);
+  else await page.mouse.move(x, y);
+  await page.waitForTimeout(120);
 }
 
 async function assertLongitudinalTrends(page, label, state) {
@@ -76,15 +81,17 @@ async function assertLongitudinalTrends(page, label, state) {
   assert.match((await page.locator('.runtime-trend-update').first().innerText()).trim(), /CURRENT MASTER-VALIDATED UPDATE/i, `${label}: deep lenses must retain current runtime interpretation`);
 
   // Regression guard: 7 Sep must be closed as a completed historical day, not the old partial shell row.
-  await selectHistoricalMetric(page, 'steps', '07 Sep');
+  await selectPreviousDayOnWellness(page, label, 'steps');
   assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep row must exist`);
   assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '6,611', `${label}: 7 Sep completed steps must be retained`);
   assert.equal((await page.locator('#wellSelectedStatus').innerText()).trim(), 'HISTORICAL', `${label}: 7 Sep must be closed historical`);
 
-  await selectHistoricalMetric(page, 'stress', '07 Sep');
+  await selectPreviousDayOnWellness(page, label, 'stress');
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep stress row must be selectable`);
   assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '24', `${label}: 7 Sep completed-day stress must be retained`);
 
-  await selectHistoricalMetric(page, 'active', '07 Sep');
+  await selectPreviousDayOnWellness(page, label, 'active');
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep active-energy row must be selectable`);
   assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '439 kcal', `${label}: 7 Sep completed active calories must be retained`);
 
   await page.locator('[data-well-metric="hrv"]').click();
