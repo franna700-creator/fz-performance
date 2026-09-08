@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "teamId": "team_xdfma3BySvP5iRuZ0WDK9S2k",
+  "projects": {
+    "application": {
+      "name": "fz-performance-mvp",
+      "projectId": "prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq",
+      "productionDomain": "https://fz-performance-mvp.vercel.app",
+      "purpose": "Canonical FZ Performance PWA shell and same-origin runtime gateway"
+    },
+    "state": {
+      "name": "fz-performance-state",
+      "projectId": "prj_vAhaOqu3dlQibh7BbUMqjhboqwrJ",
+      "productionDomain": "https://fz-performance-state.vercel.app",
+      "purpose": "Immutable runtime-state generations and current pointer"
+    }
+  },
+  "policy": {
+    "allowedProjectCount": 2,
+    "createAdditionalProjects": false,
+    "applicationReleaseTarget": "fz-performance-mvp",
+    "statePublishTarget": "fz-performance-state",
+    "note": "Do not create temporary Vercel projects for schema tests, deployment-path tests, restore tests, runtime experiments or previews. Use preview deployments inside fz-performance-mvp, repository CI, or local/test artifacts instead."
+  }
+}
