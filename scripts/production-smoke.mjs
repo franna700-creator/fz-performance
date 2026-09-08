@@ -53,6 +53,16 @@ async function bootAndNavigate(page, label) {
   assert.deepEqual(consoleErrors, [], `${label}: no console errors allowed`);
 }
 
+async function selectHistoricalMetric(page, metric, dateLabel) {
+  await page.evaluate(({metric,dateLabel}) => {
+    const rows = fzRuntimeWellnessHistory();
+    const index = rows.findIndex(row => row?.[0] === dateLabel);
+    if (index < 0) throw new Error(`Missing wellness history row ${dateLabel}`);
+    fzSetWellnessMetric(metric);
+    fzSelectWellnessPoint(metric, index, null, null, true);
+  }, {metric,dateLabel});
+}
+
 async function assertLongitudinalTrends(page, label, state) {
   await page.waitForSelector('#longitudinalLayer', { timeout: 10000 });
   const firstSectionId = await page.locator('#trends > .section').first().getAttribute('id');
@@ -65,6 +75,19 @@ async function assertLongitudinalTrends(page, label, state) {
   assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), `${state.liveToday.hrv} ms`, `${label}: current HRV must come from live runtime state`);
   assert.match((await page.locator('.runtime-trend-update').first().innerText()).trim(), /CURRENT MASTER-VALIDATED UPDATE/i, `${label}: deep lenses must retain current runtime interpretation`);
 
+  // Regression guard: 7 Sep must be closed as a completed historical day, not the old partial shell row.
+  await selectHistoricalMetric(page, 'steps', '07 Sep');
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep row must exist`);
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '6,611', `${label}: 7 Sep completed steps must be retained`);
+  assert.equal((await page.locator('#wellSelectedStatus').innerText()).trim(), 'HISTORICAL', `${label}: 7 Sep must be closed historical`);
+
+  await selectHistoricalMetric(page, 'stress', '07 Sep');
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '24', `${label}: 7 Sep completed-day stress must be retained`);
+
+  await selectHistoricalMetric(page, 'active', '07 Sep');
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '439 kcal', `${label}: 7 Sep completed active calories must be retained`);
+
+  await page.locator('[data-well-metric="hrv"]').click();
   const wellness = page.locator('#fzWellnessChart');
   await wellness.scrollIntoViewIfNeeded();
   const box = await wellness.boundingBox();
@@ -169,7 +192,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   await desktopSmoke(browser);
   await mobileSmoke(browser);
-  console.log('PASS production browser smoke: desktop + mobile + runtime + primary longitudinal Trends + live wellness sync + scrubbing + six lenses + legacy chart scrubbing');
+  console.log('PASS production browser smoke: desktop + mobile + runtime + 7 Sep completed history + current wellness sync + scrubbing + six lenses + legacy chart scrubbing');
 } finally {
   await browser.close();
 }
