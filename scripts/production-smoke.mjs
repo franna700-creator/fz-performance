@@ -12,6 +12,12 @@ function expectedSastDate() {
   }).format(new Date());
 }
 
+function expectedWellnessDate(state) {
+  const [y,m,d] = String(state.stateId).slice(0,10).split('-').map(Number);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${String(d).padStart(2,'0')} ${months[m-1]}`;
+}
+
 async function assertGateway(context) {
   const response = await context.request.get(`${BASE}/api/runtime-state`, { headers: { accept: 'application/json' } });
   assert.equal(response.status(), 200, 'runtime gateway must return HTTP 200');
@@ -47,12 +53,18 @@ async function bootAndNavigate(page, label) {
   assert.deepEqual(consoleErrors, [], `${label}: no console errors allowed`);
 }
 
-async function assertLongitudinalTrends(page, label) {
+async function assertLongitudinalTrends(page, label, state) {
   await page.waitForSelector('#longitudinalLayer', { timeout: 10000 });
   const firstSectionId = await page.locator('#trends > .section').first().getAttribute('id');
   assert.equal(firstSectionId, 'longitudinalLayer', `${label}: longitudinal Trends must be the primary/top Trends surface`);
 
   await page.waitForSelector('#fzWellnessChart svg', { timeout: 10000 });
+  const currentDate = expectedWellnessDate(state);
+  await page.waitForFunction(date => document.querySelector('#wellSelectedDate')?.textContent?.trim() === date, currentDate, { timeout: 5000 });
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), currentDate, `${label}: wellness explorer must open on current master-validated state date`);
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), `${state.liveToday.hrv} ms`, `${label}: current HRV must come from live runtime state`);
+  assert.match((await page.locator('.runtime-trend-update').first().innerText()).trim(), /CURRENT MASTER-VALIDATED UPDATE/i, `${label}: deep lenses must retain current runtime interpretation`);
+
   const wellness = page.locator('#fzWellnessChart');
   await wellness.scrollIntoViewIfNeeded();
   const box = await wellness.boundingBox();
@@ -65,10 +77,12 @@ async function assertLongitudinalTrends(page, label) {
   }
   await page.waitForTimeout(100);
   const selected = (await page.locator('#wellSelectedDate').innerText()).trim();
-  assert.ok(selected && selected !== '07 Sep', `${label}: scrubbed wellness explorer must select historical days, not remain stuck on latest`);
+  assert.ok(selected && selected !== currentDate, `${label}: scrubbed wellness explorer must select historical days, not remain stuck on current state`);
 
   await page.locator('[data-well-metric="sleepScore"]').click();
   assert.match((await page.locator('#wellMetricTitle').innerText()).trim(), /Sleep score/i, `${label}: wellness metric tabs must change the chart`);
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), currentDate, `${label}: changing wellness metric must return to the latest valid current point when available`);
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), String(state.liveToday.sleepScore), `${label}: current sleep score must come from live runtime state`);
 
   const lensChecks = [
     ['response', '#fzResponseSvg'],
@@ -80,6 +94,7 @@ async function assertLongitudinalTrends(page, label) {
   for (const [lens, selector] of lensChecks) {
     await page.locator(`[data-long-lens="${lens}"]`).click();
     await page.waitForSelector(selector, { timeout: 5000 });
+    await page.waitForSelector(`.long-pane[data-lens="${lens}"] .runtime-trend-update`, { timeout: 5000 });
   }
   await page.locator('[data-long-lens="state"]').click();
   await page.waitForSelector('#fzWellnessChart svg', { timeout: 5000 });
@@ -92,7 +107,7 @@ async function desktopSmoke(browser) {
   try {
     await bootAndNavigate(page, 'desktop');
     await page.locator('.nav button[data-page="trends"]').click();
-    await assertLongitudinalTrends(page, 'desktop');
+    await assertLongitudinalTrends(page, 'desktop', state);
 
     await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
     await page.waitForSelector('#loadChart svg', { timeout: 10000 });
@@ -126,12 +141,12 @@ async function desktopSmoke(browser) {
 
 async function mobileSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  await assertGateway(context);
+  const state = await assertGateway(context);
   const page = await context.newPage();
   try {
     await bootAndNavigate(page, 'mobile');
     await page.locator('.bottom button[data-page="trends"]').click();
-    await assertLongitudinalTrends(page, 'mobile');
+    await assertLongitudinalTrends(page, 'mobile', state);
 
     await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
     const chart = page.locator('#recoveryChart');
@@ -154,7 +169,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   await desktopSmoke(browser);
   await mobileSmoke(browser);
-  console.log('PASS production browser smoke: desktop + mobile + runtime + primary longitudinal Trends + wellness scrubbing + six lenses + legacy chart scrubbing');
+  console.log('PASS production browser smoke: desktop + mobile + runtime + primary longitudinal Trends + live wellness sync + scrubbing + six lenses + legacy chart scrubbing');
 } finally {
   await browser.close();
 }
