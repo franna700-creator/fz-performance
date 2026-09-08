@@ -7,7 +7,7 @@ Timezone: Africa/Johannesburg
 
 ## Purpose
 
-This document is the durable operating contract for the two production scheduled workflows that keep the FZ Performance PWA current. The scheduled prompts should orchestrate this contract rather than accumulating incident-specific logic indefinitely.
+This document is the durable operating contract for the production workflows that keep the FZ Performance PWA current. Scheduled prompts and one-shot manual publisher invocations should orchestrate this contract rather than accumulating incident-specific logic indefinitely.
 
 ## Canonical scheduled workflows
 
@@ -45,16 +45,33 @@ Responsibilities:
 - Use the highest available reasoning effort.
 - Run from the ChatGPT conversation titled `FZ Performance Scheduled Prompt Environment`.
 - Never perform Garmin/Tredict intelligence or master repair.
-- Accept only a current-cycle `READY_FOR_PUBLISH`, `masterValidated=true` candidate from `PWA State`.
+- Accept only a `READY_FOR_PUBLISH`, `masterValidated=true` candidate from `PWA State` that is eligible for the resolved run type.
 - Validate schema, content parity, longitudinal history integrity and runtime compatibility.
 - Publish atomically only to `fz-performance-state`.
 - Never mutate or redeploy `fz-performance-mvp` during routine state refreshes.
 - Verify the production gateway and the real PWA before claiming success.
 
 Watchdog behavior:
-- If the current cycle has already been published and verified, no-op and report `ALREADY_CURRENT_VERIFIED`.
+- If the intended cycle has already been published and verified, no-op and report `ALREADY_CURRENT_VERIFIED`.
 - If the current-cycle candidate became ready after the primary publish slot, publish and verify it.
 - If it is still not publication-ready, preserve production and report the exact failing gate.
+
+## Manual ad-hoc state publication
+
+A validated intraday state may be published on explicit user request without waiting for the next routine publish slot. This is run type `MANUAL_AD_HOC` and is governed by `docs/MANUAL_STATE_PUBLICATION.md` plus the same state-publication protocol used by the scheduled publisher.
+
+Manual publication rules:
+- It is a state-only publication mode, not a new intelligence cycle and not a product release.
+- It may run only after the canonical master has already been reconciled and `PWA State` is complete, `masterValidated=true` and `READY_FOR_PUBLISH`.
+- It must have an explicit auditable manual publication request in `PWA State` metadata.
+- It is not required to align to 06:30 / 07:30 / 20:30 / 21:30.
+- It does not alter `scheduleSAST=[6,20]` or the normal `nextRefreshAt`.
+- It must use the same optimistic lease, monotonic stateId rules, immutable generation build, content-parity gate, rollback behavior and three-level verification as the scheduled publisher.
+- It publishes only to `fz-performance-state` and never mutates or redeploys `fz-performance-mvp`.
+- If the exact candidate is already live, it must no-op and verify rather than redeploy.
+- If a newer publisher wins, the older manual candidate must not overwrite it.
+
+The canonical interactive-chat trigger is a single-use publisher invocation that re-reads the current GitHub contracts at execution time. Manual means publish sooner, not publish differently.
 
 ## Pre-flight rules
 
@@ -63,9 +80,9 @@ Before any write or deployment, confirm:
 2. Canonical master is reachable.
 3. Required connectors are reachable for the intelligence task.
 4. Current production state/pointer is readable.
-5. Current SAST cycle is resolved correctly.
+5. The run type is resolved as PRIMARY, WATCHDOG or MANUAL_AD_HOC.
 6. Required schemas and product contracts are readable.
-7. The workflow is operating in the canonical scheduled-prompt conversation context where available.
+7. The workflow is operating in the canonical scheduled-prompt conversation context where available, or in a single-use manual publisher invocation explicitly governed by `docs/MANUAL_STATE_PUBLICATION.md`.
 
 If the execution environment explicitly reports a lower-than-required reasoning mode, missing required tools, missing canonical data, or an incompatible product contract, fail closed. Do not substitute a shortened or partial workflow.
 
@@ -137,6 +154,6 @@ Use explicit outcomes only:
 
 No inference without reconciliation.
 No state without validation.
-No publish without an explicit current-cycle handoff.
+No publish without an explicit eligible handoff.
 No success without production verification.
 No historical data may silently disappear.
