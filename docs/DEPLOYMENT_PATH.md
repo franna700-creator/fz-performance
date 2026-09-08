@@ -8,6 +8,8 @@ Product/platform releases must be boring, deterministic and attributable.
 
 Routine intelligence runs occur at 06:00 and 20:00 SAST. Their corresponding state publish/verify runs occur at 06:30 and 20:30 SAST. Routine state publication is separate from product deployment and MUST NOT deploy the PWA shell.
 
+An explicit user-requested intraday publication may also run as `MANUAL_AD_HOC` after the canonical master has already been reconciled and `PWA State` is validated and `READY_FOR_PUBLISH`. This is not a third intelligence cycle and not a second deployment mechanism: it invokes the same locked state publisher sooner. See `docs/MANUAL_STATE_PUBLICATION.md`.
+
 ## Canonical Vercel project registry
 
 FZ Performance uses exactly two persistent Vercel projects:
@@ -26,7 +28,7 @@ FZ Performance uses exactly two persistent Vercel projects:
 
 The machine-readable copy of this registry is `config/vercel-projects.json`.
 
-**Anti-proliferation rule:** do not create additional Vercel projects for previews, schema tests, restore tests, file-path tests, runtime experiments, deployment tooling tests, or one-off recovery work. Product previews belong inside `fz-performance-mvp`; schema/build tests belong in repository CI/local artifacts; state publications belong only in `fz-performance-state`.
+**Anti-proliferation rule:** do not create additional Vercel projects for previews, schema tests, restore tests, file-path tests, runtime experiments, deployment tooling tests, manual state publications, or one-off recovery work. Product previews belong inside `fz-performance-mvp`; schema/build tests belong in repository CI/local artifacts; all state publications belong only in `fz-performance-state`.
 
 Any legacy Vercel project outside this two-project registry is non-canonical and may be retired after confirming that it is not referenced by production code or automation.
 
@@ -54,9 +56,11 @@ Any legacy Vercel project outside this two-project registry is non-canonical and
 
 ## Authentication rule
 
-Do not use one-off GitHub Actions device-login workflows, personal tokens embedded in workflows, or ad-hoc credential workarounds for normal FZ releases.
+Do not use one-off GitHub Actions device-login workflows, personal tokens embedded in workflows, or ad-hoc credential workarounds for normal FZ releases or manual state publications.
 
-The current supported in-chat release mechanism is direct Vercel deployment of the small pinned bootstrap described above into the pre-existing canonical application project. This requires no new plugins and does not alter the FZ runtime architecture.
+The current supported in-chat product-release mechanism is direct Vercel deployment of the small pinned bootstrap described above into the pre-existing canonical application project. This requires no new plugins and does not alter the FZ runtime architecture.
+
+State publication uses the canonical publisher execution environment and project-scoped path already proven for `fz-performance-state`. A manual request must invoke that same publisher contract rather than introducing new Vercel credentials into the PWA, repository, or a new CI workflow.
 
 If native Vercel Git Integration is configured later, it may replace the bootstrap transport only after proving the same guarantees: exact commit identity, preview gate, deterministic build, production verification and rollback safety. It must not introduce automatic shell deployment for ordinary intelligence/state refreshes.
 
@@ -70,6 +74,12 @@ Flow: Garmin + Tredict + athlete feedback → reconciled Drive master → `PWA S
 Operational cadence:
 - 06:00 intelligence → 06:30 publish/verify
 - 20:00 intelligence → 20:30 publish/verify
+
+On-demand mode:
+- a material intraday update is reconciled into the master first;
+- `PWA State` is validated and marked `READY_FOR_PUBLISH` with an explicit manual handoff;
+- `MANUAL_AD_HOC` invokes the same state publisher immediately;
+- normal `scheduleSAST=[6,20]` and `nextRefreshAt` remain unchanged.
 
 No PWA shell deployment.
 
