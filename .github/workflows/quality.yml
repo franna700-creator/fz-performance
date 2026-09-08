@@ -12,6 +12,7 @@ jobs:
       - run: node scripts/longitudinal-trends-v2.mjs
       - run: node scripts/longitudinal-trends-v3.mjs
       - run: node scripts/longitudinal-trends-v4.mjs
+      - run: node scripts/trends-primary-surface.mjs
       - run: node scripts/v061-cadence-cleanup.mjs
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
