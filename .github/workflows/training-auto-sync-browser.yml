@@ -1,0 +1,34 @@
+name: training-auto-sync-browser
+
+on:
+  pull_request:
+    paths:
+      - 'src/training-auto-sync.js'
+      - 'src/training-auto-sync.css'
+      - 'scripts/training-auto-sync-browser-smoke.mjs'
+      - 'scripts/training-auto-sync-smoke.mjs'
+      - 'scripts/clean-shell.mjs'
+      - 'package.json'
+      - '.github/workflows/training-auto-sync-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise training auto-sync in a real browser with mocked same-origin APIs
+        run: node scripts/training-auto-sync-browser-smoke.mjs
