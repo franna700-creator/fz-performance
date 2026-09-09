@@ -8,39 +8,62 @@ await fs.mkdir(ARTIFACT_DIR, { recursive: true });
 
 function expectedSastDate() {
   return new Intl.DateTimeFormat('en-ZA', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Johannesburg'
+    timeZone: 'Africa/Johannesburg',
+    weekday: 'short',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
   }).format(new Date());
 }
 
-function expectedWellnessDate(state) {
-  const [y,m,d] = String(state.stateId).slice(0,10).split('-').map(Number);
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${String(d).padStart(2,'0')} ${months[m-1]}`;
+async function getJson(context, path) {
+  const response = await context.request.get(`${BASE}${path}`, { headers: { accept: 'application/json' } });
+  assert.equal(response.status(), 200, `${path} must return HTTP 200`);
+  return { response, data: await response.json() };
 }
 
-function previousCompletedWellness(state) {
-  const rows = state.datasets?.WELLNESS_HISTORY;
-  assert.ok(Array.isArray(rows) && rows.length > 1, 'runtime WELLNESS_HISTORY must contain history plus current day');
-  const currentIndex = rows.findIndex(row => row?.status === 'LIVE / PARTIAL');
-  assert.ok(currentIndex > 0, 'runtime WELLNESS_HISTORY must contain a completed day before the current live row');
-  for (let i = currentIndex - 1; i >= 0; i -= 1) {
-    if (rows[i]?.status === 'HISTORICAL') return rows[i];
-  }
-  assert.fail('runtime WELLNESS_HISTORY must contain a completed historical day before current');
+async function assertContracts(context) {
+  const runtime = await getJson(context, '/api/runtime-state');
+  assert.equal(runtime.data.masterValidated, true, 'runtime state must be master validated');
+  assert.ok(runtime.data.stateId, 'runtime stateId must be present');
+  assert.ok(runtime.response.headers()['x-fz-state-sha256'], 'runtime checksum header must be present');
+  assert.equal(runtime.response.headers()['x-fz-state-source'], 'database', 'production runtime must be database-backed');
+
+  const trends = (await getJson(context, '/api/trends/current?days=45')).data;
+  assert.equal(trends.ok, true, 'canonical Trends contract must be healthy');
+  assert.match(trends.provenance?.operationalTruth || '', /Neon/i, 'Trends operational truth must be Neon');
+  assert.match(trends.provenance?.historicalLoadSeed || '', /Cardio Load master/i, 'historical load seed provenance must be explicit');
+  assert.equal(trends.provenance?.auditRepresentation, 'Google Drive is not queried by this runtime contract', 'Drive must not be a runtime dependency');
+
+  const jul27 = trends.load?.series?.find(x => x.date === '2026-07-27');
+  assert.ok(jul27, '27 Jul historical load point must exist');
+  assert.ok(Math.abs(Number(jul27.value) - 129.2166666667) < 0.001, '27 Jul must retain the validated whole-day NCL rollup');
+  assert.equal(jul27.state, 'HISTORICAL_RECONCILED', '27 Jul load must be historical reconciled truth');
+
+  const sep8 = trends.load?.series?.find(x => x.date === '2026-09-08');
+  assert.ok(sep8, '8 Sep load point must exist');
+  assert.ok(Math.abs(Number(sep8.value) - 66.32) < 0.001, '8 Sep NCL must remain 66.32');
+  assert.equal(sep8.state, 'CANONICAL_DERIVED', '8 Sep load must remain directly derived from canonical detail');
+  assert.deepEqual(trends.quality?.loadMissingDates || [], [], 'current 28-day load window must contain no false missing dates');
+  assert.ok(Math.abs(Number(trends.load?.rolling7d?.value) - 270.72) < 0.001, '7d rolling NCL must remain 270.72');
+  assert.ok(Math.abs(Number(trends.load?.rolling28d?.value) - 2036.59) < 0.001, '28d rolling NCL must remain 2036.59');
+
+  const expectedAet = ['2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'];
+  assert.deepEqual((trends.performance?.matchedAet || []).map(x => x.date), expectedAet, 'matched AET family must be exact and stable');
+  assert.equal(trends.performance.matchedAet.find(x => x.date === '2026-08-04')?.comparison, 'MATCHED_CAVEAT', '4 Aug AET must retain matched caveat');
+  assert.equal(trends.performance?.excludedAet?.find(x => x.date === '2026-09-08')?.comparison, 'NON_COMPARABLE', '8 Sep GI-limited AET must remain non-comparable');
+
+  const system = (await getJson(context, '/api/system/status')).data;
+  assert.equal(system.ok, true, 'system status must be healthy');
+  assert.equal(system.architecture?.operationalTruth, 'Neon', 'SYSTEM operational truth must be Neon');
+  assert.match(system.architecture?.driveRole || '', /flight recorder; not runtime engine/i, 'Drive role must remain audit-only');
+  assert.equal(system.garmin?.connection?.status, 'CONNECTED', 'Garmin / Fitness AI connection must be connected');
+  assert.equal(system.tredict?.configured, true, 'Tredict must be configured');
+
+  return { runtime: runtime.data, trends, system };
 }
 
-async function assertGateway(context) {
-  const response = await context.request.get(`${BASE}/api/runtime-state`, { headers: { accept: 'application/json' } });
-  assert.equal(response.status(), 200, 'runtime gateway must return HTTP 200');
-  const state = await response.json();
-  assert.equal(state.masterValidated, true, 'runtime state must be master validated');
-  assert.ok(state.stateId, 'runtime stateId must be present');
-  assert.ok(response.headers()['x-fz-state-sha256'], 'runtime checksum header must be present');
-  assert.ok(response.headers()['x-fz-state-source'], 'runtime generation source header must be present');
-  return state;
-}
-
-async function bootAndNavigate(page, label) {
+async function boot(page, label) {
   const pageErrors = [];
   const consoleErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -48,158 +71,82 @@ async function bootAndNavigate(page, label) {
 
   const response = await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   assert.ok(response && response.ok(), `${label}: root document must load`);
-  await page.waitForFunction(() => document.documentElement.dataset.fzReady === 'true', null, { timeout: 20000 });
+  await page.waitForSelector('#today .fz-clean-hero', { timeout: 30000 });
+  await page.waitForSelector('#today .fz-live-grid .fz-live-metric', { timeout: 15000 });
 
+  const viewport = await page.locator('meta[name="viewport"]').getAttribute('content');
+  assert.match(viewport || '', /viewport-fit=cover/, `${label}: mobile safe-area viewport must remain enabled`);
   assert.equal((await page.locator('#todayDate').innerText()).trim(), expectedSastDate(), `${label}: SAST date must be correct`);
   assert.match((await page.locator('#countdown').innerText()).trim(), /^\d{2}:\d{2}:\d{2}$/, `${label}: countdown must render`);
   assert.match(await page.locator('#nextSlot').innerText(), /(06|20):00 SAST/, `${label}: next refresh must be one of the locked slots`);
+  assert.equal(await page.locator('body').innerText().then(t => t.includes('Why this matters now')), false, `${label}: removed TODAY duplication must not return`);
 
-  for (const id of ['today', 'trends', 'train', 'system']) {
-    const selector = label === 'mobile' ? `.bottom button[data-page="${id}"]` : `.nav button[data-page="${id}"]`;
-    await page.locator(selector).click();
-    await page.waitForFunction(pageId => document.getElementById(pageId)?.classList.contains('active'), id);
+  return { pageErrors, consoleErrors };
+}
+
+async function openPage(page, label, id) {
+  const selector = label === 'mobile' ? `.bottom button[data-page="${id}"]` : `.nav button[data-page="${id}"]`;
+  await page.locator(selector).click();
+  await page.waitForFunction(pageId => document.getElementById(pageId)?.classList.contains('active'), id, { timeout: 5000 });
+}
+
+async function assertConsolidatedSurfaces(page, label) {
+  await openPage(page, label, 'today');
+  await page.waitForSelector('#today .fz-clean-recommendation');
+  await page.waitForSelector('#today .fz-training-focus');
+
+  await openPage(page, label, 'trends');
+  for (const selector of ['#cleanHrvChart svg','#cleanSleepChart svg','#cleanNclChart svg','#cleanAetChart svg','#cleanRunScatter svg','#trendAthleteVoice']) {
+    await page.waitForSelector(selector, { timeout: 10000 });
   }
+  const trendsText = await page.locator('#trends').innerText();
+  assert.match(trendsText, /Normalised Cardio Load/i, `${label}: NCL surface must render`);
+  assert.match(trendsText, /Matched Run AET/i, `${label}: matched AET surface must render`);
+  assert.match(trendsText, /NON.COMPARABLE|NON-COMPARABLE/i, `${label}: excluded AET evidence must remain visible`);
 
-  assert.deepEqual(pageErrors, [], `${label}: no page errors allowed`);
-  assert.deepEqual(consoleErrors, [], `${label}: no console errors allowed`);
-}
+  const ncl = page.locator('#cleanNclChart');
+  await ncl.scrollIntoViewIfNeeded();
+  const box = await ncl.boundingBox();
+  assert.ok(box && box.width > 100 && box.height > 80, `${label}: NCL chart must have a real rendered box`);
+  if (label === 'mobile') await page.touchscreen.tap(box.x + box.width * 0.75, box.y + box.height * 0.45);
+  else await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.45);
+  await page.waitForFunction(() => {
+    const tip = document.querySelector('#cleanNclChart .fz-chart-tooltip');
+    return tip && getComputedStyle(tip).display !== 'none' && tip.textContent.trim().length > 8;
+  }, null, { timeout: 3000 });
 
-async function selectPreviousDayOnWellness(page, label, metric) {
-  await page.locator(`[data-well-metric="${metric}"]`).click();
-  const wellness = page.locator('#fzWellnessChart');
-  await wellness.scrollIntoViewIfNeeded();
-  const box = await wellness.boundingBox();
-  assert.ok(box && box.width > 100 && box.height > 100, `${label}: wellness chart must have a real box`);
-  // Interact just left of the latest point to select the immediately previous observation.
-  const x = box.x + box.width * 0.955;
-  const y = box.y + box.height * 0.46;
-  if (label === 'mobile') await page.touchscreen.tap(x, y);
-  else await page.mouse.move(x, y);
-  await page.waitForTimeout(120);
-}
+  await openPage(page, label, 'train');
+  await page.waitForSelector('#athleteMemory .fz-athlete-memory-shell', { timeout: 10000 });
+  await page.waitForSelector('#train .fz-training-list', { timeout: 10000 });
+  assert.match(await page.locator('#train').innerText(), /Canonical subjective evidence/i, `${label}: Athlete Memory must be canonical and explicit`);
 
-async function assertLongitudinalTrends(page, label, state) {
-  await page.waitForSelector('#longitudinalLayer', { timeout: 10000 });
-  const firstSectionId = await page.locator('#trends > .section').first().getAttribute('id');
-  assert.equal(firstSectionId, 'longitudinalLayer', `${label}: longitudinal Trends must be the primary/top Trends surface`);
-
-  await page.waitForSelector('#fzWellnessChart svg', { timeout: 10000 });
-  const currentDate = expectedWellnessDate(state);
-  const previous = previousCompletedWellness(state);
-  await page.waitForFunction(date => document.querySelector('#wellSelectedDate')?.textContent?.trim() === date, currentDate, { timeout: 5000 });
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), currentDate, `${label}: wellness explorer must open on current master-validated state date`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), `${state.liveToday.hrv} ms`, `${label}: current HRV must come from live runtime state`);
-  assert.match((await page.locator('.runtime-trend-update').first().innerText()).trim(), /CURRENT MASTER-VALIDATED UPDATE/i, `${label}: deep lenses must retain current runtime interpretation`);
-
-  // Regression guard: the immediately previous completed day must remain fully closed and selectable.
-  await selectPreviousDayOnWellness(page, label, 'steps');
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), previous.dateLabel, `${label}: previous completed wellness row must exist`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), Number(previous.completedDaySteps).toLocaleString('en-US'), `${label}: previous completed steps must be retained`);
-  assert.equal((await page.locator('#wellSelectedStatus').innerText()).trim(), 'HISTORICAL', `${label}: previous completed day must be historical`);
-
-  await selectPreviousDayOnWellness(page, label, 'stress');
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), previous.dateLabel, `${label}: previous completed stress row must be selectable`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), String(previous.completedDayStress), `${label}: previous completed-day stress must be retained`);
-
-  await selectPreviousDayOnWellness(page, label, 'active');
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), previous.dateLabel, `${label}: previous completed active-energy row must be selectable`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), `${Number(previous.completedDayActiveCalories).toLocaleString('en-US')} kcal`, `${label}: previous completed active calories must be retained`);
-
-  await page.locator('[data-well-metric="hrv"]').click();
-  const wellness = page.locator('#fzWellnessChart');
-  await wellness.scrollIntoViewIfNeeded();
-  const box = await wellness.boundingBox();
-  assert.ok(box && box.width > 100 && box.height > 100, `${label}: wellness explorer must render with a real box`);
+  await openPage(page, label, 'system');
+  await page.waitForSelector('#system .status-grid', { timeout: 10000 });
+  await page.waitForSelector('#system .pipeline-flow', { timeout: 10000 });
+  const systemText = await page.locator('#system').innerText();
+  assert.match(systemText, /Operational truth[\s\S]*NEON/i, `${label}: SYSTEM must show Neon operational truth`);
+  assert.match(systemText, /flight recorder[\s\S]*not the runtime engine/i, `${label}: SYSTEM must show Drive as audit-only`);
 
   if (label === 'mobile') {
-    await page.touchscreen.tap(box.x + box.width * 0.28, box.y + Math.min(box.height * 0.48, 125));
-  } else {
-    await page.mouse.move(box.x + box.width * 0.28, box.y + box.height * 0.45);
-  }
-  await page.waitForTimeout(100);
-  const selected = (await page.locator('#wellSelectedDate').innerText()).trim();
-  assert.ok(selected && selected !== currentDate, `${label}: scrubbed wellness explorer must select historical days, not remain stuck on current state`);
-
-  await page.locator('[data-well-metric="sleepScore"]').click();
-  assert.match((await page.locator('#wellMetricTitle').innerText()).trim(), /Sleep score/i, `${label}: wellness metric tabs must change the chart`);
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), currentDate, `${label}: changing wellness metric must return to the latest valid current point when available`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), String(state.liveToday.sleepScore), `${label}: current sleep score must come from live runtime state`);
-
-  const lensChecks = [
-    ['response', '#fzResponseSvg'],
-    ['performance', '#fzAetDeepChart svg'],
-    ['cost', '#fzAcChart svg'],
-    ['voice', '#voiceDeepList'],
-    ['trajectory', '.deep-trajectory']
-  ];
-  for (const [lens, selector] of lensChecks) {
-    await page.locator(`[data-long-lens="${lens}"]`).click();
-    await page.waitForSelector(selector, { timeout: 5000 });
-    await page.waitForSelector(`.long-pane[data-lens="${lens}"] .runtime-trend-update`, { timeout: 5000 });
-  }
-  await page.locator('[data-long-lens="state"]').click();
-  await page.waitForSelector('#fzWellnessChart svg', { timeout: 5000 });
-}
-
-async function desktopSmoke(browser) {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  const state = await assertGateway(context);
-  const page = await context.newPage();
-  try {
-    await bootAndNavigate(page, 'desktop');
-    await page.locator('.nav button[data-page="trends"]').click();
-    await assertLongitudinalTrends(page, 'desktop', state);
-
-    await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
-    await page.waitForSelector('#loadChart svg', { timeout: 10000 });
-    await page.waitForSelector('#aetChart svg', { timeout: 10000 });
-    await page.waitForSelector('#runScatter svg', { timeout: 10000 });
-
-    const chart = page.locator('#recoveryChart');
-    await chart.scrollIntoViewIfNeeded();
-    const box = await chart.boundingBox();
-    assert.ok(box && box.width > 100 && box.height > 100, 'desktop: recovery chart must have a real rendered box');
-    await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.45);
-    await page.waitForSelector('#recoveryChart .chart-scrub-tooltip.show', { timeout: 3000 });
-    const pointerTip = (await page.locator('#recoveryChart .chart-scrub-tooltip.show').innerText()).trim();
-    assert.ok(pointerTip.length > 8, 'desktop: pointer scrub tooltip must contain observation data');
-
-    await chart.focus();
-    await page.keyboard.press('ArrowRight');
-    await page.waitForSelector('#recoveryChart .chart-scrub-tooltip.show', { timeout: 3000 });
-
-    await page.locator('.nav button[data-page="system"]').click();
-    await page.waitForSelector('#runtimeHealthPanel');
-    assert.match(await page.locator('#runtimeHealthPanel').innerText(), /Platform[\s\S]*Application[\s\S]*Data/i, 'desktop: health layers must render');
-    assert.ok(state.pages.today && state.pages.trends && state.pages.train && state.pages.system, 'desktop: all four runtime page contracts must exist');
-  } catch (error) {
-    await page.screenshot({ path: `${ARTIFACT_DIR}/desktop-failure.png`, fullPage: true }).catch(() => {});
-    throw error;
-  } finally {
-    await context.close();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert.ok(overflow <= 2, `mobile: page must not horizontally overflow (${overflow}px)`);
+    assert.ok(await page.locator('.bottom').isVisible(), 'mobile: bottom navigation must remain visible');
   }
 }
 
-async function mobileSmoke(browser) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  const state = await assertGateway(context);
+async function runViewport(browser, label, contextOptions, screenshotName) {
+  const context = await browser.newContext(contextOptions);
+  await assertContracts(context);
   const page = await context.newPage();
   try {
-    await bootAndNavigate(page, 'mobile');
-    await page.locator('.bottom button[data-page="trends"]').click();
-    await assertLongitudinalTrends(page, 'mobile', state);
-
-    await page.waitForSelector('#recoveryChart svg', { timeout: 10000 });
-    const chart = page.locator('#recoveryChart');
-    await chart.scrollIntoViewIfNeeded();
-    const box = await chart.boundingBox();
-    assert.ok(box && box.width > 100, 'mobile: chart must render');
-    await page.touchscreen.tap(box.x + box.width * 0.5, box.y + Math.min(box.height * 0.45, 120));
-    await page.waitForSelector('#recoveryChart .chart-scrub-tooltip.show', { timeout: 3000 });
-    const touchTip = (await page.locator('#recoveryChart .chart-scrub-tooltip.show').innerText()).trim();
-    assert.ok(touchTip.length > 8, 'mobile: touch scrub tooltip must contain observation data');
+    const errors = await boot(page, label);
+    await assertConsolidatedSurfaces(page, label);
+    await openPage(page, label, 'today');
+    await page.screenshot({ path: `${ARTIFACT_DIR}/${screenshotName}`, fullPage: true });
+    assert.deepEqual(errors.pageErrors, [], `${label}: no page errors allowed`);
+    assert.deepEqual(errors.consoleErrors, [], `${label}: no console errors allowed`);
   } catch (error) {
-    await page.screenshot({ path: `${ARTIFACT_DIR}/mobile-failure.png`, fullPage: true }).catch(() => {});
+    await page.screenshot({ path: `${ARTIFACT_DIR}/${label}-failure.png`, fullPage: true }).catch(() => {});
     throw error;
   } finally {
     await context.close();
@@ -208,9 +155,9 @@ async function mobileSmoke(browser) {
 
 const browser = await chromium.launch({ headless: true });
 try {
-  await desktopSmoke(browser);
-  await mobileSmoke(browser);
-  console.log('PASS production browser smoke: desktop + mobile + runtime + previous completed history + current wellness sync + scrubbing + six lenses + legacy chart scrubbing');
+  await runViewport(browser, 'desktop', { viewport: { width: 1440, height: 1000 } }, 'desktop-final.png');
+  await runViewport(browser, 'mobile', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, 'mobile-final.png');
+  console.log('PASS consolidated production browser smoke: desktop + mobile + canonical runtime contracts + NCL authority + matched AET + Athlete Memory + SYSTEM provenance + chart scrubbing');
 } finally {
   await browser.close();
 }
