@@ -41,10 +41,12 @@ jobs:
       - run: node --check scripts/tranche2-live-wellness-v2.mjs
       - run: node --check scripts/tranche2-mobile-hardening.mjs
       - run: node --check scripts/tranche2-mobile-safe-area.mjs
+      - run: node --check scripts/tranche3-training-smoke.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
       - run: node scripts/schema-smoke.mjs
+      - run: node scripts/tranche3-training-smoke.mjs
       - run: node scripts/smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'
