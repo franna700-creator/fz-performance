@@ -6,7 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/build.mjs && node scripts/longitudinal-trends-v2.mjs && node scripts/longitudinal-trends-v3.mjs && node scripts/longitudinal-trends-v4.mjs && node scripts/trends-primary-surface.mjs && node scripts/v061-cadence-cleanup.mjs && node scripts/tranche2-live-wellness.mjs && node scripts/tranche2-live-wellness-v2.mjs && node scripts/tranche3-option-b-ui.mjs && node scripts/tranche2-mobile-hardening.mjs && node scripts/tranche2-mobile-safe-area.mjs && node scripts/smoke.mjs"
+    "build": "node scripts/build.mjs && node scripts/longitudinal-trends-v2.mjs && node scripts/longitudinal-trends-v3.mjs && node scripts/longitudinal-trends-v4.mjs && node scripts/trends-primary-surface.mjs && node scripts/v061-cadence-cleanup.mjs && node scripts/tranche2-live-wellness.mjs && node scripts/tranche2-live-wellness-v2.mjs && node scripts/tranche3-option-b-ui.mjs && node scripts/tranche3-option-b-focus.mjs && node scripts/tranche2-mobile-hardening.mjs && node scripts/tranche2-mobile-safe-area.mjs && node scripts/smoke.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.0.0",
