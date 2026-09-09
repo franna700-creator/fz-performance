@@ -1,11 +1,11 @@
 {
-  "buildCommand": "node scripts/build.mjs && node scripts/longitudinal-trends-v2.mjs && node scripts/longitudinal-trends-v3.mjs && node scripts/longitudinal-trends-v4.mjs && node scripts/trends-primary-surface.mjs && node scripts/v061-cadence-cleanup.mjs && node scripts/tranche2-live-wellness.mjs && node scripts/smoke.mjs",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "headers": [
     {"source":"/api/runtime-state","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
-    {"source":"/api/wellness/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
-    {"source":"/api/source/fitness-ai/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/wellness/today","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/source/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/assets/(.*)","headers":[{"key":"Cache-Control","value":"public, max-age=0, must-revalidate"}]}
