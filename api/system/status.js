@@ -42,7 +42,10 @@ export default async function handler(req, res) {
         latestEvidence: evidence.filter(row => row.source_key === 'tredict')
       },
       garmin: {
-        connection: sources.find(row => row.source_key === 'fitness_ai') || sources.find(row => row.source_key === 'garmin') || null,
+        connection: sources.find(row => row.source_key === 'fitness-ai')
+          || sources.find(row => row.source_key === 'fitness_ai')
+          || sources.find(row => row.source_key === 'garmin')
+          || null,
         latestWellness: wellness[0] || null,
         latestEvidence: evidence.filter(row => row.source_key === 'garmin')
       },
