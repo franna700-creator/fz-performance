@@ -10,7 +10,8 @@ const wellnessSync = fs.readFileSync('lib/wellness-sync.js', 'utf8');
 const checks = [
   ['live component loads before clean app', html.includes('/assets/live-physiology.js') && html.indexOf('/assets/live-physiology.js') < html.indexOf('/assets/app-clean.js')],
   ['live component stylesheet wired', html.includes('/assets/live-physiology.css') && css.includes('.fz-live-chart-v3')],
-  ['db-only app request is intercepted', app.includes("getJson('/api/wellness/today?refresh=0')") && live.includes("url.searchParams.get('refresh') === '0'") && live.includes("url.searchParams.delete('refresh')")],
+  ['persisted wellness still renders first', app.includes("getJson('/api/wellness/today?refresh=0')") && live.includes("requestUrl?.searchParams.get('refresh') === '0'") && live.includes('queueMicrotask(backgroundRefresh)')],
+  ['background refresh uses source endpoint', live.includes("const url = force ? '/api/wellness/today?refresh=1' : '/api/wellness/today'")],
   ['automatic cadence remains five minutes', app.includes('300000') && live.includes('autoRefreshMs: 300000')],
   ['manual Garmin refresh exists', live.includes("'/api/wellness/today?refresh=1'") && live.includes('Refresh Garmin')],
   ['all four intraday scrub graphs restored', ['body_battery','stress','heart_rate','respiration'].every(key => live.includes(key)) && live.includes('fz-live-scrub-line') && live.includes('ArrowLeft') && live.includes('pointerdown')],
