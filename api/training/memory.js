@@ -56,7 +56,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
 
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : todayLocal();
-  const backDays = boundedInt(req.query.backDays, 30, 2, 90);
+  const backDays = boundedInt(req.query.backDays, 45, 2, 90);
   const forwardDays = boundedInt(req.query.forwardDays, 14, 0, 30);
   const rangeStart = addDays(date, -backDays);
   const rangeEnd = addDays(date, forwardDays);
