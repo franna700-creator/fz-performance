@@ -31,14 +31,14 @@ function trainingSection() {
 
 function trainingSyncSummary() {
   if (FZ_TRAINING_AUTO_SYNC.busy) return 'Workout sources · syncing…';
-  if (FZ_TRAINING_AUTO_SYNC.lastError) return 'Workout sources · last sync failed';
+  if (FZ_TRAINING_AUTO_SYNC.lastError) return 'Workout sources · last sync failed · auto-sync 5 min';
   if (!FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt) return 'Workout sources · auto-sync every 5 min';
   const sync = FZ_TRAINING_AUTO_SYNC.lastResult?.sync;
   const tredict = Number(sync?.tredict?.activities || 0);
   const garmin = Number(sync?.garmin?.activities || 0);
   const matched = Number(sync?.garmin?.matched || 0);
   const detail = (tredict || garmin || matched) ? ` · Tredict ${tredict} · Garmin ${garmin} · matched ${matched}` : '';
-  return `Workout sources · synced ${trainingTime(FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt)}${detail}`;
+  return `Workout sources · synced ${trainingTime(FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt)} · auto-sync 5 min${detail}`;
 }
 
 function mountTrainingSyncToolbar() {
@@ -126,7 +126,7 @@ function startTrainingAutoSync() {
   });
 
   const today = document.getElementById('today');
-  if (today) new MutationObserver(() => queueMicrotask(mountTrainingSyncToolbar)).observe(today, { childList: true, subtree: true });
+  if (today) new MutationObserver(() => queueMicrotask(mountTrainingSyncToolbar)).observe(today, { childList: true });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startTrainingAutoSync, { once: true });
