@@ -35,6 +35,8 @@ const checks=[
  ['Tranche 3 Option B injector',js.includes('FZ_TRANCHE3_OPTION_B_TRAINING_MEMORY_V1')&&js.includes('TRAINING STATE · ')&&js.includes('Training Memory')],
  ['training focus hardening',js.includes('FZ_TRANCHE3_OPTION_B_FOCUS_V1')&&js.includes('fzTrainingFocusScore')&&js.includes('LAST KEY EXECUTION')],
  ['historical feedback surface',js.includes('FZ_TRANCHE3_HISTORICAL_FEEDBACK_V1')&&js.includes('ATHLETE CONTEXT · UNLINKED')&&css.includes('.fz-training-unlinked-context')],
+ ['training memory lenses',js.includes('FZ_TRANCHE3_TRAINING_MEMORY_LENSES_V1')&&js.includes('Response memory')&&js.includes('Changed / stopped')&&css.includes('.fz-training-lenses')],
+ ['source plan semantics',js.includes("mode:'UPCOMING PLAN'")&&js.includes('this is not the FZ next-session recommendation')&&!js.includes("mode:'NEXT SESSION'")],
  ['historical memory range',memoryApi.includes('boundedInt(req.query.backDays, 45, 2, 90)')],
  ['training certainty labels',['OBSERVED','ATHLETE REPORTED','FZ INFERRED','HYPOTHESIS'].every(x=>js.includes(x))],
  ['TODAY to TRAIN handoff',js.includes('data-fz-open-train')&&js.includes('fzOpenTrainingMemory')],
