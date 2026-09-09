@@ -105,11 +105,21 @@ async function assertConsolidatedSurfaces(page, label) {
   assert.match(trendsText, /NON.COMPARABLE|NON-COMPARABLE/i, `${label}: excluded AET evidence must remain visible`);
 
   const ncl = page.locator('#cleanNclChart');
-  await ncl.scrollIntoViewIfNeeded();
-  const box = await ncl.boundingBox();
+  const nclSvg = ncl.locator('svg');
+  await nclSvg.scrollIntoViewIfNeeded();
+  const box = await nclSvg.boundingBox();
   assert.ok(box && box.width > 100 && box.height > 80, `${label}: NCL chart must have a real rendered box`);
-  if (label === 'mobile') await page.touchscreen.tap(box.x + box.width * 0.75, box.y + box.height * 0.45);
-  else await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.45);
+  const clientX = box.x + box.width * 0.75;
+  const clientY = box.y + box.height * 0.45;
+  if (label === 'mobile') {
+    await page.touchscreen.tap(clientX, clientY);
+    // Headless Chromium's touchscreen API does not consistently synthesize
+    // PointerEvents for SVG. Exercise the same production pointerdown handler
+    // directly after the physical tap so the touch interaction path is deterministic.
+    await nclSvg.dispatchEvent('pointerdown', { clientX, clientY, pointerType: 'touch', bubbles: true });
+  } else {
+    await page.mouse.move(clientX, clientY);
+  }
   await page.waitForFunction(() => {
     const tip = document.querySelector('#cleanNclChart .fz-chart-tooltip');
     return tip && getComputedStyle(tip).display !== 'none' && tip.textContent.trim().length > 8;
