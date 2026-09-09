@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const base=fs.existsSync('dist/index.html')?'dist/': '';
-const html=fs.readFileSync(base+'index.html','utf8'),js=fs.readFileSync(base+'assets/app.js','utf8'),css=fs.readFileSync(base+'assets/app.css','utf8'),api=fs.readFileSync('api/runtime-state.js','utf8');
+const html=fs.readFileSync(base+'index.html','utf8'),js=fs.readFileSync(base+'assets/app.js','utf8'),css=fs.readFileSync(base+'assets/app.css','utf8'),api=fs.readFileSync('api/runtime-state.js','utf8'),memoryApi=fs.readFileSync('api/training/memory.js','utf8');
 const checks=[
  ['direct external app.js',html.includes('/assets/app.js')],
  ['no document.write',!html.includes('document.write')&&!js.includes('document.write')],
@@ -34,6 +34,8 @@ const checks=[
  ['training memory endpoint',fs.existsSync('api/training/memory.js')&&js.includes("fetch('/api/training/memory")],
  ['Tranche 3 Option B injector',js.includes('FZ_TRANCHE3_OPTION_B_TRAINING_MEMORY_V1')&&js.includes('TRAINING STATE · ')&&js.includes('Training Memory')],
  ['training focus hardening',js.includes('FZ_TRANCHE3_OPTION_B_FOCUS_V1')&&js.includes('fzTrainingFocusScore')&&js.includes('LAST KEY EXECUTION')],
+ ['historical feedback surface',js.includes('FZ_TRANCHE3_HISTORICAL_FEEDBACK_V1')&&js.includes('ATHLETE CONTEXT · UNLINKED')&&css.includes('.fz-training-unlinked-context')],
+ ['historical memory range',memoryApi.includes('boundedInt(req.query.backDays, 45, 2, 90)')],
  ['training certainty labels',['OBSERVED','ATHLETE REPORTED','FZ INFERRED','HYPOTHESIS'].every(x=>js.includes(x))],
  ['TODAY to TRAIN handoff',js.includes('data-fz-open-train')&&js.includes('fzOpenTrainingMemory')],
  ['training memory mobile styling',css.includes('.fz-training-memory-section')&&css.includes('@media(max-width:700px)')]
