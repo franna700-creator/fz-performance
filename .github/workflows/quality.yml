@@ -16,6 +16,7 @@ jobs:
       - run: node --check api/wellness/today.js
       - run: node --check api/training/today.js
       - run: node --check api/training/memory.js
+      - run: node --check api/training/athlete-event.js
       - run: node --check api/source/fitness-ai/connect.js
       - run: node --check api/source/fitness-ai/callback.js
       - run: node --check api/source/fitness-ai/status.js
@@ -29,6 +30,7 @@ jobs:
       - run: node --check lib/wellness-sync.js
       - run: node --check lib/training-store.js
       - run: node --check lib/training-sync.js
+      - run: node --check lib/athlete-memory-ingest.js
       - run: node --check scripts/tranche2-live-wellness.mjs
       - run: node --check scripts/tranche2-live-wellness-v2.mjs
       - run: node --check scripts/tranche2-mobile-hardening.mjs
@@ -39,11 +41,13 @@ jobs:
       - run: node --check scripts/tranche3-training-memory-lenses.mjs
       - run: node --check scripts/tranche3-athlete-memory-consolidation.mjs
       - run: node --check scripts/tranche3-training-smoke.mjs
+      - run: node --check scripts/tranche3-athlete-ingest-smoke.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
       - run: node scripts/schema-smoke.mjs
       - run: node scripts/tranche3-training-smoke.mjs
+      - run: node scripts/tranche3-athlete-ingest-smoke.mjs
       - run: node scripts/smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'
