@@ -16,6 +16,7 @@ jobs:
       - run: node scripts/trends-primary-surface.mjs
       - run: node scripts/v061-cadence-cleanup.mjs
       - run: node scripts/tranche2-live-wellness.mjs
+      - run: node scripts/tranche2-live-wellness-v2.mjs
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
       - run: node --check api/runtime-state-write.js
@@ -30,6 +31,7 @@ jobs:
       - run: node --check lib/wellness-store.js
       - run: node --check lib/wellness-sync.js
       - run: node --check scripts/tranche2-live-wellness.mjs
+      - run: node --check scripts/tranche2-live-wellness-v2.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
