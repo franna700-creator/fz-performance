@@ -75,3 +75,7 @@ Live wellness is observation/state infrastructure. It does not automatically rew
 6. Force the first live sync and validate source data against the connector.
 7. Observe a later source change and prove the PWA evolves without deployment.
 8. Confirm the immutable runtime path remains independent and available as the existing fail-stale state safety layer.
+
+## Deployment-source verification
+
+The existing `fz-performance-mvp` Vercel project was linked to `franna700-creator/fz-performance` with `main` as the production branch on 09 Sep 2026. This documentation-only commit is the deliberate trigger used to verify that future product commits deploy automatically from Git while athlete state continues to flow independently through Neon.
