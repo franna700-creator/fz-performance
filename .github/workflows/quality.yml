@@ -23,23 +23,30 @@ jobs:
       - run: node --check api/runtime-state.js
       - run: node --check api/runtime-state-write.js
       - run: node --check api/wellness/today.js
+      - run: node --check api/training/today.js
       - run: node --check api/source/fitness-ai/connect.js
       - run: node --check api/source/fitness-ai/callback.js
       - run: node --check api/source/fitness-ai/status.js
+      - run: node --check api/source/tredict/status.js
       - run: node --check lib/db.js
       - run: node --check lib/runtime-store.js
       - run: node --check lib/source-connection-store.js
       - run: node --check lib/fitness-ai-client.js
+      - run: node --check lib/tredict-client.js
       - run: node --check lib/wellness-store.js
       - run: node --check lib/wellness-sync.js
+      - run: node --check lib/training-store.js
+      - run: node --check lib/training-sync.js
       - run: node --check scripts/tranche2-live-wellness.mjs
       - run: node --check scripts/tranche2-live-wellness-v2.mjs
       - run: node --check scripts/tranche2-mobile-hardening.mjs
       - run: node --check scripts/tranche2-mobile-safe-area.mjs
+      - run: node --check scripts/tranche3-training-smoke.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
       - run: node scripts/schema-smoke.mjs
+      - run: node scripts/tranche3-training-smoke.mjs
       - run: node scripts/smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'
