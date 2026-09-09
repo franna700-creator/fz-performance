@@ -1,0 +1,30 @@
+.fz-live-grid[hidden]{display:none!important}
+.fz-live-physiology-v3{display:grid;gap:12px;margin-top:10px}
+.fz-live-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #262626;border-radius:14px;background:#0d0d0d}
+.fz-live-toolbar>div>p{margin:5px 0 0;color:#8f8f8f;font-size:9px;line-height:1.4}
+.fz-live-freshness{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:900;letter-spacing:.11em}
+.fz-live-freshness i{display:inline-block;width:7px;height:7px;border-radius:999px;background:currentColor;box-shadow:0 0 0 4px rgba(255,255,255,.03)}
+.fz-live-freshness.good{color:#b8f28a}.fz-live-freshness.warn{color:#f4d000}.fz-live-freshness.bad{color:#ff8b8b}
+.fz-live-refresh{appearance:none;border:1px solid #3a3a3a;border-radius:999px;background:#141414;color:#f4d000;padding:8px 12px;font:800 9px/1 inherit;letter-spacing:.04em;cursor:pointer;white-space:nowrap}
+.fz-live-refresh:hover{border-color:#5a5a5a}.fz-live-refresh:disabled{opacity:.55;cursor:wait}
+.fz-live-anchor-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.fz-live-anchor-row>div{min-width:0;padding:12px;border:1px solid #242424;border-radius:13px;background:#0d0d0d}
+.fz-live-anchor-row small{display:block;color:#8c8c8c;font-size:9px;margin-bottom:5px}
+.fz-live-anchor-row b{display:block;color:#fff;font-size:17px;line-height:1.1}
+.fz-live-anchor-row span{display:block;margin-top:5px;color:#777;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fz-live-chart-grid-v3{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.fz-live-chart-v3{position:relative;overflow:visible;min-width:0;padding:12px;border:1px solid #242424;border-radius:14px;background:#0c0c0c}
+.fz-live-chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.fz-live-chart-head small{display:block;color:#8d8d8d;font-size:9px;margin-bottom:4px}.fz-live-chart-head b{font-size:13px;line-height:1.2}.fz-live-chart-head>span{color:#737373;font-size:8px;text-align:right;line-height:1.35}
+.fz-live-chart-v3 svg{display:block;width:100%;height:90px;color:#f4d000;background:linear-gradient(to bottom,transparent 49%,#1d1d1d 50%,transparent 51%);cursor:crosshair;touch-action:pan-y;outline:none;border-radius:8px}
+.fz-live-chart-v3 svg:focus-visible{box-shadow:0 0 0 2px rgba(244,208,0,.25)}
+.fz-live-series-line{fill:none;stroke:currentColor;stroke-width:2.5;vector-effect:non-scaling-stroke}
+.fz-live-scrub-line{stroke:#858585;stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.fz-live-scrub-dot{fill:#0d0d0d;stroke:#f4d000;stroke-width:2;vector-effect:non-scaling-stroke}
+.fz-live-empty-text{fill:#777;font-size:9px}
+.fz-live-scrub-tip{position:absolute;z-index:5;top:48px;transform:translateX(-50%);min-width:78px;padding:6px 8px;border:1px solid #3a3a3a;border-radius:8px;background:#070707;box-shadow:0 8px 20px rgba(0,0,0,.38);pointer-events:none;text-align:center}
+.fz-live-scrub-tip[hidden]{display:none}.fz-live-scrub-tip b,.fz-live-scrub-tip span{display:block}.fz-live-scrub-tip b{font-size:8px;color:#999}.fz-live-scrub-tip span{margin-top:2px;font-size:10px;color:#fff;font-weight:900}
+.fz-live-chart-v3:after{content:'SCRUB';position:absolute;right:11px;bottom:8px;color:#4f4f4f;font-size:7px;font-weight:900;letter-spacing:.12em}
+.fz-live-footnote{color:#717171;font-size:8px;line-height:1.45;padding:0 2px}
+@media(max-width:700px){.fz-live-toolbar{align-items:flex-start}.fz-live-toolbar>div{min-width:0}.fz-live-anchor-row,.fz-live-chart-grid-v3{grid-template-columns:repeat(2,minmax(0,1fr))}.fz-live-chart-head{min-height:34px}.fz-live-chart-v3:after{display:none}}
+@media(max-width:430px){.fz-live-toolbar{flex-direction:column}.fz-live-refresh{align-self:flex-start}.fz-live-anchor-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
