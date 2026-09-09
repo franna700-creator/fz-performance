@@ -4,9 +4,11 @@
 
 Move FZ from source mirroring to a canonical training lifecycle that can preserve:
 
-`PLAN → RECOMMENDATION → ATHLETE CHOICE → MODIFICATION → EXECUTION → OUTCOME → NEXT RESPONSE`
+`SOURCE EVIDENCE → CANONICAL SESSION → ATHLETE RESPONSE → OUTCOME → MEMORY`
 
 without collapsing Garmin, Tredict, FZ interpretation, or athlete-reported information into one mutable row.
+
+A future source-supplied workout is an **UPCOMING PLAN**, not the FZ next-session recommendation. The adaptive **NEXT SESSION RECOMMENDATION** belongs to the later event-driven/adaptation layer.
 
 ## Truth model
 
@@ -36,6 +38,8 @@ When a later source establishes the canonical execution, an earlier source-only 
 
 The browser never calls either source directly.
 
+Tredict planned-workout support remains implemented for interoperability, but FZ does not treat Tredict as the athlete's planning authority. If Tredict supplies a future workout it is retained as source evidence only.
+
 ## Production activation note
 
 Vercel environment-variable changes apply to new deployments. After `TREDICT_API_TOKEN` is created or rotated, trigger one production deployment before validating `/api/source/tredict/status` or running a training refresh.
@@ -52,48 +56,54 @@ Runs near-term source ingestion/reconciliation first, then returns the canonical
 
 `GET /api/training/memory?refresh=0`
 
-Returns the broader athlete-facing canonical memory window from Neon. The default window is 30 days back and 14 days forward, with superseded source-only sessions returned separately for audit.
+Returns the broader athlete-facing canonical memory window from Neon. The default window is 45 days back and 14 days forward, with superseded source-only sessions returned separately for audit.
 
 `GET /api/training/memory?refresh=1`
 
 Refreshes only the near-term source window (-2 / +7 days), then returns the broader canonical memory window. This prevents the TRAIN page from repeatedly re-reading an unnecessarily large source history.
 
-`GET /api/source/tredict/status`
+`GET /api/source/tredict/status?probe=1`
 
-Reports whether the production Tredict credential is configured and validates live `activityRead` access.
+Validates live `activityRead` access and returns the source connection state.
 
-## Option B athlete-facing surface
+## Athlete-facing surface
 
 ### TODAY — compact lifecycle
 
-TODAY stays a decision surface, not an activity log. The training card shows the most relevant canonical session with:
+TODAY stays the current-state/recommendation surface, not an activity log. Its training card shows the most relevant canonical training state with:
 
-- current lifecycle mode (`NEXT SESSION`, `TODAY · LATEST EXECUTION`, or `LAST EXECUTION`);
+- current lifecycle context such as `TODAY · LATEST EXECUTION`, `LAST EXECUTION`, or source `UPCOMING PLAN`;
 - session title and canonical status;
 - one human-readable explanation of what happened;
-- source/reconciliation and athlete-feedback chips;
-- a direct `View training memory →` handoff into TRAIN.
+- source/reconciliation and athlete-feedback context;
+- a direct handoff into TRAIN.
 
-### TRAIN — full training memory
+The presence of an `UPCOMING PLAN` must never be presented as the FZ next-session recommendation.
 
-TRAIN owns the richer memory view. Each canonical session exposes:
+### TRAIN — canonical Training Memory + Athlete Memory
 
-- status and reconciliation state;
+TRAIN owns the richer memory view. It exposes:
+
+- canonical sessions with status and reconciliation state;
 - chronological source/system/athlete events;
 - certainty labels (`OBSERVED`, `ATHLETE REPORTED`, `FZ INFERRED`, `HYPOTHESIS`);
-- athlete feedback and hypotheses without promoting them to source fact;
-- expandable source and reconciliation provenance;
-- superseded source-row count retained for audit without duplicating the athlete-facing session list.
+- canonical Athlete Memory categories (`STATE`, `SESSION`, `COST`, `RECOVERY`, `FUELING`, `CONSTRAINT`, `HYPOTHESIS`);
+- athlete-event date/time separately from any related training-session date;
+- linked and standalone athlete context;
+- source and reconciliation provenance;
+- superseded source rows retained for audit without duplicating athlete-facing sessions.
 
-The persisted ledger renders immediately, followed by a background source refresh. While visible, the source layer is refreshed on a five-minute cadence and when the app returns to the foreground after a meaningful gap.
+TRENDS Athlete Voice is derived from the same canonical Athlete Memory rather than maintaining a competing subjective-history list.
 
 ## Tranche 3 exit gate
 
 1. Production schema is live.
 2. Tredict source is authenticated server-side.
-3. Tredict executed records and Garmin activities ingest idempotently; planned records are consumed when supplied by the source adapter.
+3. Tredict executed records and Garmin activities ingest idempotently; planned records are consumed when supplied by the source adapter, but zero planned records is valid when the athlete does not use Tredict as a planner.
 4. Clear duplicate executions reconcile; ambiguous ones remain explicit.
 5. Athlete feedback can be written as `REPORTED` or `HYPOTHESIS` without mutating source evidence.
 6. The canonical timeline can reconstruct a real session lifecycle.
 7. TODAY consumes a compact current lifecycle from the canonical ledger.
-8. TRAIN exposes the full canonical event history and provenance without querying source systems directly from the browser.
+8. TRAIN exposes the full canonical event history, Athlete Memory and provenance without querying source systems directly from the browser.
+
+Final production evidence and the signed exit result are recorded in `docs/TRANCHE_3_EXIT_GATE_2026-09-09.md`.
