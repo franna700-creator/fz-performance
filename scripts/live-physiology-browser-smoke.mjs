@@ -109,7 +109,7 @@ try {
   assert((await page.locator('[data-live-key="heart_rate"] [data-live-value]').textContent()).includes('·'), 'pointer scrubbing exposes timestamped value');
 
   await page.locator('[data-live-refresh]').click();
-  await page.waitForFunction(() => document.querySelector('.fz-live-toolbar')?.textContent?.includes('18:45'));
+  await page.waitForFunction(() => document.querySelector('.fz-live-toolbar')?.textContent?.includes('20:45'));
   assert(forcedRefreshes === 1, 'Refresh Garmin performs explicit forced source refresh');
 
   assert((await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)), 'mobile Live Physiology introduces no horizontal overflow');
