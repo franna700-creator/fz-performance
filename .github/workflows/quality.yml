@@ -35,6 +35,7 @@ jobs:
       - run: node --check scripts/tranche2-mobile-safe-area.mjs
       - run: node --check scripts/tranche3-option-b-ui.mjs
       - run: node --check scripts/tranche3-option-b-focus.mjs
+      - run: node --check scripts/tranche3-historical-feedback-ui.mjs
       - run: node --check scripts/tranche3-training-smoke.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
