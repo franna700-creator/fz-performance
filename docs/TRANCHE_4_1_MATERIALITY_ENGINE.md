@@ -120,9 +120,11 @@ At Tranche 4.1, a `RECOMPUTE_RECOMMENDATION` result records the requirement to r
 
 ## Observability
 
-`GET /api/intelligence/materiality?limit=50`
+Materiality observability is exposed inside the existing SYSTEM contract rather than adding another Vercel function:
 
-returns recent persisted materiality assessments and engine metadata.
+`GET /api/system/status?materialityLimit=50`
+
+returns recent persisted materiality assessments under `intelligence.materiality`, together with engine metadata. This keeps FZ within the current Hobby-plan serverless-function limit.
 
 ## 4.1 exit gate
 
