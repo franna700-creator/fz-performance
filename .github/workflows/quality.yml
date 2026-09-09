@@ -15,13 +15,24 @@ jobs:
       - run: node scripts/longitudinal-trends-v4.mjs
       - run: node scripts/trends-primary-surface.mjs
       - run: node scripts/v061-cadence-cleanup.mjs
+      - run: node scripts/tranche2-live-wellness.mjs
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
       - run: node --check api/runtime-state-write.js
+      - run: node --check api/wellness/today.js
+      - run: node --check api/source/fitness-ai/connect.js
+      - run: node --check api/source/fitness-ai/callback.js
+      - run: node --check api/source/fitness-ai/status.js
+      - run: node --check lib/db.js
       - run: node --check lib/runtime-store.js
+      - run: node --check lib/source-connection-store.js
+      - run: node --check lib/fitness-ai-client.js
+      - run: node --check lib/wellness-store.js
+      - run: node --check lib/wellness-sync.js
+      - run: node --check scripts/tranche2-live-wellness.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
-      - run: node -e "import('@neondatabase/serverless').then(() => console.log('Neon driver OK'))"
+      - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
       - run: node scripts/schema-smoke.mjs
       - run: node scripts/smoke.mjs
       - name: Package validated release bundle
@@ -31,9 +42,8 @@ jobs:
           name: fz-validated-release-${{ github.sha }}
           path: |
             dist/
-            api/runtime-state.js
-            api/runtime-state-write.js
-            lib/runtime-store.js
-            db/migrations/001_runtime_store.sql
+            api/
+            lib/
+            db/migrations/
           if-no-files-found: error
           retention-days: 14
