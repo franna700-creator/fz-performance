@@ -20,6 +20,7 @@ const checks=[
  ['missing load not zero',app.includes('missing detail is never plotted as zero')&&trendsStore.includes("state: 'PENDING_DETAIL'")],
  ['historical NCL is runtime-owned',trendsStore.includes("contextType'='HISTORICAL_DAILY_NCL")&&trendsStore.includes('historicalNclMap')],
  ['historical NCL newest-per-day',trendsStore.includes('SELECT DISTINCT ON (local_date)')&&trendsStore.includes('ORDER BY local_date,ingested_at DESC')],
+ ['historical daily NCL outranks incomplete activity inventory',trendsStore.includes('if (historicalLoad.has(date))')&&trendsStore.includes("state: 'HISTORICAL_RECONCILED'")],
  ['rolling NCL keeps two-decimal precision',trendsStore.includes('round(tail.reduce((sum, point) => sum + Number(point.value || 0), 0), 2)')],
  ['dynamic AET and run maps',app.includes('cleanAetChart')&&app.includes('cleanRunScatter')],
  ['canonical AET expectation',trendsStore.includes("'2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'")&&trendsStore.includes('expectedMatchedAetMissing')],
