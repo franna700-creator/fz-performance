@@ -17,7 +17,7 @@ const checks=[
  ['dynamic AET and run maps',app.includes('cleanAetChart')&&app.includes('cleanRunScatter')],
  ['canonical system architecture',app.includes('Operational truth')&&app.includes('NEON')&&app.includes('flight recorder')],
  ['safe area preserved',css.includes('safe-area-inset-top')&&css.includes('safe-area-inset-bottom')],
- ['legacy injector tower removed from active build',!pkg.scripts.build.includes('longitudinal-trends-v4')&&!pkg.scripts.build.includes('tranche3-option-b-ui')&&!pkg.scripts.build.includes('tranche2-live-wellness')),
+ ['legacy injector tower removed from active build',!pkg.scripts.build.includes('longitudinal-trends-v4')&&!pkg.scripts.build.includes('tranche3-option-b-ui')&&!pkg.scripts.build.includes('tranche2-live-wellness')],
  ['canonical APIs',fs.existsSync('api/trends/current.js')&&fs.existsSync('api/system/status.js')&&fs.existsSync('lib/trends-store.js')]
 ];
 let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok)bad++}if(bad)process.exit(1);
