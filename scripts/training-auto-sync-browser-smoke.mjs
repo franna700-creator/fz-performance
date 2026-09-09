@@ -52,10 +52,10 @@ try{
   assert((await page.locator('[data-training-sync-status]').textContent()).includes('synced'),'training sync status becomes visible after source persistence');
   assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after background source reconciliation');
 
-  await page.locator('[data-page="train"]').first().click();
+  await page.locator('[data-page="train"]:visible').first().click();
   assert((await page.locator('#train').textContent()).includes('Evening Zone 2'),'TRAIN reflects newly reconciled canonical workout');
 
-  await page.locator('[data-page="today"]').first().click();
+  await page.locator('[data-page="today"]:visible').first().click();
   await page.locator('[data-training-sync-now]').click();
   await page.waitForFunction(()=>document.querySelector('[data-training-sync-now]')?.textContent==='Sync workouts');
   assert(sourceSyncRequests===2,'manual Sync workouts performs an explicit source refresh');
