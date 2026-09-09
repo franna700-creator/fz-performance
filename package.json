@@ -6,7 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/build.mjs && node scripts/clean-shell.mjs && node scripts/clean-smoke.mjs"
+    "build": "node scripts/build.mjs && node scripts/clean-shell.mjs && node scripts/clean-smoke.mjs && node scripts/live-physiology-smoke.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.0.0",
