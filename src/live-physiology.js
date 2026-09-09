@@ -13,41 +13,31 @@ const LIVE_SERIES = {
   respiration: { label: 'Respiration', suffix: ' br/min', decimals: 1, filter: value => Number.isFinite(value) && value > 0 }
 };
 
-function isWellnessUrl(input) {
+function wellnessUrl(input) {
   const raw = typeof input === 'string' ? input : input?.url;
-  if (!raw) return false;
+  if (!raw) return null;
   try {
     const url = new URL(raw, window.location.origin);
-    return url.origin === window.location.origin && url.pathname === '/api/wellness/today';
+    return url.origin === window.location.origin && url.pathname === '/api/wellness/today' ? url : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function sourceRefreshingUrl(input) {
-  const raw = typeof input === 'string' ? input : input?.url;
-  if (!raw) return input;
-  const url = new URL(raw, window.location.origin);
-  if (url.pathname === '/api/wellness/today' && url.searchParams.get('refresh') === '0') {
-    url.searchParams.delete('refresh');
-    return url.pathname + (url.search ? url.search : '');
-  }
-  return input;
-}
-
-function captureWellnessResponse(response) {
+function captureWellnessResponse(response, requestUrl) {
   if (!response?.ok) return;
   response.clone().json().then(payload => {
     if (!payload?.ok || !payload?.wellness) return;
     FZ_LIVE_PHYSIOLOGY.payload = payload;
     queueMicrotask(renderLivePhysiology);
+    if (requestUrl?.searchParams.get('refresh') === '0') queueMicrotask(backgroundRefresh);
   }).catch(() => {});
 }
 
 window.fetch = async function fzLivePhysiologyFetch(input, init) {
-  const nextInput = isWellnessUrl(input) ? sourceRefreshingUrl(input) : input;
-  const response = await FZ_LIVE_PHYSIOLOGY.originalFetch(nextInput, init);
-  if (isWellnessUrl(nextInput)) captureWellnessResponse(response);
+  const requestUrl = wellnessUrl(input);
+  const response = await FZ_LIVE_PHYSIOLOGY.originalFetch(input, init);
+  if (requestUrl) captureWellnessResponse(response, requestUrl);
   return response;
 };
 
@@ -129,7 +119,7 @@ function physiologyShell(payload) {
         ${chartShell('heart_rate', hr, current.restingHeartRate == null ? '' : `Resting ${fmt(current.restingHeartRate)} bpm`)}
         ${chartShell('respiration', respiration, 'Latest valid positive reading')}
       </div>
-      <div class="fz-live-footnote">Intraday traces use persisted 15-minute Garmin observations. Drag, hover, tap or use arrow keys to scrub.</div>
+      <div class="fz-live-footnote">Persisted physiology renders immediately. Garmin refreshes in the background on load, every 5 minutes while visible, and whenever the app regains focus. Intraday traces use persisted 15-minute Garmin observations.</div>
     </div>`;
 }
 
@@ -242,13 +232,14 @@ function renderLivePhysiology() {
   FZ_LIVE_PHYSIOLOGY.mountedRoot = mount;
 }
 
-async function forceRefresh() {
+async function refreshSource({ force = false } = {}) {
   if (FZ_LIVE_PHYSIOLOGY.refreshBusy) return;
   FZ_LIVE_PHYSIOLOGY.refreshBusy = true;
   const button = document.querySelector('[data-live-refresh]');
-  if (button) { button.disabled = true; button.textContent = 'Refreshing…'; }
+  if (force && button) { button.disabled = true; button.textContent = 'Refreshing…'; }
   try {
-    const response = await FZ_LIVE_PHYSIOLOGY.originalFetch('/api/wellness/today?refresh=1', { cache: 'no-store', headers: { accept: 'application/json' } });
+    const url = force ? '/api/wellness/today?refresh=1' : '/api/wellness/today';
+    const response = await FZ_LIVE_PHYSIOLOGY.originalFetch(url, { cache: 'no-store', headers: { accept: 'application/json' } });
     if (!response.ok) throw new Error(`wellness ${response.status}`);
     const payload = await response.json();
     if (payload?.ok && payload?.wellness) {
@@ -256,12 +247,20 @@ async function forceRefresh() {
       renderLivePhysiology();
     }
   } catch {
-    if (button) button.textContent = 'Refresh failed · retry';
+    if (force && button) button.textContent = 'Refresh failed · retry';
   } finally {
     FZ_LIVE_PHYSIOLOGY.refreshBusy = false;
     const next = document.querySelector('[data-live-refresh]');
-    if (next) { next.disabled = false; if (!next.textContent.includes('failed')) next.textContent = 'Refresh Garmin'; }
+    if (force && next) { next.disabled = false; if (!next.textContent.includes('failed')) next.textContent = 'Refresh Garmin'; }
   }
+}
+
+function backgroundRefresh() {
+  refreshSource({ force: false });
+}
+
+function forceRefresh() {
+  refreshSource({ force: true });
 }
 
 document.addEventListener('click', event => {
