@@ -20,10 +20,33 @@ function parseBody(req) {
   return null;
 }
 
+function contract() {
+  return {
+    version: 'forward-athlete-memory-v1',
+    memoryCategories: MEMORY_CATEGORIES,
+    eventTypes: ATHLETE_EVENT_TYPES,
+    behavior: {
+      preservesObservationTime: true,
+      supportsStandaloneContext: true,
+      linksWhenConfident: true,
+      idempotentEventKey: true
+    }
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
+
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      ok: true,
+      writeConfigured: Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL) && Boolean(process.env.FZ_STATE_WRITE_TOKEN),
+      contract: contract()
+    });
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
 
@@ -50,15 +73,12 @@ export default async function handler(req, res) {
     const result = await recordAthleteMemory(body);
     return res.status(200).json({
       ok: true,
-      contract: {
-        memoryCategories: MEMORY_CATEGORIES,
-        eventTypes: ATHLETE_EVENT_TYPES
-      },
+      contract: contract(),
       memory: result
     });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    const badInput = /^(summary_required|summary_too_long|raw_text_too_long|invalid_|unknown_session|memory_category|required|invalid_event_type)/.test(detail);
+    const badInput = /^(summary_required|summary_too_long|raw_text_too_long|invalid_|unknown_session|unknown_source_record|memory_category|required|invalid_event_type)/.test(detail);
     console.error('FZ athlete memory ingest failed', detail);
     return res.status(badInput ? 400 : 500).json({
       ok: false,
