@@ -1,0 +1,34 @@
+name: live-physiology-browser
+
+on:
+  pull_request:
+    paths:
+      - 'src/live-physiology.js'
+      - 'src/live-physiology.css'
+      - 'scripts/live-physiology-browser-smoke.mjs'
+      - 'scripts/live-physiology-smoke.mjs'
+      - 'scripts/clean-shell.mjs'
+      - 'package.json'
+      - '.github/workflows/live-physiology-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise Live Physiology in a real browser with mocked same-origin APIs
+        run: node scripts/live-physiology-browser-smoke.mjs
