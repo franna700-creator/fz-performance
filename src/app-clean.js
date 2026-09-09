@@ -59,12 +59,7 @@ function renderToday(){
       ${metricCard('Respiration',fmt(w?.respiration,1),'br/min','Latest positive reading')}
     </div>
   </div>
-  <div class="section"><div class="section-head"><h2>Training State</h2><p>Canonical execution + Athlete Memory · not a source activity list</p></div>${focus?trainingFocusCard(focus):'<div class="card rich"><h3>No canonical training session in the current memory window.</h3></div>'}</div>
-  <div class="section"><div class="section-head"><h2>Why this matters now</h2><p>Meaning before metrics</p></div><div class="three">
-    ${meaningCard('Systemic state',r?.systemicRecovery||'No current interpretation.')}
-    ${meaningCard('Local / tolerance state',r?.localTissueState||'No current interpretation.')}
-    ${meaningCard('Fallback',r?.fallback||'No fallback currently defined.')}
-  </div></div>`;
+  <div class="section"><div class="section-head"><h2>Training State</h2><p>Canonical execution + Athlete Memory · not a source activity list</p></div>${focus?trainingFocusCard(focus):'<div class="card rich"><h3>No canonical training session in the current memory window.</h3></div>'}</div>`;
 }
 function metricCard(label,value,unit,note){return`<div class="card metric fz-live-metric"><div class="live-top"><span class="m-label">${esc(label)}</span><span class="live-state">LIVE</span></div><div class="m-value">${esc(value)}${unit==='bpm'?' <small>bpm</small>':''}</div><div class="m-note">${esc(note||unit||'')}</div></div>`}
 function meaningCard(title,text){return`<div class="card rich"><div class="eyebrow">${esc(title)}</div><p>${esc(text)}</p></div>`}
