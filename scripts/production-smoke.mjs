@@ -18,6 +18,17 @@ function expectedWellnessDate(state) {
   return `${String(d).padStart(2,'0')} ${months[m-1]}`;
 }
 
+function previousCompletedWellness(state) {
+  const rows = state.datasets?.WELLNESS_HISTORY;
+  assert.ok(Array.isArray(rows) && rows.length > 1, 'runtime WELLNESS_HISTORY must contain history plus current day');
+  const currentIndex = rows.findIndex(row => row?.status === 'LIVE / PARTIAL');
+  assert.ok(currentIndex > 0, 'runtime WELLNESS_HISTORY must contain a completed day before the current live row');
+  for (let i = currentIndex - 1; i >= 0; i -= 1) {
+    if (rows[i]?.status === 'HISTORICAL') return rows[i];
+  }
+  assert.fail('runtime WELLNESS_HISTORY must contain a completed historical day before current');
+}
+
 async function assertGateway(context) {
   const response = await context.request.get(`${BASE}/api/runtime-state`, { headers: { accept: 'application/json' } });
   assert.equal(response.status(), 200, 'runtime gateway must return HTTP 200');
@@ -59,8 +70,7 @@ async function selectPreviousDayOnWellness(page, label, metric) {
   await wellness.scrollIntoViewIfNeeded();
   const box = await wellness.boundingBox();
   assert.ok(box && box.width > 100 && box.height > 100, `${label}: wellness chart must have a real box`);
-  // Current runtime adds 8 Sep after the retained 17 Aug → 7 Sep history. 7 Sep is the
-  // penultimate observation, so interact just left of the latest point through the public UI.
+  // Interact just left of the latest point to select the immediately previous observation.
   const x = box.x + box.width * 0.955;
   const y = box.y + box.height * 0.46;
   if (label === 'mobile') await page.touchscreen.tap(x, y);
@@ -75,24 +85,25 @@ async function assertLongitudinalTrends(page, label, state) {
 
   await page.waitForSelector('#fzWellnessChart svg', { timeout: 10000 });
   const currentDate = expectedWellnessDate(state);
+  const previous = previousCompletedWellness(state);
   await page.waitForFunction(date => document.querySelector('#wellSelectedDate')?.textContent?.trim() === date, currentDate, { timeout: 5000 });
   assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), currentDate, `${label}: wellness explorer must open on current master-validated state date`);
   assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), `${state.liveToday.hrv} ms`, `${label}: current HRV must come from live runtime state`);
   assert.match((await page.locator('.runtime-trend-update').first().innerText()).trim(), /CURRENT MASTER-VALIDATED UPDATE/i, `${label}: deep lenses must retain current runtime interpretation`);
 
-  // Regression guard: 7 Sep must be closed as a completed historical day, not the old partial shell row.
+  // Regression guard: the immediately previous completed day must remain fully closed and selectable.
   await selectPreviousDayOnWellness(page, label, 'steps');
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep row must exist`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '6,611', `${label}: 7 Sep completed steps must be retained`);
-  assert.equal((await page.locator('#wellSelectedStatus').innerText()).trim(), 'HISTORICAL', `${label}: 7 Sep must be closed historical`);
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), previous.dateLabel, `${label}: previous completed wellness row must exist`);
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), Number(previous.completedDaySteps).toLocaleString('en-US'), `${label}: previous completed steps must be retained`);
+  assert.equal((await page.locator('#wellSelectedStatus').innerText()).trim(), 'HISTORICAL', `${label}: previous completed day must be historical`);
 
   await selectPreviousDayOnWellness(page, label, 'stress');
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep stress row must be selectable`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '24', `${label}: 7 Sep completed-day stress must be retained`);
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), previous.dateLabel, `${label}: previous completed stress row must be selectable`);
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), String(previous.completedDayStress), `${label}: previous completed-day stress must be retained`);
 
   await selectPreviousDayOnWellness(page, label, 'active');
-  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), '07 Sep', `${label}: 7 Sep active-energy row must be selectable`);
-  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), '439 kcal', `${label}: 7 Sep completed active calories must be retained`);
+  assert.equal((await page.locator('#wellSelectedDate').innerText()).trim(), previous.dateLabel, `${label}: previous completed active-energy row must be selectable`);
+  assert.equal((await page.locator('#wellSelectedValue').innerText()).trim(), `${Number(previous.completedDayActiveCalories).toLocaleString('en-US')} kcal`, `${label}: previous completed active calories must be retained`);
 
   await page.locator('[data-well-metric="hrv"]').click();
   const wellness = page.locator('#fzWellnessChart');
@@ -199,7 +210,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   await desktopSmoke(browser);
   await mobileSmoke(browser);
-  console.log('PASS production browser smoke: desktop + mobile + runtime + 7 Sep completed history + current wellness sync + scrubbing + six lenses + legacy chart scrubbing');
+  console.log('PASS production browser smoke: desktop + mobile + runtime + previous completed history + current wellness sync + scrubbing + six lenses + legacy chart scrubbing');
 } finally {
   await browser.close();
 }
