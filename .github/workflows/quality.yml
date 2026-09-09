@@ -9,21 +9,13 @@ jobs:
         with:
           node-version: 24
       - run: npm install --ignore-scripts --no-audit --no-fund
-      - run: node scripts/build.mjs
-      - run: node scripts/longitudinal-trends-v2.mjs
-      - run: node scripts/longitudinal-trends-v3.mjs
-      - run: node scripts/longitudinal-trends-v4.mjs
-      - run: node scripts/trends-primary-surface.mjs
-      - run: node scripts/v061-cadence-cleanup.mjs
-      - run: node scripts/tranche2-live-wellness.mjs
-      - run: node scripts/tranche2-live-wellness-v2.mjs
-      - run: node scripts/tranche2-mobile-hardening.mjs
-      - run: node scripts/tranche2-mobile-safe-area.mjs
+      - run: npm run build
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
       - run: node --check api/runtime-state-write.js
       - run: node --check api/wellness/today.js
       - run: node --check api/training/today.js
+      - run: node --check api/training/memory.js
       - run: node --check api/source/fitness-ai/connect.js
       - run: node --check api/source/fitness-ai/callback.js
       - run: node --check api/source/fitness-ai/status.js
@@ -41,6 +33,7 @@ jobs:
       - run: node --check scripts/tranche2-live-wellness-v2.mjs
       - run: node --check scripts/tranche2-mobile-hardening.mjs
       - run: node --check scripts/tranche2-mobile-safe-area.mjs
+      - run: node --check scripts/tranche3-option-b-ui.mjs
       - run: node --check scripts/tranche3-training-smoke.mjs
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
