@@ -35,6 +35,6 @@ const checks=[
  ['Tranche 3 Option B injector',js.includes('FZ_TRANCHE3_OPTION_B_TRAINING_MEMORY_V1')&&js.includes('TRAINING STATE · ')&&js.includes('Training Memory')],
  ['training certainty labels',['OBSERVED','ATHLETE REPORTED','FZ INFERRED','HYPOTHESIS'].every(x=>js.includes(x))],
  ['TODAY to TRAIN handoff',js.includes('data-fz-open-train')&&js.includes('fzOpenTrainingMemory')],
- ['training memory mobile styling',css.includes('.fz-training-memory-section')&&css.includes('@media(max-width:700px)'))
+ ['training memory mobile styling',css.includes('.fz-training-memory-section')&&css.includes('@media(max-width:700px)')]
 ];
 let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok)bad++}if(bad)process.exit(1);
