@@ -32,6 +32,10 @@ Tredict-native `executedTrainingId` is authoritative when available. Otherwise G
 - Garmin activities: existing Fitness AI/Garmin server connection.
 - Tredict: server-side Streamable HTTP MCP client at `https://www.tredict.com/api/mcp/v2`, authenticated with a Vercel `TREDICT_API_TOKEN` secret.
 
+## Production activation note
+
+Vercel environment-variable changes apply to new deployments. After `TREDICT_API_TOKEN` is created or rotated, trigger one production deployment before validating `/api/source/tredict/status` or running a training refresh.
+
 ## API contract
 
 `GET /api/training/today?refresh=0`
