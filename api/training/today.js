@@ -30,12 +30,18 @@ function shape(range) {
     if (!sourcesBySession.has(source.session_id)) sourcesBySession.set(source.session_id, []);
     sourcesBySession.get(source.session_id).push(source);
   }
+
+  const decorate = session => ({
+    ...session,
+    events: eventsBySession.get(session.session_id) || [],
+    sources: sourcesBySession.get(session.session_id) || []
+  });
+  const primary = range.sessions.filter(session => session.status !== 'SUPERSEDED').map(decorate);
+  const superseded = range.sessions.filter(session => session.status === 'SUPERSEDED').map(decorate);
+
   return {
-    sessions: range.sessions.map(session => ({
-      ...session,
-      events: eventsBySession.get(session.session_id) || [],
-      sources: sourcesBySession.get(session.session_id) || []
-    })),
+    sessions: primary,
+    supersededSessions: superseded,
     contextEvents: eventsBySession.get('__context__') || []
   };
 }
