@@ -24,8 +24,11 @@ html=html
   .replace('<link href="/assets/app.css" rel="stylesheet"/>','<link href="/assets/app.css" rel="stylesheet"/><link href="/assets/clean.css" rel="stylesheet"/>')
   .replace(/<div class="subtitle">[\s\S]*?<\/div><\/div><div class="fresh">/, '<div class="subtitle">Current state → longitudinal change → execution memory → provenance. Each page has one job; canonical data is rendered at runtime.</div></div><div class="fresh">')
   .replace(/<div class="side-note">[\s\S]*?<\/div><\/aside>/, '<div class="side-note">Canonical runtime · Neon operational truth · Drive audit copy.</div></aside>')
+  .replace('Scheduled refreshes · 06:00 / 13:00 / 20:00 SAST','Scheduled intelligence state · 06:00 / 20:00 SAST')
+  .replace('Scheduled refreshes · 06:00 / 20:00 SAST','Scheduled intelligence state · 06:00 / 20:00 SAST')
   .replace('<script src="/assets/app.js" type="module"></script>','<script src="/assets/app-clean.js" type="module"></script>');
 if(html.includes('STRONG SYSTEMIC REBOUND')||html.includes('Matched Run AET · Power/HR')||html.includes('Google Drive master</b><span class="pill">CANONICAL'))throw new Error('Stale athlete-state content remains in static shell');
+if(html.includes('06:00 / 13:00 / 20:00'))throw new Error('Stale three-slot cadence remains in clean shell');
 if(!html.includes('/assets/app-clean.js')||!html.includes('/assets/clean.css'))throw new Error('Clean runtime assets not wired');
 fs.writeFileSync(htmlPath,html);
 fs.copyFileSync(cleanJs,path.join(dist,'assets','app-clean.js'));
