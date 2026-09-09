@@ -53,7 +53,8 @@ try{
   assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after background source reconciliation');
 
   await page.locator('[data-page="train"]:visible').first().click();
-  assert((await page.locator('#train').textContent()).includes('Evening Zone 2'),'TRAIN reflects newly reconciled canonical workout');
+  await page.locator('[data-training-lens="ALL"]').click();
+  assert((await page.locator('#train').textContent()).includes('Evening Zone 2'),'TRAIN All sessions reflects newly reconciled canonical workout');
 
   await page.locator('[data-page="today"]:visible').first().click();
   await page.locator('[data-training-sync-now]').click();
