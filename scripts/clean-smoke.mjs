@@ -15,7 +15,7 @@ const checks=[
  ['runtime-owned data',app.includes("getJson('/api/runtime-state')")&&app.includes("getJson('/api/trends/current?days=45')")&&app.includes("getJson('/api/training/memory?backDays=45&forwardDays=0')")],
  ['recommendation semantics',app.includes('CURRENT FZ RECOMMENDATION')&&!app.includes('Final FZ Performance Call')],
  ['athlete memory categories',['STATE','SESSION','COST','RECOVERY','FUELING','CONSTRAINT','HYPOTHESIS'].every(x=>app.includes(x))],
- ['missing load not zero',app.includes('missing detail is never plotted as zero')&&trendsStore.includes("state: 'PENDING_DETAIL'"))],
+ ['missing load not zero',app.includes('missing detail is never plotted as zero')&&trendsStore.includes("state: 'PENDING_DETAIL'")],
  ['dynamic AET and run maps',app.includes('cleanAetChart')&&app.includes('cleanRunScatter')],
  ['canonical AET expectation',trendsStore.includes("'2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'")&&trendsStore.includes('expectedMatchedAetMissing')],
  ['athlete voice can identify AET',trendsStore.includes("/\\b(run\\s+)?aet\\b/.test(text)")],
