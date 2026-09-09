@@ -17,6 +17,7 @@ jobs:
       - run: node --check api/training/today.js
       - run: node --check api/training/memory.js
       - run: node --check api/training/athlete-event.js
+      - run: node --check api/intelligence/materiality.js
       - run: node --check api/trends/current.js
       - run: node --check api/system/status.js
       - run: node --check api/source/fitness-ai/connect.js
@@ -33,13 +34,18 @@ jobs:
       - run: node --check lib/training-store.js
       - run: node --check lib/training-sync.js
       - run: node --check lib/athlete-memory-ingest.js
+      - run: node --check lib/athlete-response-capture.js
+      - run: node --check lib/materiality-engine.js
+      - run: node --check lib/materiality-store.js
       - run: node --check lib/trends-store.js
       - run: node --check scripts/clean-shell.mjs
       - run: node --check scripts/clean-smoke.mjs
+      - run: node --check scripts/tranche4-materiality-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
       - run: node scripts/schema-smoke.mjs
       - run: node scripts/tranche3-training-smoke.mjs
       - run: node scripts/tranche3-athlete-ingest-smoke.mjs
+      - run: node scripts/tranche4-materiality-smoke.mjs
       - run: node scripts/clean-smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'

@@ -6,6 +6,7 @@ import {
   FZ_ATHLETE_ID,
   SPEAKER_RESOLUTIONS
 } from '../../lib/athlete-response-capture.js';
+import { MATERIALITY_ENGINE_VERSION, MATERIALITY_LEVELS } from '../../lib/materiality-engine.js';
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -28,12 +29,14 @@ function parseBody(req) {
 
 function contract() {
   return {
-    version: 'exercise-athlete-response-v3.1',
+    version: 'exercise-athlete-response-v3.1+materiality-v4.1',
     projectScope: EXERCISE_PROJECT_SCOPE,
     athleteId: FZ_ATHLETE_ID,
     speakerResolutions: SPEAKER_RESOLUTIONS,
     memoryCategories: MEMORY_CATEGORIES,
     eventTypes: ATHLETE_EVENT_TYPES,
+    materialityEngineVersion: MATERIALITY_ENGINE_VERSION,
+    materialityLevels: MATERIALITY_LEVELS,
     requiredCaptureFields: ['projectScope', 'athleteId', 'speakerResolution'],
     behavior: {
       chatIsPrimaryInput: true,
@@ -44,7 +47,9 @@ function contract() {
       supportsStandaloneContext: true,
       linksWhenConfident: true,
       ambiguousSpeakerRequiresConfirmation: true,
-      idempotentEventKey: true
+      idempotentEventKey: true,
+      evaluatesMaterialitySameTurn: true,
+      materialityDoesNotYetRecomputeRecommendation: true
     }
   };
 }
@@ -93,7 +98,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    const badInput = /^(summary_required|summary_too_long|raw_text_too_long|invalid_|unknown_session|unknown_source_record|memory_category|required|invalid_event_type|exercise_project_scope_required|francois_speaker_required|speaker_resolution_required)/.test(detail);
+    const badInput = /^(summary_required|summary_too_long|raw_text_too_long|invalid_|unknown_session|unknown_source_record|memory_category|required|invalid_event_type|exercise_project_scope_required|francois_speaker_required|speaker_resolution_required|materiality_)/.test(detail);
     console.error('FZ athlete response ingest failed', detail);
     return res.status(badInput ? 400 : 500).json({
       ok: false,
