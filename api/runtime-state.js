@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import {
   databaseRuntimeEnabled,
   databaseRuntimeRequired,
-  loadDatabaseRuntimeState
+  loadDatabaseRuntimeState,
+  publishDatabaseRuntimeState
 } from '../lib/runtime-store.js';
 
 const ORIGIN = 'https://fz-performance-state.vercel.app';
@@ -146,7 +147,6 @@ async function resolveState() {
     throw new Error(`no validated generation available (${errors.join('; ')})`);
   }
 
-  // Transitional compatibility with the v0.5 direct generation manifest.
   if (validGenerationManifest(pointerOrLegacy, { allowLegacy: true })) {
     const state = await loadGeneration(pointerOrLegacy, null, { allowLegacy: true });
     return {
@@ -172,11 +172,31 @@ function sendState(res, { state, sha, generation, source, warning = null }) {
   return res.status(200).json(state);
 }
 
+async function bootstrapDatabaseFromImmutable() {
+  const immutable = await resolveState();
+  const serialized = JSON.stringify(immutable.state);
+  const payloadSha256 = sha256(serialized);
+  await publishDatabaseRuntimeState({
+    state: immutable.state,
+    payloadSha256,
+    sourceClass: 'FZ_IMMUTABLE_BOOTSTRAP'
+  });
+  return {
+    state: immutable.state,
+    payloadSha256,
+    stateId: immutable.state.stateId,
+    source: 'database-bootstrap'
+  };
+}
+
 export default async function handler(req, res) {
   if (databaseRuntimeEnabled()) {
     try {
-      const loaded = await loadDatabaseRuntimeState();
-      if (!loaded) throw new Error('database runtime pointer is empty');
+      let loaded = await loadDatabaseRuntimeState();
+      if (!loaded) {
+        if (databaseRuntimeRequired()) throw new Error('database runtime pointer is empty');
+        loaded = await bootstrapDatabaseFromImmutable();
+      }
       if (!validRuntimeState(loaded.state)) throw new Error('database runtime state schema contract failure');
       if (loaded.state.stateId !== loaded.stateId) throw new Error('database runtime stateId mismatch');
       if (!HEX64.test(loaded.payloadSha256 || '')) throw new Error('database runtime checksum invalid');
@@ -184,7 +204,7 @@ export default async function handler(req, res) {
         state: loaded.state,
         sha: loaded.payloadSha256,
         generation: loaded.payloadSha256,
-        source: 'database'
+        source: loaded.source || 'database'
       });
     } catch (error) {
       console.warn('FZ database runtime unavailable', error instanceof Error ? error.message : String(error));
