@@ -31,7 +31,7 @@ const checks=[
  ['longitudinal Trends domains',['ATHLETE STATE','RECOVERY RESPONSE','PERFORMANCE','EXPOSURE COST','ATHLETE VOICE','TRAJECTORY'].every(x=>js.includes(x))],
  ['readiness forward-only rule',js.includes('Readiness history begins from exact retained FZ scores going forward')],
  ['baseline maturity',js.includes('PROVISIONAL')&&js.includes('Personal baseline')],
- ['training memory endpoint',fs.existsSync('api/training/memory.js')&&js.includes("fetch('/api/training/memory"))],
+ ['training memory endpoint',fs.existsSync('api/training/memory.js')&&js.includes("fetch('/api/training/memory")],
  ['Tranche 3 Option B injector',js.includes('FZ_TRANCHE3_OPTION_B_TRAINING_MEMORY_V1')&&js.includes('TRAINING STATE · ')&&js.includes('Training Memory')],
  ['training certainty labels',['OBSERVED','ATHLETE REPORTED','FZ INFERRED','HYPOTHESIS'].every(x=>js.includes(x))],
  ['TODAY to TRAIN handoff',js.includes('data-fz-open-train')&&js.includes('fzOpenTrainingMemory')],
