@@ -7,6 +7,11 @@ import {
   johannesburgLocalDate,
   scoreSessionCandidate
 } from '../lib/athlete-memory-ingest.js';
+import {
+  normalizeExerciseAthleteResponse,
+  EXERCISE_PROJECT_SCOPE,
+  FZ_ATHLETE_ID
+} from '../lib/athlete-response-capture.js';
 
 const categories = classifyAthleteMemory({
   summary: 'Run AET felt hard and I stopped early because of stomach cramps after a banana 40 minutes before.',
@@ -24,6 +29,23 @@ const key2 = athleteEventKey({ idempotencyKey: 'conversation-message-123', occur
 assert.equal(key1, key2, 'explicit idempotency key must dominate content changes');
 assert.match(key1, /^athlete:forward:[a-f0-9]{28}$/);
 
+const normalized = normalizeExerciseAthleteResponse({
+  projectScope: 'exercise-project',
+  athleteId: 'francois',
+  speakerResolution: 'INFERRED_HIGH_CONFIDENCE',
+  reportedAt: '2026-09-10T06:00:00Z',
+  occurredAt: '2026-09-09T20:00:00Z',
+  occurrencePrecision: 'approximate',
+  summary: 'Quads became sore around 22:00 last night.'
+});
+assert.equal(normalized.projectScope, EXERCISE_PROJECT_SCOPE);
+assert.equal(normalized.athleteId, FZ_ATHLETE_ID);
+assert.equal(normalized.reportedAt, '2026-09-10T06:00:00.000Z');
+assert.equal(normalized.occurredAt, '2026-09-09T20:00:00.000Z');
+assert.equal(normalized.payload.captureScope, 'exercise-project');
+assert.throws(() => normalizeExerciseAthleteResponse({ projectScope: 'exercise-project', athleteId: 'francois', summary: 'ambiguous speaker' }), /speaker_resolution_required/);
+assert.throws(() => normalizeExerciseAthleteResponse({ projectScope: 'other-project', athleteId: 'francois', speakerResolution: 'CONFIRMED', summary: 'wrong project' }), /exercise_project_scope_required/);
+
 const candidate = {
   local_date: '2026-09-08',
   title: 'Roodepoort - AET Run Workout',
@@ -39,4 +61,4 @@ const scored = scoreSessionCandidate(candidate, {
 }, '2026-09-08T17:12:00Z', 2);
 assert(scored.score >= 0.7, `expected strong contextual link, got ${scored.score}`);
 
-console.log('PASS Tranche 3 forward athlete-memory ingestion contract');
+console.log('PASS Tranche 3.1 Exercise-project athlete response capture contract');
