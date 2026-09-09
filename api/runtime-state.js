@@ -1,5 +1,10 @@
 import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
+import {
+  databaseRuntimeEnabled,
+  databaseRuntimeRequired,
+  loadDatabaseRuntimeState
+} from '../lib/runtime-store.js';
 
 const ORIGIN = 'https://fz-performance-state.vercel.app';
 const POINTER_PATH = '/current.json';
@@ -156,17 +161,49 @@ async function resolveState() {
   throw new Error('invalid runtime state pointer');
 }
 
+function sendState(res, { state, sha, generation, source, warning = null }) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('X-FZ-State-Id', state.stateId);
+  res.setHeader('X-FZ-State-SHA256', sha);
+  res.setHeader('X-FZ-State-Generation', generation);
+  res.setHeader('X-FZ-State-Source', source);
+  if (warning) res.setHeader('Warning', warning);
+  return res.status(200).json(state);
+}
+
 export default async function handler(req, res) {
+  if (databaseRuntimeEnabled()) {
+    try {
+      const loaded = await loadDatabaseRuntimeState();
+      if (!loaded) throw new Error('database runtime pointer is empty');
+      if (!validRuntimeState(loaded.state)) throw new Error('database runtime state schema contract failure');
+      if (loaded.state.stateId !== loaded.stateId) throw new Error('database runtime stateId mismatch');
+      if (!HEX64.test(loaded.payloadSha256 || '')) throw new Error('database runtime checksum invalid');
+      return sendState(res, {
+        state: loaded.state,
+        sha: loaded.payloadSha256,
+        generation: loaded.payloadSha256,
+        source: 'database'
+      });
+    } catch (error) {
+      console.warn('FZ database runtime unavailable', error instanceof Error ? error.message : String(error));
+      if (databaseRuntimeRequired()) {
+        res.setHeader('Cache-Control', 'no-store, max-age=0');
+        return res.status(503).json({ ok: false, error: 'database_runtime_state_unavailable' });
+      }
+    }
+  }
+
   try {
     const loaded = await resolveState();
-    res.setHeader('Cache-Control', 'no-store, max-age=0');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('X-FZ-State-Id', loaded.state.stateId);
-    res.setHeader('X-FZ-State-SHA256', loaded.manifest.compressedSha256);
-    res.setHeader('X-FZ-State-Generation', loaded.generationId);
-    res.setHeader('X-FZ-State-Source', loaded.source);
-    if (loaded.source === 'previous') res.setHeader('Warning', '110 - "FZ serving previous validated runtime state"');
-    return res.status(200).json(loaded.state);
+    return sendState(res, {
+      state: loaded.state,
+      sha: loaded.manifest.compressedSha256,
+      generation: loaded.generationId,
+      source: loaded.source,
+      warning: loaded.source === 'previous' ? '110 - "FZ serving previous validated runtime state"' : null
+    });
   } catch (error) {
     console.error('FZ runtime state unavailable', error instanceof Error ? error.message : String(error));
     res.setHeader('Cache-Control', 'no-store, max-age=0');

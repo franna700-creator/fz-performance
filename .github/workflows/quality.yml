@@ -8,6 +8,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
       - run: node scripts/build.mjs
       - run: node scripts/longitudinal-trends-v2.mjs
       - run: node scripts/longitudinal-trends-v3.mjs
@@ -16,8 +17,11 @@ jobs:
       - run: node scripts/v061-cadence-cleanup.mjs
       - run: node --check dist/assets/app.js
       - run: node --check api/runtime-state.js
+      - run: node --check api/runtime-state-write.js
+      - run: node --check lib/runtime-store.js
       - run: node --check scripts/smoke.mjs
       - run: node --check scripts/production-smoke.mjs
+      - run: node -e "import('@neondatabase/serverless').then(() => console.log('Neon driver OK'))"
       - run: node scripts/schema-smoke.mjs
       - run: node scripts/smoke.mjs
       - name: Package validated release bundle
@@ -28,5 +32,8 @@ jobs:
           path: |
             dist/
             api/runtime-state.js
+            api/runtime-state-write.js
+            lib/runtime-store.js
+            db/migrations/001_runtime_store.sql
           if-no-files-found: error
           retention-days: 14
