@@ -1,84 +1,42 @@
-import { readTrainingRange } from '../../lib/training-store.js';
-import { syncTrainingSources } from '../../lib/training-sync.js';
+import { getTrainingDay } from '../../lib/training-presentation.js';
+import { syncTrainingRuntime } from '../../lib/training-sync-runtime.js';
 
-const TZ = 'Africa/Johannesburg';
-
-function todayLocal() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(new Date());
+function num(value, fallback, min, max) {
+  const parsed=Number(value);
+  if(!Number.isFinite(parsed)) return fallback;
+  return Math.max(min,Math.min(max,Math.trunc(parsed)));
 }
 
-function addDays(dateString, days) {
-  const d = new Date(`${dateString}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function shape(range) {
-  const eventsBySession = new Map();
-  for (const event of range.events) {
-    const key = event.session_id || '__context__';
-    if (!eventsBySession.has(key)) eventsBySession.set(key, []);
-    eventsBySession.get(key).push(event);
+export default async function handler(req,res){
+  if(req.method!=='GET'){
+    res.setHeader('Allow','GET');
+    return res.status(405).json({error:'method_not_allowed'});
   }
-  const sourcesBySession = new Map();
-  for (const source of range.sources) {
-    if (!sourcesBySession.has(source.session_id)) sourcesBySession.set(source.session_id, []);
-    sourcesBySession.get(source.session_id).push(source);
-  }
-
-  const decorate = session => ({
-    ...session,
-    events: eventsBySession.get(session.session_id) || [],
-    sources: sourcesBySession.get(session.session_id) || []
-  });
-  const primary = range.sessions.filter(session => session.status !== 'SUPERSEDED').map(decorate);
-  const superseded = range.sessions.filter(session => session.status === 'SUPERSEDED').map(decorate);
-
-  return {
-    sessions: primary,
-    supersededSessions: superseded,
-    contextEvents: eventsBySession.get('__context__') || []
-  };
-}
-
-export default async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store, max-age=0');
-  if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
-
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : todayLocal();
-  const startDate = addDays(date, -2);
-  const endDate = addDays(date, 7);
-  let sync = null;
-  let warning = null;
-
-  if (String(req.query.refresh || '') === '1') {
-    try {
-      sync = await syncTrainingSources({ startDate, endDate });
-    } catch (error) {
-      warning = error instanceof Error ? error.message : String(error);
+  const requestedDate=req.query?.date ? String(req.query.date) : null;
+  const refresh=['1','true','yes'].includes(String(req.query?.refresh||'').toLowerCase());
+  try{
+    let sync=null;
+    if(refresh){
+      sync=await syncTrainingRuntime({force:true,days:num(req.query?.days,5,2,14),reason:'api-training-today'});
     }
-  }
-
-  try {
-    const range = await readTrainingRange(startDate, endDate);
+    const day=await getTrainingDay(requestedDate);
+    if(!day) return res.status(404).json({ok:false,error:'training_day_not_found',date:requestedDate});
     return res.status(200).json({
-      ok: true,
-      date,
-      range: { startDate, endDate },
+      ok:true,
+      generatedAt:new Date().toISOString(),
+      source:'fz-training-canonical',
       sync,
-      warning,
-      ...shape(range)
+      ...day
     });
-  } catch (error) {
+  }catch(error){
     return res.status(503).json({
-      ok: false,
-      error: 'training_store_unavailable',
-      detail: error instanceof Error ? error.message : String(error)
+      ok:false,
+      error:'training_today_unavailable',
+      detail:String(error?.message||error),
+      date:requestedDate,
+      sessions:[],
+      athleteMemory:[],
+      feedback:[]
     });
   }
 }

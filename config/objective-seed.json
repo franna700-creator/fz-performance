@@ -1,0 +1,121 @@
+{
+  "version": "1.0",
+  "asOf": "2026-09-10",
+  "capabilities": [
+    {
+      "id": "compromised_running",
+      "name": "Compromised running",
+      "category": "HYBRID",
+      "description": "Ability to preserve useful running mechanics and pace after meaningful non-running work."
+    },
+    {
+      "id": "running_economy",
+      "name": "Running economy",
+      "category": "RUNNING",
+      "description": "Cost of producing sustainable running speed at controlled effort."
+    },
+    {
+      "id": "aerobic_durability",
+      "name": "Aerobic durability",
+      "category": "AEROBIC",
+      "description": "Ability to sustain output over prolonged work without disproportionate drift or recovery cost."
+    },
+    {
+      "id": "threshold_aerobic_power",
+      "name": "Threshold / high-aerobic power",
+      "category": "AEROBIC",
+      "description": "Ability to sustain and repeat work near the upper aerobic domain."
+    },
+    {
+      "id": "mixed_modality_repeatability",
+      "name": "Mixed-modality repeatability",
+      "category": "HYBRID",
+      "description": "Ability to repeat useful work across alternating modalities without excessive decay."
+    },
+    {
+      "id": "station_strength_endurance",
+      "name": "Station strength-endurance",
+      "category": "HYROX",
+      "description": "Ability to maintain quality and output across strength-endurance race stations."
+    },
+    {
+      "id": "transition_efficiency",
+      "name": "Transition efficiency",
+      "category": "HYBRID",
+      "description": "Ability to move between modalities with limited time and physiological cost."
+    },
+    {
+      "id": "local_tissue_tolerance",
+      "name": "Local tissue tolerance",
+      "category": "RECOVERY",
+      "description": "Ability to tolerate event-relevant local muscular loading without disproportionate delayed cost."
+    },
+    {
+      "id": "race_pacing",
+      "name": "Race pacing",
+      "category": "EXECUTION",
+      "description": "Ability to distribute effort appropriately across the specific event demand."
+    }
+  ],
+  "events": [
+    {
+      "id": "deadly-dozen-uj-2026-09-20",
+      "name": "Deadly Dozen UJ",
+      "date": "2026-09-20",
+      "status": "SCHEDULED",
+      "role": "VALIDATION",
+      "strategicWeight": 0.2,
+      "objective": {
+        "type": "TIME_UNDER",
+        "targetSeconds": 3600,
+        "label": "Sub-60 minute finish",
+        "activeDevelopmentTarget": false
+      },
+      "benchmark": {
+        "date": "2026-05-01",
+        "seconds": 3660,
+        "label": "61-minute finish in May 2026"
+      },
+      "demands": [
+        {"capabilityId":"compromised_running","weight":0.9,"transferWeight":0.8,"specificity":"SHARED"},
+        {"capabilityId":"mixed_modality_repeatability","weight":0.75,"transferWeight":0.75,"specificity":"SHARED"},
+        {"capabilityId":"aerobic_durability","weight":0.55,"transferWeight":0.65,"specificity":"SHARED"},
+        {"capabilityId":"transition_efficiency","weight":0.55,"transferWeight":0.65,"specificity":"SHARED"},
+        {"capabilityId":"local_tissue_tolerance","weight":0.65,"transferWeight":0.55,"specificity":"SHARED"},
+        {"capabilityId":"race_pacing","weight":0.45,"transferWeight":0.35,"specificity":"EVENT_SPECIFIC"}
+      ],
+      "formatProfileId":"deadly-dozen-track-male-sa",
+      "scheduleEvidence":{"athleteEnteredDate":"2026-09-20","officialSiteDate":"2026-09-19","status":"RESOLVED_ATHLETE_CONFIRMED","activeDate":"2026-09-20","resolvedAt":"2026-09-10","resolution":"ATHLETE_CONFIRMED_SUNDAY_20_SEPTEMBER","rule":"ATHLETE_CONFIRMED_SCHEDULE_IS_ACTIVE; RETAIN EXTERNAL_DISCREPANCY_AS_PROVENANCE"},
+      "transferPolicy":"USE_STATION_LEVEL_EVENT_FORMAT_PROFILE; DO_NOT_TREAT_EVENT_RESULT_AS_HYROX_EQUIVALENT"
+    },
+    {
+      "id":"hoka-half-pretoria-2026-09-24","name":"Hoka Half Marathon Pretoria","date":"2026-09-24","status":"SCHEDULED","role":"SECONDARY","strategicWeight":0.45,
+      "objective":{"type":"TIME_TARGET","targetSeconds":6600,"targetPaceSecondsPerKm":313,"label":"1:50:00 finish"},
+      "demands":[
+        {"capabilityId":"running_economy","weight":0.95,"transferWeight":0.8,"specificity":"SHARED"},
+        {"capabilityId":"aerobic_durability","weight":0.95,"transferWeight":0.85,"specificity":"SHARED"},
+        {"capabilityId":"threshold_aerobic_power","weight":0.65,"transferWeight":0.7,"specificity":"SHARED"},
+        {"capabilityId":"race_pacing","weight":0.9,"transferWeight":0.4,"specificity":"EVENT_SPECIFIC"},
+        {"capabilityId":"local_tissue_tolerance","weight":0.55,"transferWeight":0.45,"specificity":"SHARED"}
+      ],
+      "formatProfileId":"half-marathon-road","transferPolicy":"FOUNDATIONAL_RUNNING_TRANSFER_ONLY; NO_DIRECT_STATION_OR_COMPROMISED_RUNNING_VALIDATION"
+    },
+    {
+      "id":"hyrox-johannesburg-2026-11-28","name":"HYROX Johannesburg Solo Male","date":"2026-11-28","status":"SCHEDULED","role":"PRIMARY","strategicWeight":1.0,
+      "objective":{"type":"CAPABILITY_PRIMARY","label":"Primary performance objective; maximise HYROX-relevant performance evidence and race readiness"},
+      "demands":[
+        {"capabilityId":"compromised_running","weight":1.0,"transferWeight":0.9,"specificity":"SHARED"},
+        {"capabilityId":"running_economy","weight":0.85,"transferWeight":0.8,"specificity":"SHARED"},
+        {"capabilityId":"aerobic_durability","weight":0.85,"transferWeight":0.8,"specificity":"SHARED"},
+        {"capabilityId":"threshold_aerobic_power","weight":0.85,"transferWeight":0.8,"specificity":"SHARED"},
+        {"capabilityId":"mixed_modality_repeatability","weight":1.0,"transferWeight":0.9,"specificity":"SHARED"},
+        {"capabilityId":"station_strength_endurance","weight":1.0,"transferWeight":0.95,"specificity":"EVENT_SPECIFIC"},
+        {"capabilityId":"transition_efficiency","weight":0.85,"transferWeight":0.85,"specificity":"SHARED"},
+        {"capabilityId":"local_tissue_tolerance","weight":0.9,"transferWeight":0.8,"specificity":"SHARED"},
+        {"capabilityId":"race_pacing","weight":0.8,"transferWeight":0.55,"specificity":"EVENT_SPECIFIC"}
+      ],
+      "formatProfileId":"hyrox-open-men-2025-26","transferPolicy":"PRIMARY_REFERENCE_PROFILE"
+    }
+  ],
+  "evergreenObjectives":[{"id":"maintain-fitness","name":"Maintain fitness","status":"DORMANT","role":"MAINTENANCE","strategicWeight":0.65,"activationPolicy":"SURFACE_WHEN_NO_ACTIVE_PRIMARY_EVENT; REQUIRE_ATHLETE_CONFIRMATION","description":"Preserve broad aerobic, strength and hybrid capability when no event-specific objective is currently primary."}]
+}

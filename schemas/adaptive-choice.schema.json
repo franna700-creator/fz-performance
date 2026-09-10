@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance.local/schemas/adaptive-choice.schema.json",
+  "title": "FZ Adaptive Daily Choice",
+  "type": "object",
+  "required": ["schemaVersion", "decisionId", "localDate", "generatedAt", "fzRecommendedLane", "lanes", "context"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "localDate": { "type": "string", "format": "date" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "recommendationVersion": { "type": ["string", "null"] },
+    "fzRecommendedLane": { "$ref": "#/$defs/lane" },
+    "safetyOverride": { "type": "boolean", "default": false },
+    "lanes": {"type":"object","required":["ABSORB","MAINTAIN","ADAPT"],"properties":{"ABSORB":{"$ref":"#/$defs/laneOptions"},"MAINTAIN":{"$ref":"#/$defs/laneOptions"},"ADAPT":{"$ref":"#/$defs/laneOptions"}},"additionalProperties":false},
+    "athleteSelection": {"type":["object","null"],"properties":{"lane":{"$ref":"#/$defs/lane"},"optionId":{"type":["string","null"]},"matchesFzRecommendation":{"type":"boolean"},"overrideReason":{"type":["string","null"]},"selectedAt":{"type":"string","format":"date-time"}},"required":["lane","matchesFzRecommendation","selectedAt"],"additionalProperties":false},
+    "context": {"type":"object","required":["runtimeStateId","materialityAssessmentId","primaryObjective"],"properties":{"runtimeStateId":{"type":["string","null"]},"materialityAssessmentId":{"type":["string","number","null"]},"primaryObjective":{"type":"string","minLength":1},"eventPhase":{"type":["string","null"]},"recentTrainingWindowHours":{"type":"integer","minimum":1,"maximum":168},"assumptions":{"type":"array","items":{"type":"string"}}},"additionalProperties":true}
+  },
+  "$defs": {"lane":{"enum":["ABSORB","MAINTAIN","ADAPT"]},"laneOptions":{"type":"array","minItems":0,"maxItems":3,"items":{"$ref":"#/$defs/sessionOption"}},"sessionOption":{"type":"object","required":["optionId","title","modality","objective","dose","expectedCost","whyNow","confidence"],"properties":{"optionId":{"type":"string","minLength":1},"title":{"type":"string","minLength":1},"modality":{"type":"string","minLength":1},"objective":{"type":"string","minLength":1},"dose":{"type":"string","minLength":1},"expectedCost":{"enum":["LOW","LOW_TO_MODERATE","MODERATE","MODERATE_TO_HIGH","HIGH"]},"whyNow":{"type":"string","minLength":1},"successCondition":{"type":["string","null"]},"stopCondition":{"type":["string","null"]},"targetedGaps":{"type":"array","items":{"type":"string"}},"confidence":{"enum":["LOW","MODERATE","HIGH"]}},"additionalProperties":true}},
+  "additionalProperties": true
+}

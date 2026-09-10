@@ -35,17 +35,47 @@ jobs:
       - run: node --check lib/wellness-sync.js
       - run: node --check lib/training-store.js
       - run: node --check lib/training-sync.js
+      - run: node --check lib/training-sync-runtime.js
+      - run: node --check lib/training-evidence.js
+      - run: node --check lib/training-classifier.js
+      - run: node --check lib/training-presentation.js
+      - run: node --check lib/athlete-memory-association.js
+      - run: node --check lib/athlete-memory-reconcile.js
+      - run: node --check lib/adaptive-lanes.js
+      - run: node --check lib/trends-dynamic.js
       - run: node --check lib/athlete-memory-ingest.js
       - run: node --check lib/athlete-response-capture.js
       - run: node --check lib/materiality-engine.js
       - run: node --check lib/materiality-store.js
       - run: node --check lib/trends-store.js
+      - run: node --check lib/event-objective-model.js
+      - run: node --check lib/data-contract-registry.js
+      - run: node --check lib/runtime-dependency-graph.js
+      - run: node --check lib/systemic-reconciliation-sweep.js
+      - run: node --check lib/event-format-model.js
+      - run: node --check lib/event-intelligence.js
+      - run: node --check scripts/event-objective-schema-smoke.mjs
+      - run: node --check scripts/event-objective-smoke.mjs
+      - run: node --check scripts/data-contract-smoke.mjs
+      - run: node --check scripts/dependency-graph-smoke.mjs
+      - run: node --check scripts/reconciliation-sweep-smoke.mjs
+      - run: node --check scripts/event-format-smoke.mjs
+      - run: node --check scripts/event-intake-schema-smoke.mjs
+      - run: node --check scripts/event-intelligence-smoke.mjs
+      - run: node --check scripts/contract-dependency-closure-smoke.mjs
       - run: node --check scripts/clean-shell.mjs
       - run: node --check scripts/clean-smoke.mjs
       - run: node --check scripts/live-physiology-smoke.mjs
       - run: node --check scripts/training-auto-sync-smoke.mjs
       - run: node --check scripts/system-intelligence-smoke.mjs
       - run: node --check scripts/dynamic-runtime-smoke.mjs
+      - run: node --check scripts/training-evidence-smoke.mjs
+      - run: node --check scripts/training-classifier-smoke.mjs
+      - run: node --check scripts/athlete-memory-reconcile-smoke.mjs
+      - run: node --check scripts/runtime-consistency-smoke.mjs
+      - run: node --check scripts/adaptive-choice-schema-smoke.mjs
+      - run: node --check scripts/design-system-smoke.mjs
+      - run: node --check scripts/systemic-repair-smoke.mjs
       - run: node --check scripts/tranche4-materiality-smoke.mjs
       - run: node --check scripts/production-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
@@ -58,6 +88,22 @@ jobs:
       - run: node scripts/training-auto-sync-smoke.mjs
       - run: node scripts/system-intelligence-smoke.mjs
       - run: node scripts/dynamic-runtime-smoke.mjs
+      - run: node scripts/training-evidence-smoke.mjs
+      - run: node scripts/training-classifier-smoke.mjs
+      - run: node scripts/athlete-memory-reconcile-smoke.mjs
+      - run: node scripts/runtime-consistency-smoke.mjs
+      - run: node scripts/adaptive-choice-schema-smoke.mjs
+      - run: node scripts/design-system-smoke.mjs
+      - run: node scripts/systemic-repair-smoke.mjs
+      - run: node scripts/event-objective-schema-smoke.mjs
+      - run: node scripts/event-objective-smoke.mjs
+      - run: node scripts/data-contract-smoke.mjs
+      - run: node scripts/dependency-graph-smoke.mjs
+      - run: node scripts/reconciliation-sweep-smoke.mjs
+      - run: node scripts/event-format-smoke.mjs
+      - run: node scripts/event-intake-schema-smoke.mjs
+      - run: node scripts/event-intelligence-smoke.mjs
+      - run: node scripts/contract-dependency-closure-smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'
         uses: actions/upload-artifact@v4

@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "taxonomyVersion": "FZ_EVENT_DEMAND_V1",
+  "profiles": [
+    {
+      "profileId": "hyrox-open-men-2025-26",
+      "eventFamily": "HYROX",
+      "variant": "OPEN_MEN",
+      "knowledgeStatus": "QUALIFIED",
+      "provenance": [
+        {"sourceType":"STANDARD_REFERENCE","sourceRef":"HYROX race format used by FZ Performance","verifiedAt":"2026-09-10","confidence":0.99}
+      ],
+      "runStructure": {"segmentCount":8,"segmentDistanceM":1000,"totalDistanceM":8000,"pattern":"RUN_THEN_STATION","compromisedRunning":true,"transitionCount":16},
+      "stations": [
+        {"order":1,"id":"ski_erg","label":"SkiErg","work":{"distanceM":1000},"movementFamilies":["erg_ski","pulling_endurance","trunk"],"capabilities":["station_strength_endurance","aerobic_durability"]},
+        {"order":2,"id":"sled_push","label":"Sled Push","work":{"distanceM":50,"loadKg":152},"movementFamilies":["sled_push","horizontal_force","leg_strength_endurance"],"capabilities":["station_strength_endurance","local_tissue_tolerance"]},
+        {"order":3,"id":"sled_pull","label":"Sled Pull","work":{"distanceM":50,"loadKg":103},"movementFamilies":["sled_pull","rope_pull","posterior_chain","grip"],"capabilities":["station_strength_endurance","local_tissue_tolerance"]},
+        {"order":4,"id":"burpee_broad_jump","label":"Burpee Broad Jump","work":{"distanceM":80},"movementFamilies":["burpee","broad_jump","ground_contact","horizontal_loc...12446 chars truncated...

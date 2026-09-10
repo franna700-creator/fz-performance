@@ -1,0 +1,150 @@
+/* FZ Performance v0.7 — authoritative visual system.
+   Loaded last. Product truth never lives in CSS. */
+:root{
+  color-scheme:dark;
+  --fz-brand-yellow:#f5cf19;
+  --fz-brand-black:#050505;
+  --fz-bg:#050505;
+  --fz-surface-1:#090909;
+  --fz-surface-2:#0e0e0e;
+  --fz-surface-3:#141414;
+  --fz-surface-raised:#181818;
+  --fz-border:#2b2b2b;
+  --fz-border-strong:#3a3a3a;
+  --fz-text:#f3f3ee;
+  --fz-text-muted:#aaa9a2;
+  --fz-text-subtle:#77766f;
+  --fz-accent:var(--fz-brand-yellow);
+  --fz-success:#9bd6ad;
+  --fz-danger:#ff8585;
+  --fz-warning:var(--fz-brand-yellow);
+  --fz-radius-sm:10px;
+  --fz-radius-md:14px;
+  --fz-radius-lg:18px;
+  --fz-radius-pill:999px;
+  --fz-shadow-raised:0 16px 44px rgba(0,0,0,.28);
+  --fz-control-height:44px;
+  --fz-content-max:1440px;
+  --fz-space-1:4px;
+  --fz-space-2:8px;
+  --fz-space-3:12px;
+  --fz-space-4:16px;
+  --fz-space-5:24px;
+  --fz-space-6:32px;
+  --fz-font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  /* Compatibility tokens used by the retained shell/layout layer. */
+  --yellow:var(--fz-accent);
+  --green:var(--fz-success);
+  --red:var(--fz-danger);
+  --fz-control-h:var(--fz-control-height);
+  --fz-radius-control:var(--fz-radius-sm);
+  --fz-gap-tight:var(--fz-space-2);
+  --fz-gap-card:var(--fz-space-3);
+}
+
+html{background:var(--fz-bg);scroll-behavior:smooth}
+body{background:var(--fz-bg);color:var(--fz-text);font-family:var(--fz-font);text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.main{max-width:var(--fz-content-max)}
+
+/* Typography hierarchy: compact, but never dependent on microscopic text. */
+.mast h1{letter-spacing:-.045em}
+.section-head h2{color:var(--fz-text);letter-spacing:-.025em}
+.section-head p,.subtitle,.muted,.chart-meta,.microline,.fz-live-footnote{color:var(--fz-text-muted);font-size:12px;line-height:1.55}
+.eyebrow,.status-card small,.fz-live-chart-head small,.m-label,.cap-name{font-size:10px;line-height:1.35;letter-spacing:.065em;text-transform:uppercase}
+.card p,.status-card p,.fz-athlete-memory-event>p,.fz-session-events p{font-size:12px;line-height:1.55}
+.fz-provenance-strip b,.fz-athlete-memory-link small,.fz-athlete-memory-top>span{font-size:9px;line-height:1.35;letter-spacing:.06em}
+.fz-provenance-strip span,.fz-athlete-memory-link strong,.fz-athlete-memory-link span,.fz-training-meta span,.fz-athlete-memory-cats b{font-size:10px;line-height:1.4}
+
+/* Surface hierarchy is shared by every product page. */
+.card,.status-card,.fz-training-card,.fz-athlete-memory-event,.fz-live-chart-v3,.fz-athlete-memory-shell{
+  background:var(--fz-surface-2);
+  border-color:var(--fz-border);
+  border-radius:var(--fz-radius-md);
+}
+.card.rich,.fz-athlete-memory-shell{background:var(--fz-surface-1)}
+.fz-clean-readiness,.fz-clean-recommendation{box-shadow:var(--fz-shadow-raised)}
+.page>.section+.section{margin-top:var(--fz-space-5)}
+.section-head{margin-bottom:var(--fz-space-3)}
+
+/* FZ brand semantics: yellow means active/FZ-selected/actionable, not generic decoration. */
+.nav button[data-page],.bottom button[data-page],
+.fz-live-refresh,.fz-training-sync-toolbar button,.fz-link-button,.fz-more,
+.fz-training-lenses button,.fz-athlete-memory-filters button,.fz-athlete-memory-relationship button{
+  min-height:var(--fz-control-height);
+  border-radius:var(--fz-radius-sm);
+  font-family:var(--fz-font);
+  font-size:11px;
+  font-weight:750;
+  transition:border-color .14s ease,background .14s ease,color .14s ease,transform .14s ease;
+}
+.nav button[data-page].active,.bottom button[data-page].active,
+.fz-training-lenses button.active,.fz-athlete-memory-filters button.active,.fz-athlete-memory-relationship button.active{
+  border-color:var(--fz-accent);
+  color:var(--fz-text);
+}
+.fz-live-refresh,.fz-training-sync-toolbar button,.fz-link-button,.fz-more{
+  border:1px solid var(--fz-border-strong);
+  background:var(--fz-surface-3);
+  color:var(--fz-text);
+}
+.fz-live-refresh:hover,.fz-training-sync-toolbar button:hover,.fz-link-button:hover,.fz-more:hover{
+  border-color:var(--fz-accent);
+  background:#17160c;
+}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--fz-accent)!important;
+  outline-offset:3px!important;
+}
+
+/* Status is semantic and consistent across the product. */
+.pill,.tag,.live-state,.fz-live-freshness{border-radius:var(--fz-radius-pill)}
+.pill.good,.fz-live-freshness.good{border-color:#2d5d3d;color:var(--fz-success)}
+.pill.bad,.fz-live-freshness.bad{border-color:#673232;color:var(--fz-danger)}
+.pill.warn,.fz-live-freshness.warn{border-color:#6b5d18;color:var(--fz-warning)}
+
+/* Living-state treatment: source freshness is visible but calm. */
+[data-dynamic-source]{position:relative}
+[data-dynamic-source]::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:2px;
+  border-radius:2px;
+  background:linear-gradient(180deg,var(--fz-accent),rgba(245,207,25,0));
+  opacity:.45;
+  pointer-events:none;
+}
+.fz-live-freshness i{background:currentColor}
+[data-freshness="LIVE"] .fz-live-freshness i{animation:fz-live-pulse 2.4s ease-in-out infinite}
+@keyframes fz-live-pulse{0%,100%{opacity:.45;transform:scale(.86)}50%{opacity:1;transform:scale(1.08)}}
+
+/* Charts share the brand language and remain readable without colour alone. */
+.fz-clean-chart svg path,.fz-live-series-line{stroke:var(--fz-accent)}
+.fz-clean-chart svg circle{stroke:var(--fz-accent);fill:var(--fz-surface-1)}
+.fz-chart-tooltip,.fz-live-scrub-tip{border-radius:var(--fz-radius-sm);box-shadow:var(--fz-shadow-raised)}
+.fz-quality-note{background:var(--fz-surface-1);border-color:var(--fz-border)}
+
+/* Dense metadata is grouped, not shrunk. */
+.fz-training-meta span,.fz-athlete-memory-cats b,.fz-rollup b,.fz-rollup span,.fz-athlete-voice-counts span,.fz-athlete-memory-stats span{
+  border-color:var(--fz-border);
+  background:var(--fz-surface-1);
+  border-radius:var(--fz-radius-pill);
+}
+.fz-provenance-strip{background:var(--fz-surface-1);border-color:var(--fz-border);border-radius:var(--fz-radius-md)}
+
+/* Stable interaction states. */
+button:disabled{opacity:.55;cursor:not-allowed}
+@media(hover:hover){button:not(:disabled):active{transform:translateY(1px)}}
+
+@media(max-width:760px){
+  :root{--fz-control-height:44px}
+  .main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .section-head p,.subtitle,.muted,.chart-meta,.microline,.fz-live-footnote{font-size:12px}
+  .card p,.status-card p,.fz-athlete-memory-event>p,.fz-session-events p{font-size:12px}
+  .nav button[data-page],.bottom button[data-page],.fz-live-refresh,.fz-training-sync-toolbar button,.fz-link-button,.fz-more{min-height:44px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
