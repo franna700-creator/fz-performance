@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { evaluateRecommendation, recommendationContextFingerprint, RECOMMENDATION_ENGINE_VERSION } from '../lib/recommendation-engine.js';
+import { deriveConstraintSeverity } from '../lib/adaptive-context.js';
 
 const schema=JSON.parse(await fs.readFile('schemas/recommendation-shadow.schema.json','utf8'));
 assert.equal(schema.properties.mode.const,'SHADOW');
 assert.equal(schema.properties.rules.properties.mayNotAlterToday.const,true);
+assert.equal(deriveConstraintSeverity(null,'READY Recovered No material local limiter'),'NONE','benign negated limiter wording must not manufacture a constraint');
+assert.equal(deriveConstraintSeverity(null,'READY Recovered No pain'),'NONE','benign no-pain wording must not manufacture a constraint');
+assert.equal(deriveConstraintSeverity(null,'MIXED Not fully recovered with GI limiter'),'MODERATE');
 
 function base(overrides={}){
   return {asOf:'2026-09-10',primaryObjective:{id:'primary',name:'Primary event',role:'PRIMARY',runwayDays:79,knowledgeStatus:'QUALIFIED'},recovery:{readinessScore:82,status:'READY',systemicState:'Recovered',localConstraint:'No material local limiter',constraintSeverity:'NONE',safetyBlock:false},load:{rolling7d:100,rolling28d:400,ratio7dTo28dQuarter:1,recentAdaptCount:0},sequencing:{nextPlannedLane:null,nextPlannedWithinHours:null,nextPlannedSessionId:null},eventPressure:[],measurement:{status:'READY',hierarchyId:'hyrox-singles-v1',topGaps:[{measurementId:'running.compromised_repeatability',priority:1,tier:'PRIMARY',question:'Can compromised running repeat?'}]},materiality:{level:'UPDATE_STATE',reasonCodes:[],blocksExistingRecommendation:false},evidence:[{ref:'objective:primary',fact:'Primary objective resolved.',provenance:'fixture',quality:'DIRECT'}],uncertainty:{missing:[],assumptions:[],confidence:'HIGH'},...overrides};
