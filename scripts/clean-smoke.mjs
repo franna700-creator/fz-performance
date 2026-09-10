@@ -6,10 +6,18 @@ const css=fs.readFileSync('dist/assets/clean.css','utf8');
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
 const trendsStore=fs.readFileSync('lib/trends-store.js','utf8');
 const systemStatus=fs.readFileSync('api/system/status.js','utf8');
+const objectiveSeed=JSON.parse(fs.readFileSync('config/objective-seed.json','utf8'));
+const staticFiles=['dist/index.html',...fs.readdirSync('dist/assets').filter(name=>/\.(?:js|css)$/.test(name)).map(name=>`dist/assets/${name}`)];
+const staticText=staticFiles.map(file=>fs.readFileSync(file,'utf8')).join('\n');
+const seededAthleteEventTokens=[...new Set((objectiveSeed.events||[]).flatMap(event=>[event.id,event.name,event.date]).filter(value=>typeof value==='string'&&value.trim().length>=6))];
+const seededAthleteTruthLeaks=seededAthleteEventTokens.filter(token=>staticText.includes(token));
 const checks=[
  ['neutral static TODAY',html.includes('Loading current athlete state')&&!html.includes('STRONG SYSTEMIC REBOUND')],
  ['neutral static TRENDS',html.includes('Loading canonical longitudinal data')&&!html.includes('current day explicit zero')],
  ['clean app only',html.includes('/assets/app-clean.js')&&!html.includes('<script src="/assets/app.js" type="module"></script>')],
+ ['legacy app asset physically absent',!fs.existsSync('dist/assets/app.js')],
+ ['objective-neutral static shell',html.includes('Adaptive Performance System')&&!html.includes('HYROX System')],
+ ['no seeded athlete event truth in static dist',seededAthleteTruthLeaks.length===0],
  ['clean css',html.includes('/assets/clean.css')&&css.includes('FZ Performance consolidation layer')],
  ['four product pages',['today','trends','train','system'].every(id=>html.includes(`id="${id}"`))],
  ['two-slot cadence only',html.includes('06:00 / 20:00 SAST')&&!html.includes('06:00 / 13:00 / 20:00')&&app.includes('const slots=[6,20]')],
@@ -31,5 +39,5 @@ const checks=[
  ['legacy injector tower removed from active build',!pkg.scripts.build.includes('longitudinal-trends-v4')&&!pkg.scripts.build.includes('tranche3-option-b-ui')&&!pkg.scripts.build.includes('tranche2-live-wellness')],
  ['canonical APIs',fs.existsSync('api/trends/current.js')&&fs.existsSync('api/system/status.js')&&fs.existsSync('lib/trends-store.js')]
 ];
-let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok)bad++}if(bad)process.exit(1);
+let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok){bad++;if(name==='no seeded athlete event truth in static dist')console.error('Static athlete-truth leaks:',seededAthleteTruthLeaks.join(', '));}}if(bad)process.exit(1);
 console.log('PASS consolidated FZ build');

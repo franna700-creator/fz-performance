@@ -5,6 +5,7 @@ const root=process.cwd();
 const dist=path.join(root,'dist');
 const htmlPath=path.join(dist,'index.html');
 const cssPath=path.join(dist,'assets','app.css');
+const legacyAppPath=path.join(dist,'assets','app.js');
 const cleanJs=path.join(root,'src','app-clean.js');
 const cleanCss=path.join(root,'src','clean.css');
 const liveJs=path.join(root,'src','live-physiology.js');
@@ -30,10 +31,12 @@ html=html
   .replace('<link href="/assets/app.css" rel="stylesheet"/>','<link href="/assets/app.css" rel="stylesheet"/><link href="/assets/clean.css" rel="stylesheet"/><link href="/assets/live-physiology.css" rel="stylesheet"/><link href="/assets/training-auto-sync.css" rel="stylesheet"/><link href="/assets/fz-design-system.css" rel="stylesheet"/>')
   .replace(/<div class="subtitle">[\s\S]*?<\/div><\/div><div class="fresh">/, '<div class="subtitle">Current state → live physiology → training memory → longitudinal change → provenance. Dynamic source data updates without shell deployment.</div></div><div class="fresh">')
   .replace(/<div class="side-note">[\s\S]*?<\/div><\/aside>/, '<div class="side-note">v0.7 dynamic runtime · Neon operational truth · Drive audit copy.</div></aside>')
+  .replace('FZ Performance · HYROX System','FZ Performance · Adaptive Performance System')
   .replace('Scheduled refreshes · 06:00 / 13:00 / 20:00 SAST','Scheduled intelligence state · 06:00 / 20:00 SAST')
   .replace('Scheduled refreshes · 06:00 / 20:00 SAST','Scheduled intelligence state · 06:00 / 20:00 SAST')
   .replace('<script src="/assets/app.js" type="module"></script>','<script src="/assets/live-physiology.js" type="module"></script><script src="/assets/system-intelligence.js" type="module"></script><script src="/assets/training-auto-sync.js" type="module"></script><script src="/assets/app-clean.js" type="module"></script>');
 if(html.includes('STRONG SYSTEMIC REBOUND')||html.includes('Matched Run AET · Power/HR')||html.includes('Google Drive master</b><span class="pill">CANONICAL'))throw new Error('Stale athlete-state content remains in static shell');
+if(html.includes('HYROX System'))throw new Error('Objective-specific product branding remains in static shell');
 if(html.includes('06:00 / 13:00 / 20:00'))throw new Error('Stale three-slot cadence remains in clean shell');
 for(const asset of ['/assets/app-clean.js','/assets/clean.css','/assets/live-physiology.js','/assets/live-physiology.css','/assets/training-auto-sync.js','/assets/training-auto-sync.css','/assets/system-intelligence.js','/assets/fz-design-system.css']) if(!html.includes(asset))throw new Error(`Clean runtime asset not wired: ${asset}`);
 if(html.indexOf('/assets/live-physiology.js')>html.indexOf('/assets/app-clean.js'))throw new Error('Live Physiology fetch interceptor must load before app-clean');
@@ -41,4 +44,6 @@ if(html.indexOf('/assets/system-intelligence.js')>html.indexOf('/assets/app-clea
 if(html.indexOf('/assets/training-auto-sync.js')>html.indexOf('/assets/app-clean.js'))throw new Error('Training auto-sync controller must load before app-clean');
 fs.writeFileSync(htmlPath,html);
 fs.copyFileSync(cleanJs,path.join(dist,'assets','app-clean.js'));fs.copyFileSync(cleanCss,path.join(dist,'assets','clean.css'));fs.copyFileSync(liveJs,path.join(dist,'assets','live-physiology.js'));fs.copyFileSync(liveCss,path.join(dist,'assets','live-physiology.css'));fs.copyFileSync(trainingSyncJs,path.join(dist,'assets','training-auto-sync.js'));fs.copyFileSync(trainingSyncCss,path.join(dist,'assets','training-auto-sync.css'));fs.copyFileSync(systemIntelligenceJs,path.join(dist,'assets','system-intelligence.js'));fs.copyFileSync(fzDesignCss,path.join(dist,'assets','fz-design-system.css'));
-console.log('PASS clean shell v0.7.0-rc7: dynamic physiology + training + 4.1 observability + runtime-owned TODAY/TRENDS/TRAIN/SYSTEM');
+fs.rmSync(legacyAppPath,{force:true});
+if(fs.existsSync(legacyAppPath))throw new Error('Legacy static app.js survived clean-shell hardening');
+console.log('PASS clean shell v0.7.0-rc7: dynamic physiology + training + 4.1 observability + runtime-owned TODAY/TRENDS/TRAIN/SYSTEM; legacy static athlete asset removed');
