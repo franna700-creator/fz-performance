@@ -1,1 +1,32 @@
-import assert from 'node:assert/strict';import fs from 'node:fs';const memory=fs.readFileSync('api/training/memory.js','utf8'),today=fs.readFileSync('api/training/today.js','utf8'),trendsApi=fs.readFileSync('api/trends/current.js','utf8'),trends=fs.readFileSync('lib/trends-dynamic.js','utf8'),runtimeSync=fs.readFileSync('lib/training-sync-runtime.js','utf8'),reconcile=fs.readFileSync('lib/athlete-memory-reconcile.js','utf8'),presentation=fs.readFileSync('lib/training-presentation.js','utf8'),shell=fs.readFileSync('dist/index.html','utf8'),systemUi=fs.readFileSync('dist/assets/system-intelligence.js','utf8');assert.match(memory,/training-sync-runtime/,'Training Memory source refresh must include late binding');assert.match(today,/training-sync-runtime/,'Training Today source refresh must include late binding');assert.match(memory,/decorateTrainingRange/,'Training Memory must use derived canonical presentation');assert.match(today,/decorateTrainingRange/,'Training Today must use derived canonical presentation');assert.match(trendsApi,/buildDynamicCurrentTrends/,'Trends API must use dynamic best-evidence builder');assert.match(trends,/MONOTONIC_BEST_AVAILABLE/,'Trends must declare monotonic best-evidence policy');assert.match(runtimeSync,/reconcileUnlinkedAthleteEvents/,'source sync must trigger Athlete Memory late binding');assert.match(reconcile,/LATE_TIME_CONTEXT_MATCH/,'late-binding must remain explicit and auditable');assert.match(presentation,/source_title/,'derived identity must retain raw source identity');assert.ok(shell.includes('/assets/fz-design-system.css'),'authoritative FZ design system must be wired');assert.ok(!shell.includes('/assets/release-polish.css'),'superseded tactical release-polish stylesheet must stay removed');assert.ok(shell.indexOf('/assets/fz-design-system.css')>shell.indexOf('/assets/clean.css')&&shell.indexOf('/assets/fz-design-system.css')>shell.indexOf('/assets/live-physiology.css')&&shell.indexOf('/assets/fz-design-system.css')>shell.indexOf('/assets/training-auto-sync.css'),'FZ design system must load after feature/layout styles');assert.match(systemUi,/Dynamic Runtime Integrity/,'SYSTEM must expose broad dynamic integrity status');assert.match(systemUi,/MONOTONIC BEST AVAILABLE|evidencePolicy/,'SYSTEM must expose Trends evidence policy');console.log('PASS v0.7 RC7 systemic runtime consistency gate');
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const memory = fs.readFileSync('api/training/memory.js','utf8');
+const today = fs.readFileSync('api/training/today.js','utf8');
+const trendsApi = fs.readFileSync('api/trends/current.js','utf8');
+const trends = fs.readFileSync('lib/trends-dynamic.js','utf8');
+const runtimeSync = fs.readFileSync('lib/training-sync-runtime.js','utf8');
+const reconcile = fs.readFileSync('lib/athlete-memory-reconcile.js','utf8');
+const presentation = fs.readFileSync('lib/training-presentation.js','utf8');
+const shell = fs.readFileSync('dist/index.html','utf8');
+const systemUi = fs.readFileSync('dist/assets/system-intelligence.js','utf8');
+
+assert.match(memory, /training-sync-runtime/, 'Training Memory source refresh must include late binding');
+assert.match(today, /training-sync-runtime/, 'Training Today source refresh must include late binding');
+assert.match(memory, /decorateTrainingRange/, 'Training Memory must use derived canonical presentation');
+assert.match(today, /decorateTrainingRange/, 'Training Today must use derived canonical presentation');
+assert.match(trendsApi, /buildDynamicCurrentTrends/, 'Trends API must use dynamic best-evidence builder');
+assert.match(trends, /MONOTONIC_BEST_AVAILABLE/, 'Trends must declare monotonic best-evidence policy');
+assert.match(runtimeSync, /reconcileUnlinkedAthleteEvents/, 'source sync must trigger Athlete Memory late binding');
+assert.match(reconcile, /resolveLateAssociation/, 'late-binding must use the canonical association resolver');
+assert.match(reconcile, /linkResolution/, 'late-binding must persist an explicit audit payload');
+assert.match(reconcile, /method: resolution\.method/, 'late-binding audit must persist the resolver method');
+assert.match(reconcile, /confidence: resolution\.confidence/, 'late-binding audit must persist resolver confidence');
+assert.match(reconcile, /appendAthleteEvent/, 'late-binding must append auditable system evidence');
+assert.match(presentation, /source_title/, 'derived identity must retain raw source identity');
+assert.ok(shell.includes('/assets/fz-design-system.css'), 'authoritative FZ design system must be wired');
+assert.ok(!shell.includes('/assets/release-polish.css'), 'superseded tactical release-polish stylesheet must stay removed');
+assert.ok(shell.indexOf('/assets/fz-design-system.css') > shell.indexOf('/assets/clean.css') && shell.indexOf('/assets/fz-design-system.css') > shell.indexOf('/assets/live-physiology.css') && shell.indexOf('/assets/fz-design-system.css') > shell.indexOf('/assets/training-auto-sync.css'), 'FZ design system must load after feature/layout styles');
+assert.match(systemUi, /Dynamic Runtime Integrity/, 'SYSTEM must expose broad dynamic integrity status');
+assert.match(systemUi, /MONOTONIC BEST AVAILABLE|evidencePolicy/, 'SYSTEM must expose Trends evidence policy');
+console.log('PASS v0.7 RC7 systemic runtime consistency gate');

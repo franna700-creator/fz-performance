@@ -48,38 +48,12 @@
     "RC7 completes the canonical data-contract registry with owner layer, freshness, missing/fallback semantics, provenance and consumers for every current decision-driving concept",
     "RC7 cross-validates contract refresh triggers and consumers against the transitive runtime dependency graph so registry and invalidation logic cannot silently drift"
   ],
-  "dynamicRuntime": {
-    "canonicalRereadMs": 300000,
-    "physiologySourceCheckMs": 300000,
-    "trainingSourceCheckMs": 300000,
-    "wakeThrottleMs": 120000,
-    "manualGarminRefresh": true,
-    "manualWorkoutSync": true,
-    "lateBoundAthleteMemory": true,
-    "trainingEvidencePolicy": "MONOTONIC_BEST_AVAILABLE",
-    "requiresShellDeploymentForDataRefresh": false
-  },
-  "adaptiveFoundation": {
-    "historicalIntentLanes": ["ABSORB","MAINTAIN","ADAPT"],
-    "historicalIntentIsDescriptiveOnly": true,
-    "adaptiveChoiceSchema": "1.0",
-    "activeAthleteOverrideUi": false
-  },
-  "intelligenceBoundary": {
-    "materialityEngine": "4.1.0",
-    "observability": true,
-    "automaticRecommendationRecompute": false,
-    "tranche4_2": "versioned recommendation recomputation",
-    "tranche4_3": "athlete ABSORB / MAINTAIN / ADAPT accept-or-override",
-    "tranche4_4": "ranked session composer"
-  },
-  "releaseGate": {
-    "deterministicBuild":"required","staticChecks":"required","schemaChecks":"required","dynamicRuntimeChecks":"required","lateBindingChecks":"required","monotonicEvidenceChecks":"required","classificationChecks":"required","materialityChecks":"required","preview":"one deliberate pinned preview","browserSmoke":"required desktop + mobile","productionPromotion":"exact-tested-candidate only","productionReadback":"required","rollback":"required","designSystemChecks":"required","systemicInvariantChecks":"required","eventObjectiveChecks":"required","dataContractChecks":"required","dependencyGraphChecks":"required","reconciliationSweepChecks":"required","eventDemandProfileChecks":"required","eventIntelligenceChecks":"required","eventIntakeSchemaChecks":"required","contractDependencyClosureChecks":"required","migration005Rehearsal":"passed isolated branch; production unchanged"
-  },
+  "dynamicRuntime": {"canonicalRereadMs":300000,"physiologySourceCheckMs":300000,"trainingSourceCheckMs":300000,"wakeThrottleMs":120000,"manualGarminRefresh":true,"manualWorkoutSync":true,"lateBoundAthleteMemory":true,"trainingEvidencePolicy":"MONOTONIC_BEST_AVAILABLE","requiresShellDeploymentForDataRefresh":false},
+  "adaptiveFoundation": {"historicalIntentLanes":["ABSORB","MAINTAIN","ADAPT"],"historicalIntentIsDescriptiveOnly":true,"adaptiveChoiceSchema":"1.0","activeAthleteOverrideUi":false},
+  "intelligenceBoundary": {"materialityEngine":"4.1.0","observability":true,"automaticRecommendationRecompute":false,"tranche4_2":"versioned recommendation recomputation","tranche4_3":"athlete ABSORB / MAINTAIN / ADAPT accept-or-override","tranche4_4":"ranked session composer"},
+  "releaseGate": {"deterministicBuild":"required","staticChecks":"required","schemaChecks":"required","dynamicRuntimeChecks":"required","lateBindingChecks":"required","monotonicEvidenceChecks":"required","classificationChecks":"required","materialityChecks":"required","preview":"one deliberate pinned preview","browserSmoke":"required desktop + mobile","productionPromotion":"exact-tested-candidate only","productionReadback":"required","rollback":"required","designSystemChecks":"required","systemicInvariantChecks":"required","eventObjectiveChecks":"required","dataContractChecks":"required","dependencyGraphChecks":"required","reconciliationSweepChecks":"required","eventDemandProfileChecks":"required","eventIntelligenceChecks":"required","eventIntakeSchemaChecks":"required","contractDependencyClosureChecks":"required","migration005Rehearsal":"passed isolated branch; production unchanged"},
   "designSystem": {"contract":"FZ_DESIGN_SYSTEM_V0_7","brandBlack":"#050505","brandYellow":"#f5cf19","authoritativeStylesheet":"/assets/fz-design-system.css","minimumTouchControlPx":44,"visibleKeyboardFocus":true,"reducedMotion":true,"livingStateRule":"freshness/status transitions carry motion; no decorative telemetry animation"},
   "systemicRepair": {"contract":"SYSTEMIC_REPAIR_STANDARD","repairAtInvariantLayer":true,"crossSurfacePropagationRequired":true,"regressionGateRequired":true,"dateSpecificRuntimePatchesProhibited":true,"dataContractRegistry":true,"dependencyDrivenInvalidation":true,"reconciliationSweepPrepared":true},
-  "objectiveFoundation": {
-    "contract":"EVENT_OBJECTIVE_GRAPH_V1","strategicVsNearTermSeparated":true,"sharedCapabilityTransfer":true,"currentPrimary":"hyrox-johannesburg-2026-11-28","secondaryPerformanceTarget":{"event":"hoka-half-pretoria-2026-09-24","targetSeconds":6600,"targetPaceSecondsPerKm":313},"validationEvent":{"event":"deadly-dozen-uj-2026-09-20","desiredSeconds":3600,"activeDevelopmentTarget":false},"evergreenMaintenanceActivation":"CONFIRM_BEFORE_ACTIVATION","persistenceMigration":"005_event_objective_graph.sql REHEARSED_IDEMPOTENT_NOT_APPLIED; includes FK/index hardening","eventDemandProfiles":"EVENT_DEMAND_PROFILES_V1","deadlyDozenFormatProfile":"deadly-dozen-track-male-sa","hyroxFormatProfile":"hyrox-open-men-2025-26","halfMarathonFormatProfile":"half-marathon-road","eventIngestionContract":"EVENT_INTELLIGENCE_INGESTION_STANDARD","unknownEventPolicy":"SCHEDULE_CONTEXT_ALLOWED; RESEARCH_REQUIRED_BEFORE_CAPABILITY_PRIORITY","overlapModel":"DIRECTIONAL_CAPABILITY_STATION_RUNNING_MODALITY_SEQUENCE","transferPotentialVsNetTrainingValue":"SEPARATE","deadlyDozenScheduleResolution":{"activeDate":"2026-09-20","status":"RESOLVED_ATHLETE_CONFIRMED","externalDiscrepancy":"2026-09-19 PROVENANCE_ONLY"}
-  },
-  "athleteInputIngestion": {"authoritativeProjectSource":"FZ_ATHLETE_INPUT_INTELLIGENCE_INGESTION_STANDARD.md","repositoryBinding":"docs/FZ_ATHLETE_INPUT_INTELLIGENCE_INGESTION_STANDARD.md","alwaysOnTrigger":true,"runtimeDataNotRelease":true,"persistenceClaimRequiresOperation":true}
+  "objectiveFoundation": {"contract":"EVENT_OBJECTIVE_GRAPH_V1","strategicVsNearTermSeparated":true,"sharedCapabilityTransfer":true,"currentPrimary":"hyrox-johannesburg-2026-11-28","secondaryPerformanceTarget":{"event":"hoka-half-pretoria-2026-09-24","targetSeconds":6600,"targetPaceSecondsPerKm":313},"validationEvent":{"event":"deadly-dozen-uj-2026-09-20","desiredSeconds":3600,"activeDevelopmentTarget":false},"evergreenMaintenanceActivation":"CONFIRM_BEFORE_ACTIVATION","persistenceMigration":"005_event_objective_graph.sql REHEARSED_IDEMPOTENT_NOT_APPLIED; includes FK/index hardening","eventDemandProfiles":"EVENT_DEMAND_PROFILES_V1","deadlyDozenFormatProfile":"deadly-dozen-track-male-sa","hyroxFormatProfile":"hyrox-open-men-2025-26","halfMarathonFormatProfile":"half-marathon-road","eventIngestionContract":"EVENT_INTELLIGENCE_INGESTION_STANDARD","unknownEventPolicy":"SCHEDULE_CONTEXT_ALLOWED; RESEARCH_REQUIRED_BEFORE_CAPABILITY_PRIORITY","overlapModel":"DIRECTIONAL_CAPABILITY_STATION_RUNNING_MODALITY_SEQUENCE","transferPotentialVsNetTrainingValue":"SEPARATE","deadlyDozenScheduleResolution":{"activeDate":"2026-09-20","status":"RESOLVED_ATHLETE_CONFIRMED","externalDiscrepancy":"2026-09-19 PROVENANCE_ONLY"}},
+  "athleteInputIngestion": {"authoritativeProjectSource":"FZ_ATHLETE_INPUT_INTELLIGENCE_INGESTION_STANDARD.md","repositoryBinding":"docs/FZ_ATHLETE_INPUT_INTELLIGENCE_INGESTION_STANDARD.md","alwaysOnTrigger":true,"runtimeDataNotRelease":true,"persistenceClaimRequiresOperation":true,"contractSmoke":"scripts/athlete-input-ingestion-standard-smoke.mjs"}
 }

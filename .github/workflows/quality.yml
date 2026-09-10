@@ -72,6 +72,7 @@ jobs:
       - run: node --check scripts/training-evidence-smoke.mjs
       - run: node --check scripts/training-classifier-smoke.mjs
       - run: node --check scripts/athlete-memory-reconcile-smoke.mjs
+      - run: node --check scripts/athlete-input-ingestion-standard-smoke.mjs
       - run: node --check scripts/runtime-consistency-smoke.mjs
       - run: node --check scripts/adaptive-choice-schema-smoke.mjs
       - run: node --check scripts/design-system-smoke.mjs
@@ -91,6 +92,7 @@ jobs:
       - run: node scripts/training-evidence-smoke.mjs
       - run: node scripts/training-classifier-smoke.mjs
       - run: node scripts/athlete-memory-reconcile-smoke.mjs
+      - run: node scripts/athlete-input-ingestion-standard-smoke.mjs
       - run: node scripts/runtime-consistency-smoke.mjs
       - run: node scripts/adaptive-choice-schema-smoke.mjs
       - run: node scripts/design-system-smoke.mjs
