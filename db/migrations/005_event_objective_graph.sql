@@ -40,8 +40,10 @@ CREATE TABLE IF NOT EXISTS fz_objectives (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS fz_objectives_active_date_idx ON fz_objectives (state, role, starts_on, ends_on);
-CREATE INDEX IF NOT EXISTS fz_objectives_format_profile_idx ON fz_objectives (format_profile_id) WHERE format_profile_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS fz_objectives_active_date_idx
+  ON fz_objectives (state, role, starts_on, ends_on);
+CREATE INDEX IF NOT EXISTS fz_objectives_format_profile_idx
+  ON fz_objectives (format_profile_id) WHERE format_profile_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS fz_event_source_evidence (
   source_evidence_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -54,7 +56,8 @@ CREATE TABLE IF NOT EXISTS fz_event_source_evidence (
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS fz_event_source_evidence_lookup_idx ON fz_event_source_evidence (objective_id, observed_at DESC, source_evidence_id DESC);
+CREATE INDEX IF NOT EXISTS fz_event_source_evidence_lookup_idx
+  ON fz_event_source_evidence (objective_id, observed_at DESC, source_evidence_id DESC);
 
 CREATE TABLE IF NOT EXISTS fz_objective_capabilities (
   objective_id TEXT NOT NULL REFERENCES fz_objectives(objective_id) ON DELETE CASCADE,
@@ -79,8 +82,10 @@ CREATE TABLE IF NOT EXISTS fz_event_transfer_assessments (
   effective_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS fz_event_transfer_assessments_lookup_idx ON fz_event_transfer_assessments (source_objective_id, target_objective_id, effective_at DESC, assessment_id DESC);
-CREATE INDEX IF NOT EXISTS fz_event_transfer_assessments_target_lookup_idx ON fz_event_transfer_assessments (target_objective_id, source_objective_id, effective_at DESC, assessment_id DESC);
+CREATE INDEX IF NOT EXISTS fz_event_transfer_assessments_lookup_idx
+  ON fz_event_transfer_assessments (source_objective_id, target_objective_id, effective_at DESC, assessment_id DESC);
+CREATE INDEX IF NOT EXISTS fz_event_transfer_assessments_target_lookup_idx
+  ON fz_event_transfer_assessments (target_objective_id, source_objective_id, effective_at DESC, assessment_id DESC);
 
 CREATE TABLE IF NOT EXISTS fz_objective_revisions (
   revision_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -91,6 +96,7 @@ CREATE TABLE IF NOT EXISTS fz_objective_revisions (
   payload JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS fz_objective_revisions_lookup_idx ON fz_objective_revisions (objective_id, effective_at DESC, revision_id DESC);
+CREATE INDEX IF NOT EXISTS fz_objective_revisions_lookup_idx
+  ON fz_objective_revisions (objective_id, effective_at DESC, revision_id DESC);
 
 COMMIT;

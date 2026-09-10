@@ -2,81 +2,22 @@
   "version": "1.0",
   "asOf": "2026-09-10",
   "capabilities": [
-    {
-      "id": "compromised_running",
-      "name": "Compromised running",
-      "category": "HYBRID",
-      "description": "Ability to preserve useful running mechanics and pace after meaningful non-running work."
-    },
-    {
-      "id": "running_economy",
-      "name": "Running economy",
-      "category": "RUNNING",
-      "description": "Cost of producing sustainable running speed at controlled effort."
-    },
-    {
-      "id": "aerobic_durability",
-      "name": "Aerobic durability",
-      "category": "AEROBIC",
-      "description": "Ability to sustain output over prolonged work without disproportionate drift or recovery cost."
-    },
-    {
-      "id": "threshold_aerobic_power",
-      "name": "Threshold / high-aerobic power",
-      "category": "AEROBIC",
-      "description": "Ability to sustain and repeat work near the upper aerobic domain."
-    },
-    {
-      "id": "mixed_modality_repeatability",
-      "name": "Mixed-modality repeatability",
-      "category": "HYBRID",
-      "description": "Ability to repeat useful work across alternating modalities without excessive decay."
-    },
-    {
-      "id": "station_strength_endurance",
-      "name": "Station strength-endurance",
-      "category": "HYROX",
-      "description": "Ability to maintain quality and output across strength-endurance race stations."
-    },
-    {
-      "id": "transition_efficiency",
-      "name": "Transition efficiency",
-      "category": "HYBRID",
-      "description": "Ability to move between modalities with limited time and physiological cost."
-    },
-    {
-      "id": "local_tissue_tolerance",
-      "name": "Local tissue tolerance",
-      "category": "RECOVERY",
-      "description": "Ability to tolerate event-relevant local muscular loading without disproportionate delayed cost."
-    },
-    {
-      "id": "race_pacing",
-      "name": "Race pacing",
-      "category": "EXECUTION",
-      "description": "Ability to distribute effort appropriately across the specific event demand."
-    }
+    {"id":"compromised_running","name":"Compromised running","category":"HYBRID","description":"Ability to preserve useful running mechanics and pace after meaningful non-running work."},
+    {"id":"running_economy","name":"Running economy","category":"RUNNING","description":"Cost of producing sustainable running speed at controlled effort."},
+    {"id":"aerobic_durability","name":"Aerobic durability","category":"AEROBIC","description":"Ability to sustain output over prolonged work without disproportionate drift or recovery cost."},
+    {"id":"threshold_aerobic_power","name":"Threshold / high-aerobic power","category":"AEROBIC","description":"Ability to sustain and repeat work near the upper aerobic domain."},
+    {"id":"mixed_modality_repeatability","name":"Mixed-modality repeatability","category":"HYBRID","description":"Ability to repeat useful work across alternating modalities without excessive decay."},
+    {"id":"station_strength_endurance","name":"Station strength-endurance","category":"HYROX","description":"Ability to maintain quality and output across strength-endurance race stations."},
+    {"id":"transition_efficiency","name":"Transition efficiency","category":"HYBRID","description":"Ability to move between modalities with limited time and physiological cost."},
+    {"id":"local_tissue_tolerance","name":"Local tissue tolerance","category":"RECOVERY","description":"Ability to tolerate event-relevant local muscular loading without disproportionate delayed cost."},
+    {"id":"race_pacing","name":"Race pacing","category":"EXECUTION","description":"Ability to distribute effort appropriately across the specific event demand."}
   ],
   "events": [
     {
-      "id": "deadly-dozen-uj-2026-09-20",
-      "name": "Deadly Dozen UJ",
-      "date": "2026-09-20",
-      "status": "SCHEDULED",
-      "role": "VALIDATION",
-      "strategicWeight": 0.2,
-      "objective": {
-        "type": "TIME_UNDER",
-        "targetSeconds": 3600,
-        "label": "Sub-60 minute finish",
-        "activeDevelopmentTarget": false
-      },
-      "benchmark": {
-        "date": "2026-05-01",
-        "seconds": 3660,
-        "label": "61-minute finish in May 2026"
-      },
-      "demands": [
+      "id":"deadly-dozen-uj-2026-09-20","name":"Deadly Dozen UJ","date":"2026-09-20","status":"SCHEDULED","role":"VALIDATION","strategicWeight":0.2,
+      "objective":{"type":"TIME_UNDER","targetSeconds":3600,"label":"Sub-60 minute finish","activeDevelopmentTarget":false},
+      "benchmark":{"date":"2026-05-01","seconds":3660,"label":"61-minute finish in May 2026"},
+      "demands":[
         {"capabilityId":"compromised_running","weight":0.9,"transferWeight":0.8,"specificity":"SHARED"},
         {"capabilityId":"mixed_modality_repeatability","weight":0.75,"transferWeight":0.75,"specificity":"SHARED"},
         {"capabilityId":"aerobic_durability","weight":0.55,"transferWeight":0.65,"specificity":"SHARED"},
