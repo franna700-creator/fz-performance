@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { resolveLateAssociation } from '../lib/athlete-memory-association.js';
+const session={session_id:'bike-1',local_date:'2026-09-09',actual_start_at:'2026-09-09T16:49:45Z',title:'HIIT',sport_type:'misc',session_kind:null,status:'COMPLETED'};
+const pre={local_date:'2026-09-09',occurred_at:'2026-09-09T16:20:00Z',event_type:'CONTEXT',summary:'Feeling good before the workout',payload:{memoryCategories:['STATE','SESSION']}};
+assert.equal(resolveLateAssociation(pre,[session]).session,null,'pre-workout context must remain standalone');
+const mid={local_date:'2026-09-09',occurred_at:'2026-09-09T17:43:00Z',event_type:'CONTEXT',summary:'Feeling really good during this aerobic session',payload:{memoryCategories:['STATE','SESSION','RECOVERY']}};
+assert.equal(resolveLateAssociation(mid,[session]).session?.session_id,'bike-1','clear in-session feedback must late-link');
+const post={local_date:'2026-09-09',occurred_at:'2026-09-09T17:54:44Z',event_type:'POST_SESSION_FEEDBACK',summary:'Completed the Assault Bike aerobic session and felt good throughout',payload:{memoryCategories:['SESSION','STATE']}};
+assert.equal(resolveLateAssociation(post,[session]).session?.session_id,'bike-1','clear post-session feedback must late-link');
+const aetSession={session_id:'aet-1',local_date:'2026-09-08',actual_start_at:'2026-09-08T16:20:20Z',title:'Roodepoort AET Run',sport_type:'running',session_kind:'AET',status:'STOPPED_EARLY'};
+const miscSession={session_id:'misc-1',local_date:'2026-09-08',actual_start_at:'2026-09-08T16:21:00Z',title:'Cardio',sport_type:'misc',session_kind:null,status:'COMPLETED'};
+const aetFeedback={local_date:'2026-09-08',occurred_at:'2026-09-08T16:45:43Z',event_type:'STOPPED_EARLY',summary:'Stopped the AET because of severe stomach cramps',payload:{memoryCategories:['SESSION','COST']}};
+assert.equal(resolveLateAssociation(aetFeedback,[miscSession,aetSession]).session?.session_id,'aet-1','specific session clues must resolve a crowded training window');
+console.log('PASS Athlete Memory late-binding association rules');

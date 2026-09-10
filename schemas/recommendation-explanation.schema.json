@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://fz-performance.local/schemas/recommendation-explanation.schema.json",
+  "title":"FZ Recommendation Explainability Contract",
+  "type":"object",
+  "required":["schemaVersion","recommendationId","lane","evidence","interpretation","objectiveRelevance","recommendation","uncertainty","athleteFacing"],
+  "properties":{
+    "schemaVersion":{"const":"1.0"},
+    "recommendationId":{"type":"string","minLength":1},
+    "lane":{"enum":["ABSORB","MAINTAIN","ADAPT"]},
+    "evidence":{"type":"array","minItems":1,"items":{"type":"object","required":["ref","fact","provenance","quality"],"properties":{"ref":{"type":"string"},"fact":{"type":"string"},"provenance":{"type":"string"},"quality":{"enum":["DIRECT","DERIVED","INFERRED","PROVISIONAL"]}},"additionalProperties":true}},
+    "interpretation":{"type":"array","minItems":1,"items":{"type":"string","minLength":1}},
+    "objectiveRelevance":{"type":"array","minItems":1,"items":{"type":"object","required":["objective","connection"],"properties":{"objective":{"type":"string"},"connection":{"type":"string"},"measurementIds":{"type":"array","items":{"type":"string"}}},"additionalProperties":true}},
+    "recommendation":{"type":"object","required":["whyThisLane","expectedBenefit","expectedCost"],"properties":{"whyThisLane":{"type":"string"},"expectedBenefit":{"type":"string"},"expectedCost":{"enum":["LOW","LOW_TO_MODERATE","MODERATE","MODERATE_TO_HIGH","HIGH"]},"stopOrModifyConditions":{"type":"array","items":{"type":"string"}}},"additionalProperties":true},
+    "counterfactuals":{"type":"object","properties":{"ABSORB":{"type":["string","null"]},"MAINTAIN":{"type":["string","null"]},"ADAPT":{"type":["string","null"]}},"additionalProperties":false},
+    "uncertainty":{"type":"object","required":["confidence","unknowns"],"properties":{"confidence":{"enum":["LOW","MODERATE","HIGH"]},"unknowns":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}}},"additionalProperties":true},
+    "safety":{"type":"object","properties":{"override":{"type":"boolean"},"reason":{"type":["string","null"]}},"additionalProperties":true},
+    "athleteFacing":{"type":"object","required":["headline","whyNow","objectiveConnection"],"properties":{"headline":{"type":"string","minLength":1},"whyNow":{"type":"string","minLength":1},"objectiveConnection":{"type":"string","minLength":1},"caveat":{"type":["string","null"]}},"additionalProperties":false}
+  },
+  "additionalProperties":true
+}

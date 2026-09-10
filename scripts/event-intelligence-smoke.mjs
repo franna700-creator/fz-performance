@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { assessEventFormatAdequacy, buildEventIntelligenceContext, compareEventDemandProfiles, deriveEventDemandFingerprint, prepareEventCandidate } from '../lib/event-intelligence.js';
+
+const formats = JSON.parse(await fs.readFile('config/event-format-profiles.json','utf8'));
+const objectives = JSON.parse(await fs.readFile('config/objective-seed.json','utf8'));
+const byId = id => formats.profiles.find(profile => profile.id === id);
+const deadly = byId('deadly-dozen-track-male-sa');
+const hyrox = byId('hyrox-open-men-2025-26');
+const half = byId('half-marathon-road');
+
+assert.equal(assessEventFormatAdequacy(deadly).status,'READY');
+assert.equal(assessEventFormatAdequacy(hyrox).status,'READY');
+const deadlyFp = deriveEventDemandFingerprint(deadly);
+assert.equal(deadlyFp.run.segments,12);
+assert.ok(deadlyFp.capabilitySignals.compromised_running > 0.85);
+assert.ok(deadlyFp.modalities.includes('LOADED_CARRY'));
+
+const deadlyToHyrox = compareEventDemandProfiles(deadly,hyrox,{ calibrationRules:formats.transferRules });
+assert.equal(deadlyToHyrox.status,'READY');
+assert.equal(deadlyToHyrox.interchangeable,false);
+assert.ok(deadlyToHyrox.score >= 0.5,'Deadly Dozen should materially support but not equal HYROX');
+assert.ok(deadlyToHyrox.sharedCapabilities.some(row => row.capabilityId === 'compromised_running'));
+assert.ok(deadlyToHyrox.targetStationCoverage.some(row => row.target === 'SkiErg' && row.score < 0.5));
+assert.equal(deadlyToHyrox.netTrainingValueResolved,false);
+assert.ok(deadlyToHyrox.calibrationRules.length >= 3,'known exact transfer rules should calibrate generic overlap');
+
+const halfToHyrox = compareEventDemandProfiles(half,hyrox,{ calibrationRules:formats.transferRules });
+assert.equal(halfToHyrox.interchangeable,false);
+assert.ok(halfToHyrox.sharedCapabilities.some(row => row.capabilityId === 'running_economy'));
+assert.ok(halfToHyrox.targetStationCoverage.every(row => row.score === 0));
+
+const unknown = prepareEventCandidate({ event:{id:'future-race',name:'Future Race',date:'2026-10-10'}, profile:null, primaryProfile:hyrox });
+assert.equal(unknown.status,'RESEARCH_REQUIRED');
+assert.equal(unknown.overlapToPrimary,null);
+assert.ok(unknown.research.requiredFields.some(x => x.includes('sequence')));
+
+const athleteProfile = {
+  id:'athlete-described-hybrid',eventFamily:'NEW_HYBRID',variant:'OPEN',sourceAuthority:'ATHLETE_CONFIRMED_STRUCTURE',sourceRefs:['ATHLETE_CONFIRMATION'],
+  format:{runSegments:4,runSegmentMeters:800,totalRunMeters:3200,stationCount:4,sequence:'RUN_THEN_STATION_X4',transitionDensity:'HIGH'},
+  stations:[
+    {order:1,name:'Carry',movement:'CARRY',subtype:'FARMERS_CARRY',tags:['grip_endurance','loaded_carry']},
+    {order:2,name:'Burpees',movement:'BURPEE_LOCOMOTION',subtype:'BURPEE_BROAD_JUMP',tags:['burpee_efficiency']},
+    {order:3,name:'Lunges',movement:'LUNGE',subtype:'LOADED_LUNGE',tags:['unilateral_leg_endurance']},
+    {order:4,name:'Press',movement:'SQUAT_OVERHEAD',subtype:'THRUSTER',tags:['overhead_endurance','squat_endurance']}
+  ],dominantDemands:['mixed_modality_repeatability','compromised_running']
+};
+const athleteCandidate = prepareEventCandidate({ event:{id:'athlete-hybrid',name:'Athlete Hybrid',date:'2026-10-18'}, profile:athleteProfile, primaryProfile:hyrox });
+assert.equal(athleteCandidate.status,'READY_FOR_OBJECTIVE_GRAPH');
+assert.equal(athleteCandidate.adequacy.status,'READY_ATHLETE_STRUCTURE');
+assert.equal(athleteCandidate.demandTaxonomy.taxonomyVersion,'1.0');
+assert.ok(athleteCandidate.overlapToPrimary.score > 0);
+assert.equal(athleteCandidate.overlapToPrimary.calibrationRules.length,0,'new event must not require bespoke pairwise calibration rules');
+
+const context = buildEventIntelligenceContext({ objectiveRegistry:objectives, formatRegistry:formats, nowDate:'2026-09-10' });
+assert.equal(context.primaryEvent.id,'hyrox-johannesburg-2026-11-28');
+assert.ok(context.eventKnowledge.every(row => row.knowledgeStatus === 'QUALIFIED'));
+assert.ok(context.eventKnowledge.every(row => row.demandTaxonomy?.taxonomyVersion === '1.0'));
+assert.ok(context.capabilityPriorities.some(row => row.capabilityId === 'compromised_running'));
+assert.equal(context.rules.unknownEventMayBeScheduledButCannotInfluenceCapabilityPriority,true);
+
+const unknownScheduled = {
+  ...objectives,
+  events:[...objectives.events,{id:'unknown-secondary',name:'Unknown Secondary',date:'2026-10-01',status:'SCHEDULED',role:'SECONDARY',strategicWeight:0.5,objective:{type:'VALIDATION'},demands:[{capabilityId:'compromised_running',weight:1,transferWeight:1,specificity:'SHARED'}],formatProfileId:'not-yet-known'}]
+};
+const gated = buildEventIntelligenceContext({ objectiveRegistry:unknownScheduled, formatRegistry:formats, nowDate:'2026-09-10' });
+const unknownKnowledge = gated.eventKnowledge.find(row => row.eventId === 'unknown-secondary');
+assert.equal(unknownKnowledge.knowledgeStatus,'PENDING_RESEARCH');
+const compromised = gated.capabilityPriorities.find(row => row.capabilityId === 'compromised_running');
+assert.ok(!compromised.events.some(row => row.eventId === 'unknown-secondary'),'unqualified event must not influence capability priority');
+
+console.log('PASS event intelligence intake, research gate, directional overlap, event-specific gaps and qualified capability propagation');

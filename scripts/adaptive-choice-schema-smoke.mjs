@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const schema = JSON.parse(fs.readFileSync('schemas/adaptive-choice.schema.json','utf8'));
+assert.equal(schema.properties.schemaVersion.const, '1.0');
+assert.deepEqual(schema.$defs.lane.enum, ['ABSORB','MAINTAIN','ADAPT']);
+assert.equal(schema.$defs.laneOptions.maxItems, 3);
+for (const lane of ['ABSORB','MAINTAIN','ADAPT']) assert.ok(schema.properties.lanes.required.includes(lane));
+assert.ok(schema.properties.athleteSelection, 'athlete override must be part of the decision contract');
+assert.ok(schema.properties.context.properties.materialityAssessmentId, 'decision must preserve materiality provenance');
+console.log('PASS prepared Adaptive Choice contract (not activated in v0.7)');

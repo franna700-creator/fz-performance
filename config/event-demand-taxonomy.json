@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "principles": {
+    "sharedLanguageNotEventEquivalence": true,
+    "unknownIsNotZero": true,
+    "structureBeforeTransfer": true,
+    "eventSpecificDetailRetainedAlongsideSharedDimensions": true
+  },
+  "dimensions": [
+    {"id":"running.mode","domain":"RUNNING","type":"ENUM","values":["NONE","CONTINUOUS","INTERRUPTED"],"description":"Whether running is absent, continuous or repeatedly interrupted by work."},
+    {"id":"running.total_distance_m","domain":"RUNNING","type":"NUMBER","unit":"m","description":"Total event running distance."},
+    {"id":"running.bout_count","domain":"RUNNING","type":"NUMBER","description":"Number of discrete running bouts."},
+    {"id":"running.typical_bout_m","domain":"RUNNING","type":"NUMBER","unit":"m","description":"Representative running-bout length when segmented."},
+    {"id":"running.compromised","domain":"RUNNING","type":"SCORE","range":[0,1],"description":"Degree to which running is repeatedly performed after non-running work."},
+    {"id":"running.economy","domain":"RUNNING","type":"SCORE","range":[0,1],"description":"Importance of economical running at event-relevant speeds."},
+    {"id":"running.aerobic_durability","domain":"RUNNING","type":"SCORE","range":[0,1],"description":"Importance of sustaining aerobic output over accumulated duration."},
+    {"id":"running.threshold_aerobic_power","domain":"RUNNING","type":"SCORE","range":[0,1],"description":"Importance of sustained high-aerobic/threshold output."},
+    {"id":"work.station_count","domain":"WORK","type":"NUMBER","description":"Number of non-running work stations or labour bouts."},
+    {"id":"work.station_density","domain":"WORK","type":"SCORE","range":[0,1],"description":"Density of work bouts relative to event running/duration structure."},
+    {"id":"transition.frequency","domain":"SEQUENCING","type":"ENUM","values":["NONE","LOW","MODERATE","HIGH","VERY_HIGH"],"description":"Frequency of transitions between event elements."},
+    {"id":"sequencing.mixed_modality_repeatability","domain":"SEQUENCING","type":"SCORE","range":[0,1],"description":"Need to repeatedly restore useful output after changing modalities."},
+    {"id":"movement.locomotion","domain":"MOVEMENT","type":"SCORE","range":[0,1],"description":"Non-running locomotion requirement including burpees, crawls and loaded movement."},
+    {"id":"movement.carry_grip","domain":"MOVEMENT","type":"SCORE","range":[0,1],"description":"Loaded-carry and grip-endurance demand."},
+    {"id":"movement.squat_lunge","domain":"MOVEMENT","type":"SCORE","range":[0,1],"description":"Squat/lunge and local quadriceps strength-endurance demand."},
+    {"id":"movement.hinge_posterior_chain","domain":"MOVEMENT","type":"SCORE","range":[0,1],"description":"Hinge/posterior-chain strength-endurance demand."},
+    {"id":"movement.push_pull","domain":"MOVEMENT","type":"SCORE","range":[0,1],"description":"Upper-body or whole-body pushing/pulling demand."},
+    {"id":"movement.overhead","domain":"MOVEMENT","type":"SCORE","range":[0,1],"description":"Overhead strength-endurance and shoulder/trunk demand."},
+    {"id":"modality.erg","domain":"MODALITY","type":"SCORE","range":[0,1],"description":"Cyclical ergometer demand."},
+    {"id":"modality.sled","domain":"MODALITY","type":"SCORE","range":[0,1],"description":"Horizontal-force sled push/pull demand."},
+    {"id":"physiology.glycolytic_burden","domain":"PHYSIOLOGY","type":"SCORE","range":[0,1],"description":"Repeated high-rate metabolic contribution and tolerance requirement."},
+    {"id":"physiology.muscular_endurance","domain":"PHYSIOLOGY","type":"SCORE","range":[0,1],"description":"Repeated local/whole-body force production under fatigue."},
+    {"id":"pacing.interrupted","domain":"PACING","type":"SCORE","range":[0,1],"description":"Importance of pacing across repeated run/work interruptions."},
+    {"id":"tissue.local_cost","domain":"TISSUE","type":"SCORE","range":[0,1],"description":"Likely local tissue loading/recovery demand from event structure."}
+  ]
+}

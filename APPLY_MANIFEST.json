@@ -1,0 +1,165 @@
+{
+  "release": "0.7.0-rc.8",
+  "preparedAt": "2026-09-10T14:40:00+02:00",
+  "baseCommit": "0e9bc5fa9525873890ab9bf8ac66dd87bc825028",
+  "baseTree": "6e7ae0cfb78c95f19ab6bea893fd465daed86b3d",
+  "deploymentIntent": "PRE_DEPLOYMENT_CANDIDATE",
+  "scope": {
+    "27": "Event Demand Taxonomy v1",
+    "28": "HYROX Measurement Hierarchy v1",
+    "29": "Recommendation Explainability Contract v1",
+    "30": "Golden Athlete Scenarios v1"
+  },
+  "architectureRules": {
+    "directionalTransferScoreOwner": "event.intelligence",
+    "taxonomyComparison": "DIAGNOSTIC_ONLY",
+    "primaryMeasurementHierarchyResolvesDynamically": true,
+    "unknownMeasurementEvidence": "UNKNOWN_NOT_WEAK",
+    "recommendationEngine42Activated": false,
+    "athleteSpecificGoldenOutcomesHardcoded": false
+  },
+  "productionMutations": false,
+  "migration005Applied": false,
+  "vercelDeploymentRequested": false,
+  "localValidation": {
+    "newContractSmokes": "PASS",
+    "existingOfflineRegressionSweep": "PASS",
+    "dataContractCount": 23,
+    "dependencyGraphValidation": "PASS",
+    "qualityWorkflowYaml": "PASS",
+    "dynamicPrimarySwitch": "PASS",
+    "fullInheritedGitHubCI": "REQUIRED_BEFORE_DEPLOYMENT"
+  },
+  "files": [
+    {
+      "path": ".github/workflows/quality.yml",
+      "bytes": 6803,
+      "sha256": "b8c1eeb048c2d1534b218f443a256bb8a2d3681d3586d373391f30ee582a1aa0"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6580,
+      "sha256": "edfe25ad5cabac4c747c00617aa9c0e14f845a9f1bad154a8d45a1782eea7794"
+    },
+    {
+      "path": "config/event-demand-taxonomy.json",
+      "bytes": 4033,
+      "sha256": "700404b0cec98b31505dbebfcc16ce278dc75e4d39224d46ae0bfd3818a480e7"
+    },
+    {
+      "path": "config/measurement-hierarchies.json",
+      "bytes": 7150,
+      "sha256": "cfb00522893a0878a84b4699fb4c8b8783b125065477178a23ee8687ab8d3a48"
+    },
+    {
+      "path": "docs/EVENT_DEMAND_TAXONOMY_V1.md",
+      "bytes": 1738,
+      "sha256": "3887d651f813609075b051f1fbf446fb5de33a151f65da73f260e6d124de5e6f"
+    },
+    {
+      "path": "docs/GOLDEN_ATHLETE_SCENARIOS_V1.md",
+      "bytes": 1496,
+      "sha256": "273d9c892015ff7fffd278b352046b18f8fd6165085a2382f1ca2bf47a395fc2"
+    },
+    {
+      "path": "docs/HYROX_MEASUREMENT_HIERARCHY_V1.md",
+      "bytes": 1912,
+      "sha256": "60de3830dff9ef2336140df84f6ca152c5db0af44f13b19fac52ec763b212e40"
+    },
+    {
+      "path": "docs/PREPARE_27_30_2026-09-10.md",
+      "bytes": 1626,
+      "sha256": "f103238a3ae64a30f89a6ed48368bbd6aa13c8a3dc784ff1151b3494a5f576b3"
+    },
+    {
+      "path": "docs/RECOMMENDATION_EXPLAINABILITY_CONTRACT.md",
+      "bytes": 1449,
+      "sha256": "56f605a36716d877e306d06616f8a5e1a4d4bd8f5bd007eb5fb8ed8bc1eb8e3b"
+    },
+    {
+      "path": "fixtures/golden-athlete-scenarios.json",
+      "bytes": 1914,
+      "sha256": "4d1cc4ec6ac5072b5fba1241590fbd2a504899976de0d28089e04780de103260"
+    },
+    {
+      "path": "lib/data-contract-registry.js",
+      "bytes": 15730,
+      "sha256": "1e0cb35f0b45e179f97f3db54ef0126aa48f93f36d05b017d37e09e66dd6927a"
+    },
+    {
+      "path": "lib/event-demand-taxonomy.js",
+      "bytes": 6552,
+      "sha256": "f31e7e30d9e43a277a20a40b33d77710fb8df1b3142c10d9ef9a67a8f8ab8da1"
+    },
+    {
+      "path": "lib/event-intelligence.js",
+      "bytes": 14773,
+      "sha256": "338d7e24ee30378e341a3dcd3fc5300a808087d798ae0d362071ac71fe323c3b"
+    },
+    {
+      "path": "lib/measurement-hierarchy.js",
+      "bytes": 3617,
+      "sha256": "f5385368661b99dccc8fd24f0231e7e63f0388eaf82b8575e15858e3504bdcc9"
+    },
+    {
+      "path": "lib/recommendation-explainability.js",
+      "bytes": 3517,
+      "sha256": "1b86ca831939ffe70e9c73514e0cd6fc93ff7d54ac79d6c132ec267f84ce29f2"
+    },
+    {
+      "path": "lib/runtime-dependency-graph.js",
+      "bytes": 4969,
+      "sha256": "47f423d15d5745d358e9427220c3129a2472da91108d88c98b87b2440733bb97"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1534,
+      "sha256": "7b592f151231a8bc274aa793e5c9e9648dae0db129550a21519475ede9061012"
+    },
+    {
+      "path": "release-manifest.json",
+      "bytes": 11569,
+      "sha256": "13b25fba380e540102a9e35f289407503a6d11789d555c60cef97f9aa5c75a01"
+    },
+    {
+      "path": "schemas/recommendation-explanation.schema.json",
+      "bytes": 2548,
+      "sha256": "50125436a407dc6db3b58b71645d9354ecb0acae01de16ccb9896f92bed15243"
+    },
+    {
+      "path": "scripts/contract-dependency-closure-smoke.mjs",
+      "bytes": 1565,
+      "sha256": "32acf011e6349c366956770bd996b5c5f0d44a74c3e2125d7472d925ef74dee4"
+    },
+    {
+      "path": "scripts/data-contract-smoke.mjs",
+      "bytes": 1111,
+      "sha256": "b5e47f2c605602154e287a07c933f822ef588b4153689095958615c89b4cad04"
+    },
+    {
+      "path": "scripts/event-demand-taxonomy-smoke.mjs",
+      "bytes": 1856,
+      "sha256": "c1cf9edbfba82b8fde8512835d34bf3f5efabeba926636718d2753ef3e071f8b"
+    },
+    {
+      "path": "scripts/event-intelligence-smoke.mjs",
+      "bytes": 5360,
+      "sha256": "0b31fbc2d6c6092cab163b7f781be3fbfbc15c7b9fe954bfac5f79750b30a9d2"
+    },
+    {
+      "path": "scripts/golden-athlete-scenarios-smoke.mjs",
+      "bytes": 2408,
+      "sha256": "fbd89ca73b7a4d05f466e218e4bff4f1943d6e128c88bd112381813dc2871f9a"
+    },
+    {
+      "path": "scripts/hyrox-measurement-hierarchy-smoke.mjs",
+      "bytes": 2992,
+      "sha256": "f0ad4d59b4b2085ca0ed5cd318018dc8534f5f5c276a4cb761e8fb8967adcf03"
+    },
+    {
+      "path": "scripts/recommendation-explainability-smoke.mjs",
+      "bytes": 3055,
+      "sha256": "c32bbb2a73be158f25ec7bd350e017af4206a20aaabc98f494584e9271113e33"
+    }
+  ]
+}

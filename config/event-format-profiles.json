@@ -1,0 +1,118 @@
+{
+  "version": "1.0",
+  "asOf": "2026-09-10",
+  "profiles": [
+    {
+      "id": "deadly-dozen-track-male-sa",
+      "eventFamily": "DEADLY_DOZEN_TRACK",
+      "variant": "SINGLES_MALE_SOUTH_AFRICA",
+      "sourceAuthority": "OFFICIAL_EVENT",
+      "sourceRefs": [
+        "https://www.deadlydozen.co.za/about-3",
+        "https://www.deadlydozen.co.za/general-6",
+        "https://www.deadlydozen.com/fitness-race-formats-old"
+      ],
+      "format": {
+        "rounds": 12,
+        "runSegments": 12,
+        "runSegmentMeters": 400,
+        "totalRunMeters": 4800,
+        "stationCount": 12,
+        "sequence": "RUN_THEN_LABOUR_X12",
+        "environment": "ATHLETICS_TRACK_OUTDOOR",
+        "transitionDensity": "VERY_HIGH"
+      },
+      "stations": [
+        {"order":1,"name":"Farmers Carry","movement":"CARRY","subtype":"FARMERS_CARRY","dose":{"distanceMeters":240},"load":{"implements":2,"implement":"KETTLEBELL","kgEach":24},"tags":["grip_endurance","loaded_carry","trunk_stiffness"]},
+        {"order":2,"name":"Deadlift","movement":"HINGE","subtype":"KETTLEBELL_DEADLIFT","dose":{"reps":60},"load":{"implements":1,"implement":"KETTLEBELL","kgEach":32},"tags":["posterior_chain_endurance","grip_endurance"]},
+        {"order":3,"name":"Lunge","movement":"LUNGE","subtype":"DUMBBELL_LUNGE","dose":{"officialSaDisplay":"60x Lunge","globalTrackStandardDistanceMeters":60},"load":{"implements":2,"implement":"DUMBBELL","kgEach":12.5},"tags":["unilateral_leg_endurance","quad_endurance","locomotion_under_load"]},
+        {"order":4,"name":"Snatch","movement":"HINGE_OVERHEAD","subtype":"DUMBBELL_SNATCH","dose":{"reps":60},"load":{"implements":1,"implement":"DUMBBELL","kgEach":15},"tags":["posterior_chain_endurance","overhead_endurance","whole_body_power_endurance"]},
+        {"order":5,"name":"Burpee Broad Jump","movement":"BURPEE_LOCOMOTION","subtype":"BURPEE_BROAD_JUMP","dose":{"distanceMeters":60},"load":{"implement":"BODYWEIGHT"},"tags":["burpee_efficiency","horizontal_locomotion","heart_rate_spike_tolerance"]},
+        {"order":6,"name":"Goblet Squat","movement":"SQUAT","subtype":"GOBLET_SQUAT","dose":{"reps":60},"load":{"implements":1,"implement":"KETTLEBELL","kgEach":16},"tags":["squat_endurance","quad_endurance","trunk_endurance"]},
+        {"order":7,"name":"Front Carry","movement":"CARRY","subtype":"FRONT_PLATE_CARRY","dose":{"distanceMeters":240},"load":{"implements":1,"implement":"WEIGHT_PLATE","kgEach":25},"tags":["anterior_carry","trunk_endurance","bracing_under_lococomotion"]},
+        {"order":8,"name":"Push Press","movement":"SQUAT_OVERHEAD","subtype":"DUMBBELL_PUSH_PRESS","dose":{"reps":60},"load":{"implements":2,"implement":"DUMBBELL","kgEach":12.5},"tags":["overhead_endurance","leg_to_arm_transfer","shoulder_endurance"]},
+        {"order":9,"name":"Bear Crawl","movement":"CRAWL","subtype":"BEAR_CRAWL","dose":{"distanceMeters":120},"load":{"implement":"BODYWEIGHT"},"tags":["trunk_endurance","shoulder_endurance","locomotion_under_fatigue"]},
+        {"order":10,"name":"Clean & Press","movement":"HINGE_OVERHEAD","subtype":"PLATE_CLEAN_AND_PRESS","dose":{"reps":60},"load":{"implements":1,"implement":"WEIGHT_PLATE","kgEach":15},"tags":["whole_body_strength_endurance","overhead_endurance","posterior_chain_endurance"]},
+        {"order":11,"name":"Overhead Carry","movement":"CARRY_OVERHEAD","subtype":"OVERHEAD_PLATE_CARRY","dose":{"distanceMeters":180},"load":{"implements":1,"implement":"WEIGHT_PLATE","kgEach":15},"tags":["overhead_endurance","trunk_stability","locomotion_under_load"]},
+        {"order":12,"name":"Devil Press","movement":"BURPEE_HINGE_OVERHEAD","subtype":"DUMBBELL_DEVIL_PRESS","dose":{"reps":20},"load":{"implements":2,"implement":"DUMBBELL","kgEach":10},"tags":["whole_body_strength_endurance","burpee_efficiency","overhead_endurance","late_race_tolerance"]}
+      ],
+      "dominantDemands": [
+        "short_interval_compromised_running",
+        "high_transition_frequency",
+        "mixed_modality_repeatability",
+        "loaded_carry_endurance",
+        "grip_endurance",
+        "squat_lunge_endurance",
+        "overhead_strength_endurance",
+        "burpee_locomotion",
+        "whole_body_strength_endurance",
+        "pacing_under_repeated_interruptions"
+      ]
+    },
+    {
+      "id": "hyrox-open-men-2025-26",
+      "eventFamily": "HYROX",
+      "variant": "SINGLES_OPEN_MEN",
+      "sourceAuthority": "OFFICIAL_EVENT",
+      "sourceRefs": [
+        "https://hyrox.com/the-fitness-race/",
+        "https://hyrox.com/wp-content/uploads/2025/07/25_26_HYROX_RulebookSingles_EN.pdf"
+      ],
+      "format": {
+        "rounds": 8,
+        "runSegments": 8,
+        "runSegmentMeters": 1000,
+        "totalRunMeters": 8000,
+        "stationCount": 8,
+        "sequence": "RUN_THEN_WORKOUT_X8",
+        "environment": "INDOOR_MASS_PARTICIPATION",
+        "transitionDensity": "HIGH"
+      },
+      "stations": [
+        {"order":1,"name":"SkiErg","movement":"ERG","subtype":"SKIERG","dose":{"distanceMeters":1000},"tags":["upper_body_aerobic_endurance","trunk_endurance","erg_pacing"]},
+        {"order":2,"name":"Sled Push","movement":"SLED","subtype":"SLED_PUSH","dose":{"distanceMeters":50},"load":{"kgIncludingSled":152},"tags":["horizontal_force","quad_strength_endurance","bracing"]},
+        {"order":3,"name":"Sled Pull","movement":"SLED","subtype":"SLED_PULL","dose":{"distanceMeters":50},"load":{"kgIncludingSled":103},"tags":["posterior_chain_strength_endurance","back_arm_endurance","grip_endurance"]},
+        {"order":4,"name":"Burpee Broad Jump","movement":"BURPEE_LOCOMOTION","subtype":"BURPEE_BROAD_JUMP","dose":{"distanceMeters":80},"tags":["burpee_efficiency","horizontal_locomotion","heart_rate_spike_tolerance"]},
+        {"order":5,"name":"Row","movement":"ERG","subtype":"ROWERG","dose":{"distanceMeters":1000},"tags":["whole_body_aerobic_endurance","erg_pacing","posterior_chain_endurance"]},
+        {"order":6,"name":"Farmers Carry","movement":"CARRY","subtype":"FARMERS_CARRY","dose":{"distanceMeters":200},"load":{"implements":2,"implement":"KETTLEBELL","kgEach":24},"tags":["grip_endurance","loaded_carry","trunk_stiffness"]},
+        {"order":7,"name":"Sandbag Lunges","movement":"LUNGE","subtype":"SANDBAG_LUNGE","dose":{"distanceMeters":100},"load":{"implements":1,"implement":"SANDBAG","kgEach":20},"tags":["unilateral_leg_endurance","quad_endurance","locomotion_under_load"]},
+        {"order":8,"name":"Wall Balls","movement":"SQUAT_OVERHEAD","subtype":"WALL_BALL","dose":{"reps":100},"load":{"implements":1,"implement":"MED_BALL","kgEach":6},"tags":["squat_endurance","overhead_endurance","breathing_rhythm","late_race_tolerance"]}
+      ],
+      "dominantDemands": [
+        "one_kilometre_compromised_running",
+        "mixed_modality_repeatability",
+        "aerobic_durability",
+        "threshold_aerobic_power",
+        "erg_efficiency",
+        "sled_strength_endurance",
+        "loaded_carry_endurance",
+        "lunge_endurance",
+        "wall_ball_endurance",
+        "race_pacing"
+      ]
+    },
+    {
+      "id": "half-marathon-road",
+      "eventFamily": "HALF_MARATHON",
+      "variant": "ROAD_21_0975_KM",
+      "sourceAuthority": "STANDARD_DISTANCE",
+      "format": {"continuousRunMeters":21097.5,"stationCount":0,"sequence":"CONTINUOUS_RUN","transitionDensity":"NONE"},
+      "dominantDemands": ["running_economy","aerobic_durability","threshold_aerobic_power","race_pacing","running_tissue_durability"]
+    }
+  ],
+  "transferRules": [
+    {"from":"deadly-dozen-track-male-sa","to":"hyrox-open-men-2025-26","fromElement":"Farmers Carry","toElement":"Farmers Carry","transfer":0.98,"class":"NEAR_DIRECT","reason":"Same movement and same 2x24 kg male load; Deadly Dozen is 240 m vs HYROX 200 m."},
+    {"from":"deadly-dozen-track-male-sa","to":"hyrox-open-men-2025-26","fromElement":"Burpee Broad Jump","toElement":"Burpee Broad Jump","transfer":0.95,"class":"DIRECT","reason":"Same locomotor pattern; Deadly Dozen 60 m vs HYROX 80 m."},
+    {"from":"deadly-dozen-track-male-sa","to":"hyrox-open-men-2025-26","fromElement":"Lunge","toElement":"Sandbag Lunges","transfer":0.82,"class":"STRONG","reason":"Same repeated loaded lunge demand, but implement placement, load and distance differ."},
+    {"from":"deadly-dozen-track-male-sa","to":"hyrox-open-men-2025-26","fromElement":"Goblet Squat + Push Press + Clean & Press + Devil Press","toElement":"Wall Balls","transfer":0.62,"class":"MODERATE","reason":"Shared squat/leg-drive-to-overhead and shoulder endurance; wall-ball rhythm, target accuracy and 100-rep specificity remain unique."},
+    {"from":"deadly-dozen-track-male-sa","to":"hyrox-open-men-2025-26","fromElement":"Deadlift + Snatch + Clean & Press","toElement":"Sled Pull / Row","transfer":0.42,"class":"LIMITED_MODERATE","reason":"Posterior-chain and grip endurance transfer, but sled/erg mechanics are event-specific."},
+    {"from":"deadly-dozen-track-male-sa","to":"hyrox-open-men-2025-26","fromElement":"12x400 m compromised runs","toElement":"8x1 km compromised runs","transfer":0.78,"class":"STRONG_BUT_NOT_EQUIVALENT","reason":"Both test running after functional work; Deadly Dozen has shorter, more frequent bouts and transitions while HYROX requires longer 1 km segments and 8 km total running."},
+    {"from":"half-marathon-road","to":"hyrox-open-men-2025-26","fromElement":"21.1 km continuous road running","toElement":"8x1 km compromised runs","transfer":0.72,"class":"FOUNDATIONAL","reason":"Strong transfer for running economy, aerobic durability, pacing and tissue durability; no direct evidence for compromised transitions or stations."},
+    {"from":"half-marathon-road","to":"deadly-dozen-track-male-sa","fromElement":"21.1 km continuous road running","toElement":"12x400 m compromised runs","transfer":0.58,"class":"FOUNDATIONAL","reason":"Aerobic and running durability transfer, but not repeated short-run re-acceleration or station recovery."}
+  ],
+  "nonTransferableOrLowTransfer": [
+    {"event":"DEADLY_DOZEN_TRACK","relativeTo":"HYROX","elements":["bear crawl specificity","front plate carry specificity","overhead carry specificity","dumbbell snatch specificity","devil press specificity"]},
+    {"event":"HYROX","relativeTo":"DEADLY_DOZEN_TRACK","elements":["SkiErg pacing/technique","RowErg pacing/technique","sled push mechanics/force","sled pull mechanics/rope handling","wall-ball target/rhythm specificity","1 km segment pacing across 8 km total"]},
+    {"event":"HALF_MARATHON","relativeTo":"HYROX","elements":["station strength-endurance","erg technique","sled capacity","transition efficiency","compromised-running recovery after stations"]}
+  ]
+}

@@ -1,54 +1,21 @@
 import { readTrainingRange } from '../../lib/training-store.js';
-import { syncTrainingSources } from '../../lib/training-sync.js';
+import { syncTrainingSources } from '../../lib/training-sync-runtime.js';
+import { decorateTrainingRange } from '../../lib/training-presentation.js';
 
 const TZ = 'Africa/Johannesburg';
 
 function todayLocal() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(new Date());
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
-
 function addDays(dateString, days) {
   const d = new Date(`${dateString}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
-
 function boundedInt(value, fallback, min, max) {
   const n = Number.parseInt(String(value ?? ''), 10);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(min, Math.min(max, n));
-}
-
-function shape(range) {
-  const eventsBySession = new Map();
-  for (const event of range.events) {
-    const key = event.session_id || '__context__';
-    if (!eventsBySession.has(key)) eventsBySession.set(key, []);
-    eventsBySession.get(key).push(event);
-  }
-
-  const sourcesBySession = new Map();
-  for (const source of range.sources) {
-    if (!sourcesBySession.has(source.session_id)) sourcesBySession.set(source.session_id, []);
-    sourcesBySession.get(source.session_id).push(source);
-  }
-
-  const hydrate = session => ({
-    ...session,
-    events: eventsBySession.get(session.session_id) || [],
-    sources: sourcesBySession.get(session.session_id) || []
-  });
-
-  return {
-    sessions: range.sessions.filter(session => session.status !== 'SUPERSEDED').map(hydrate),
-    supersededSessions: range.sessions.filter(session => session.status === 'SUPERSEDED').map(hydrate),
-    contextEvents: eventsBySession.get('__context__') || []
-  };
 }
 
 export default async function handler(req, res) {
@@ -65,13 +32,9 @@ export default async function handler(req, res) {
 
   let sync = null;
   let warning = null;
-
   if (String(req.query.refresh || '') === '1') {
-    try {
-      sync = await syncTrainingSources({ startDate: syncStart, endDate: syncEnd });
-    } catch (error) {
-      warning = error instanceof Error ? error.message : String(error);
-    }
+    try { sync = await syncTrainingSources({ startDate: syncStart, endDate: syncEnd }); }
+    catch (error) { warning = error instanceof Error ? error.message : String(error); }
   }
 
   try {
@@ -83,13 +46,9 @@ export default async function handler(req, res) {
       syncWindow: { startDate: syncStart, endDate: syncEnd },
       sync,
       warning,
-      ...shape(range)
+      ...decorateTrainingRange(range)
     });
   } catch (error) {
-    return res.status(503).json({
-      ok: false,
-      error: 'training_memory_unavailable',
-      detail: error instanceof Error ? error.message : String(error)
-    });
+    return res.status(503).json({ ok: false, error: 'training_memory_unavailable', detail: error instanceof Error ? error.message : String(error) });
   }
 }

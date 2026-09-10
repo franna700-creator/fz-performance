@@ -4,6 +4,7 @@ const html=fs.readFileSync('dist/index.html','utf8');
 const sync=fs.readFileSync('dist/assets/training-auto-sync.js','utf8');
 const css=fs.readFileSync('dist/assets/training-auto-sync.css','utf8');
 const api=fs.readFileSync('api/training/memory.js','utf8');
+const runtimeSync=fs.readFileSync('lib/training-sync-runtime.js','utf8');
 const app=fs.readFileSync('dist/assets/app-clean.js','utf8');
 
 const checks=[
@@ -15,10 +16,12 @@ const checks=[
   ['focus visibility and online wake checks exist',sync.includes("window.addEventListener('focus'")&&sync.includes("document.addEventListener('visibilitychange'")&&sync.includes("window.addEventListener('online'")],
   ['wake sync is throttled',sync.includes('minWakeMs: 120000')],
   ['manual workout sync exists',sync.includes('Sync workouts')&&sync.includes('[data-training-sync-now]')],
-  ['canonical UI reload follows successful persistence',sync.includes("window.dispatchEvent(new Event('focus'))")],
+  ['successful payload is validated',sync.includes("if (!payload?.ok) throw new Error")],
+  ['canonical UI reread follows successful persistence',sync.includes("window.dispatchEvent(new Event('focus'))")&&sync.includes("source: 'training'")],
   ['training source sync remains server-side',api.includes('syncTrainingSources')&&api.includes("String(req.query.refresh || '') === '1'")],
+  ['successful source sync triggers late Athlete Memory binding',api.includes('training-sync-runtime')&&runtimeSync.includes('reconcileUnlinkedAthleteEvents')],
   ['no direct source calls from browser',!sync.includes('tredict.com')&&!sync.includes('fitness-ai')&&!sync.includes('garmin.com')],
   ['no additional serverless route added',!fs.existsSync('api/training/auto-sync.js')]
 ];
 let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok)bad++}if(bad)process.exit(1);
-console.log('PASS training auto-sync correction');
+console.log('PASS training auto-sync dynamic runtime contract');

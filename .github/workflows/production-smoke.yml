@@ -1,17 +1,13 @@
-name: production-smoke
+name: production-release-smoke
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-  schedule:
-    - cron: '23 * * * *'
 
 permissions:
   contents: read
 
 concurrency:
-  group: fz-production-smoke
+  group: fz-production-release-smoke
   cancel-in-progress: true
 
 jobs:
@@ -30,13 +26,13 @@ jobs:
         run: npm install --no-save playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Exercise production in a real browser
+      - name: Exercise the deliberately promoted release
         run: node scripts/production-smoke.mjs
       - name: Upload failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: fz-production-smoke-failure
+          name: fz-production-release-smoke-failure
           path: artifacts/
           if-no-files-found: ignore
           retention-days: 14

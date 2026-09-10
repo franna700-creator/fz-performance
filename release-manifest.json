@@ -1,34 +1,200 @@
 {
-  "release": "0.6.1",
-  "releaseDate": "2026-09-07",
-  "classification": "PRODUCT RELEASE — CADENCE ALIGNMENT / SHELL LABEL CLEANUP",
-  "sourceModel": "v0.6.0 longitudinal TRENDS baseline retained; shell/countdown/runtime-state schedule aligned to the approved 06:00 and 20:00 intelligence cadence with 06:30 and 20:30 publish/verify separation",
-  "generatedFiles": {
-    "index.html": "sha256:07aec6f0c7e77334286a37bcfb232332fc832424f230daefe6a784007df68353",
-    "assets/app.css": "sha256:9494e1a74706c8083532a1a2b009c08f46bc57c4cafbce86cc7d991a90c6b637",
-    "assets/app.js": "sha256:8029f25df298bc2d311b061bde91184c706000b6ebcc762fbc05f8aefeb5e2b1",
-    "api/runtime-state.js": "sha256:f0960cd9fde9ff92439502b2b1a547f1e86e2390ca70ac27a95f0ce4fdbb9d1f"
-  },
+  "release": "0.7.0-rc.8",
+  "releaseDate": "2026-09-10",
+  "classification": "PRODUCT RELEASE CANDIDATE \u2014 RC7 SYSTEMIC FOUNDATION + EVENT DEMAND TAXONOMY / PRIMARY-OBJECTIVE MEASUREMENT HIERARCHY / RECOMMENDATION EXPLAINABILITY / GOLDEN SCENARIOS",
+  "sourceModel": "Neon operational truth; explicit five-minute physiology and training source refresh; canonical reread after persistence; append-only source evidence with monotonic best-available derivation",
   "features": [
-    "v0.6 longitudinal TRENDS architecture retained",
-    "shell version marker advanced to v0.6.1",
-    "shell and countdown schedule aligned to 06:00 / 20:00 SAST",
-    "legacy 13:00 slot removed from generated shell and runtime-state schedule schema",
-    "stale v0.5 shell labels removed from generated HTML",
-    "06:00 / 06:30 and 20:00 / 20:30 intelligence-publisher separation documented",
-    "all immutable-generation, fail-stale and previous-generation fallback controls retained",
-    "TODAY / TRENDS / TRAIN / SYSTEM navigation and longitudinal interactions retained",
-    "pointer/touch/keyboard chart scrubbing retained"
+    "explicit Garmin physiology source refresh on load, every five minutes while visible, and stale wake-up checks",
+    "persisted-first Live Physiology with four scrubbed intraday traces",
+    "persisted-first training memory with five-minute Tredict/Garmin reconciliation and manual Sync workouts",
+    "automatic late binding of clear in-session/post-session Athlete Memory after workout evidence arrives",
+    "pre-workout context remains eligible to stay standalone rather than being force-linked",
+    "monotonic best-available evidence protects richer historical source fields from later sparse payload regression",
+    "NCL workout days are positive-derived or PENDING_DETAIL; missing detail is never represented as zero",
+    "dynamic matched AET and running-context derivation without a fixed expected-date list in the active contract",
+    "derived canonical workout identity combines source evidence and linked Athlete Memory while retaining raw source provenance",
+    "descriptive historical ABSORB / MAINTAIN / ADAPT classification with explicit confidence",
+    "SYSTEM exposes Tranche 4.1 materiality plus broad Dynamic Runtime Integrity",
+    "cross-page control/card/status/focus/mobile UI consistency stylesheet",
+    "production smoke uses moving-data invariants instead of frozen current totals",
+    "prepared versioned Adaptive Choice schema for later Tranche 4 activation",
+    "automatic Vercel Git deployments disabled; deliberate pinned release only",
+    "Neon-primary runtime/state documentation aligned with current production architecture",
+    "authoritative FZ design system with brand black #050505 and brand yellow #f5cf19 loaded last across TODAY/TRENDS/TRAIN/SYSTEM",
+    "readability and interaction hierarchy raised to a shared 44px touch-control standard with visible keyboard focus and reduced-motion support",
+    "living-state presentation uses truthful freshness and subtle source-state cues rather than decorative motion",
+    "systemic repair standard requires invariant-level fixes, cross-surface propagation and regression coverage rather than date-specific patches",
+    "versioned event/objective graph separates strategic priority from near-term event pressure",
+    "shared capability transfer allows cross-event evidence without treating events as interchangeable",
+    "current objective seed encodes HYROX primary, Hoka Half 1:50 secondary, Deadly Dozen sub-60 validation rather than active development target",
+    "evergreen Maintain Fitness objective is supported as a post-event candidate but requires athlete confirmation before activation",
+    "canonical data-contract registry declares source, refresh, missing-data semantics, primary UI home and downstream dependants",
+    "transitive runtime dependency graph defines cross-architecture invalidation rather than page-local refresh",
+    "pure systemic reconciliation sweep detects unresolved Athlete Memory, false-zero load, evidence-policy drift and objective-resolution defects",
+    "prepared migration 005 defines versioned objective/capability persistence but is intentionally not applied in v0.7 preparation",
+    "event names are backed by exact versioned demand profiles rather than generic race-category labels",
+    "Deadly Dozen South Africa profile encodes 12 x 400 m Journeys, all 12 Labours, male loads and very-high transition density",
+    "HYROX Open Men profile encodes 8 x 1 km runs and all 8 official stations/loads for direct demand comparison",
+    "station-level transfer distinguishes near-direct, strong, moderate and low/non-transferable overlap between Deadly Dozen and HYROX",
+    "half-marathon transfer is explicitly foundational running evidence rather than station or compromised-running validation",
+    "event-source date conflicts are retained and surfaced; athlete-entered schedule remains active until conflict is resolved rather than being silently overwritten",
+    "future events enter through a knowledge gate: athlete-confirmed structure or adequate sourced research before capability/recommendation influence",
+    "name/date-only events remain scheduled context but are excluded from capability priorities until their demand profile is qualified",
+    "directional event-overlap intelligence compares reusable capabilities, station/movement coverage, running structure, modality and transition pattern against the active primary objective",
+    "transfer potential is explicitly separate from net training value; recovery and opportunity cost remain Tranche 4.2 decisions",
+    "event research requests define required structure fields and preferred source-authority order instead of allowing guessed race formats",
+    "Deadly Dozen UJ date conflict resolved by athlete confirmation: Sunday 20 Sep 2026 is active; external 19 Sep discrepancy retained as provenance",
+    "prepared migration 005 now includes event-format profiles, event source evidence and versioned transfer assessments in addition to objective/capability persistence",
+    "RC7 completes the canonical data-contract registry with owner layer, freshness, missing/fallback semantics, provenance and consumers for every current decision-driving concept",
+    "RC7 cross-validates contract refresh triggers and consumers against the transitive runtime dependency graph so registry and invalidation logic cannot silently drift"
   ],
+  "dynamicRuntime": {
+    "canonicalRereadMs": 300000,
+    "physiologySourceCheckMs": 300000,
+    "trainingSourceCheckMs": 300000,
+    "wakeThrottleMs": 120000,
+    "manualGarminRefresh": true,
+    "manualWorkoutSync": true,
+    "lateBoundAthleteMemory": true,
+    "trainingEvidencePolicy": "MONOTONIC_BEST_AVAILABLE",
+    "requiresShellDeploymentForDataRefresh": false
+  },
+  "adaptiveFoundation": {
+    "historicalIntentLanes": [
+      "ABSORB",
+      "MAINTAIN",
+      "ADAPT"
+    ],
+    "historicalIntentIsDescriptiveOnly": true,
+    "adaptiveChoiceSchema": "1.0",
+    "activeAthleteOverrideUi": false
+  },
+  "intelligenceBoundary": {
+    "materialityEngine": "4.1.0",
+    "observability": true,
+    "automaticRecommendationRecompute": false,
+    "tranche4_2": "versioned recommendation recomputation",
+    "tranche4_3": "athlete ABSORB / MAINTAIN / ADAPT accept-or-override",
+    "tranche4_4": "ranked session composer"
+  },
   "releaseGate": {
     "deterministicBuild": "required",
     "staticChecks": "required",
     "schemaChecks": "required",
-    "longitudinalMarkerChecks": "required",
-    "preview": "required",
-    "browserSmoke": "required where available",
-    "productionPromotion": "exact-tested-artifact-only",
+    "dynamicRuntimeChecks": "required",
+    "lateBindingChecks": "required",
+    "monotonicEvidenceChecks": "required",
+    "classificationChecks": "required",
+    "materialityChecks": "required",
+    "preview": "one deliberate pinned preview",
+    "browserSmoke": "required desktop + mobile",
+    "productionPromotion": "exact-tested-candidate only",
     "productionReadback": "required",
-    "rollback": "required"
+    "rollback": "required",
+    "designSystemChecks": "required",
+    "systemicInvariantChecks": "required",
+    "eventObjectiveChecks": "required",
+    "dataContractChecks": "required",
+    "dependencyGraphChecks": "required",
+    "reconciliationSweepChecks": "required",
+    "eventDemandProfileChecks": "required",
+    "eventIntelligenceChecks": "required",
+    "eventIntakeSchemaChecks": "required",
+    "contractDependencyClosureChecks": "required",
+    "migration005Rehearsal": "passed isolated branch; production unchanged"
+  },
+  "designSystem": {
+    "contract": "FZ_DESIGN_SYSTEM_V0_7",
+    "brandBlack": "#050505",
+    "brandYellow": "#f5cf19",
+    "authoritativeStylesheet": "/assets/fz-design-system.css",
+    "minimumTouchControlPx": 44,
+    "visibleKeyboardFocus": true,
+    "reducedMotion": true,
+    "livingStateRule": "freshness/status transitions carry motion; no decorative telemetry animation"
+  },
+  "systemicRepair": {
+    "contract": "SYSTEMIC_REPAIR_STANDARD",
+    "repairAtInvariantLayer": true,
+    "crossSurfacePropagationRequired": true,
+    "regressionGateRequired": true,
+    "dateSpecificRuntimePatchesProhibited": true,
+    "dataContractRegistry": true,
+    "dependencyDrivenInvalidation": true,
+    "reconciliationSweepPrepared": true
+  },
+  "objectiveFoundation": {
+    "contract": "EVENT_OBJECTIVE_GRAPH_V1",
+    "strategicVsNearTermSeparated": true,
+    "sharedCapabilityTransfer": true,
+    "currentPrimary": "hyrox-johannesburg-2026-11-28",
+    "secondaryPerformanceTarget": {
+      "event": "hoka-half-pretoria-2026-09-24",
+      "targetSeconds": 6600,
+      "targetPaceSecondsPerKm": 313
+    },
+    "validationEvent": {
+      "event": "deadly-dozen-uj-2026-09-20",
+      "desiredSeconds": 3600,
+      "activeDevelopmentTarget": false
+    },
+    "evergreenMaintenanceActivation": "CONFIRM_BEFORE_ACTIVATION",
+    "persistenceMigration": "005_event_objective_graph.sql REHEARSED_IDEMPOTENT_NOT_APPLIED; includes FK/index hardening",
+    "eventDemandProfiles": "EVENT_DEMAND_PROFILES_V1",
+    "deadlyDozenFormatProfile": "deadly-dozen-track-male-sa",
+    "hyroxFormatProfile": "hyrox-open-men-2025-26",
+    "halfMarathonFormatProfile": "half-marathon-road",
+    "eventIngestionContract": "EVENT_INTELLIGENCE_INGESTION_STANDARD",
+    "unknownEventPolicy": "SCHEDULE_CONTEXT_ALLOWED; RESEARCH_REQUIRED_BEFORE_CAPABILITY_PRIORITY",
+    "overlapModel": "DIRECTIONAL_CAPABILITY_STATION_RUNNING_MODALITY_SEQUENCE",
+    "transferPotentialVsNetTrainingValue": "SEPARATE",
+    "deadlyDozenScheduleResolution": {
+      "activeDate": "2026-09-20",
+      "status": "RESOLVED_ATHLETE_CONFIRMED",
+      "externalDiscrepancy": "2026-09-19 PROVENANCE_ONLY"
+    }
+  },
+  "athleteInputIngestion": {
+    "authoritativeProjectSource": "FZ_ATHLETE_INPUT_INTELLIGENCE_INGESTION_STANDARD.md",
+    "repositoryBinding": "docs/FZ_ATHLETE_INPUT_INTELLIGENCE_INGESTION_STANDARD.md",
+    "alwaysOnTrigger": true,
+    "runtimeDataNotRelease": true,
+    "persistenceClaimRequiresOperation": true,
+    "contractSmoke": "scripts/athlete-input-ingestion-standard-smoke.mjs"
+  },
+  "prepare27_30": {
+    "eventDemandTaxonomy": {
+      "version": "1.0",
+      "status": "PREPARED_AND_REGRESSION_GATED",
+      "rule": "shared demand language does not imply event equivalence",
+      "transferScoreOwner": "event.intelligence",
+      "taxonomyComparison": "DIAGNOSTIC_ONLY"
+    },
+    "measurementHierarchy": {
+      "version": "1.0",
+      "status": "PREPARED_AND_REGRESSION_GATED",
+      "currentPrimaryFamily": "HYROX",
+      "dynamicPrimaryResolution": true,
+      "missingEvidence": "UNKNOWN_NOT_WEAK"
+    },
+    "recommendationExplainability": {
+      "version": "1.0",
+      "status": "PREPARED_NOT_ACTIVATED",
+      "requiredChain": [
+        "evidence",
+        "interpretation",
+        "objective relevance",
+        "recommendation",
+        "uncertainty"
+      ],
+      "athleteFacing": "data -> meaning -> human context"
+    },
+    "goldenScenarios": {
+      "version": "1.0",
+      "status": "PREPARED_AND_REGRESSION_GATED",
+      "scenarioCount": 10,
+      "athleteSpecificOutcomesHardcoded": false
+    },
+    "deploymentBoundary": "No production deployment or athlete-state mutation in PREPARE 27-30; these become reusable deployed logic in a controlled release."
   }
 }

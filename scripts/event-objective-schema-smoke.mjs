@@ -1,0 +1,3 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const schema=JSON.parse(fs.readFileSync('schemas/event-objective.schema.json','utf8'));const seed=JSON.parse(fs.readFileSync('config/objective-seed.json','utf8'));assert.equal(schema.$schema,'https://json-schema.org/draft/2020-12/schema');assert.equal(schema.properties.version.const,'1.0');assert.ok(schema.required.includes('events'));assert.ok(schema.required.includes('capabilities'));assert.equal(seed.version,'1.0');assert.equal(seed.events.length,3);assert.ok(seed.evergreenObjectives.some(x=>x.id==='maintain-fitness'&&x.status==='DORMANT'));console.log('PASS event/objective schema and bootstrap seed');

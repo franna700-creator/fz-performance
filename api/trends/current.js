@@ -1,4 +1,4 @@
-import { buildCurrentTrends } from '../../lib/trends-store.js';
+import { buildDynamicCurrentTrends } from '../../lib/trends-dynamic.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
@@ -8,14 +8,9 @@ export default async function handler(req, res) {
   }
   try {
     const days = Math.max(28, Math.min(90, Number.parseInt(String(req.query.days || '45'), 10) || 45));
-    const payload = await buildCurrentTrends({ days });
-    return res.status(200).json(payload);
+    return res.status(200).json(await buildDynamicCurrentTrends({ days }));
   } catch (error) {
     console.error('FZ trends contract failed', error instanceof Error ? error.message : String(error));
-    return res.status(503).json({
-      ok: false,
-      error: 'trends_unavailable',
-      detail: error instanceof Error ? error.message : String(error)
-    });
+    return res.status(503).json({ ok: false, error: 'trends_unavailable', detail: error instanceof Error ? error.message : String(error) });
   }
 }

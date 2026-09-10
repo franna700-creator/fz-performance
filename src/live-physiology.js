@@ -3,7 +3,11 @@ const FZ_LIVE_PHYSIOLOGY = {
   refreshBusy: false,
   mountedRoot: null,
   originalFetch: window.fetch.bind(window),
-  autoRefreshMs: 300000
+  autoRefreshMs: 300000,
+  minWakeMs: 120000,
+  timer: null,
+  lastSourceCheckAt: 0,
+  lastReason: null
 };
 
 const LIVE_SERIES = {
@@ -24,20 +28,19 @@ function wellnessUrl(input) {
   }
 }
 
-function captureWellnessResponse(response, requestUrl) {
+function captureWellnessResponse(response) {
   if (!response?.ok) return;
   response.clone().json().then(payload => {
     if (!payload?.ok || !payload?.wellness) return;
     FZ_LIVE_PHYSIOLOGY.payload = payload;
     queueMicrotask(renderLivePhysiology);
-    if (requestUrl?.searchParams.get('refresh') === '0') queueMicrotask(backgroundRefresh);
   }).catch(() => {});
 }
 
 window.fetch = async function fzLivePhysiologyFetch(input, init) {
   const requestUrl = wellnessUrl(input);
   const response = await FZ_LIVE_PHYSIOLOGY.originalFetch(input, init);
-  if (requestUrl) captureWellnessResponse(response, requestUrl);
+  if (requestUrl) captureWellnessResponse(response);
   return response;
 };
 
@@ -99,11 +102,11 @@ function physiologyShell(payload) {
   const syncStatus = String(payload?.syncStatus || 'UNKNOWN').replaceAll('_', ' ');
 
   return `
-    <div class="fz-live-physiology-v3" data-freshness="${freshness}">
+    <div class="fz-live-physiology-v3" data-freshness="${freshness}" data-dynamic-source="physiology">
       <div class="fz-live-toolbar">
         <div>
           <div class="fz-live-freshness ${freshnessClass(freshness)}"><i></i>${freshness}</div>
-          <p>Garmin ${sourceTime} · FZ persisted ${persistedTime} · auto-refresh 5 min · ${syncStatus}</p>
+          <p>Garmin ${sourceTime} · FZ persisted ${persistedTime} · source check 5 min · ${syncStatus}</p>
         </div>
         <button type="button" class="fz-live-refresh" data-live-refresh>Refresh Garmin</button>
       </div>
@@ -119,7 +122,7 @@ function physiologyShell(payload) {
         ${chartShell('heart_rate', hr, current.restingHeartRate == null ? '' : `Resting ${fmt(current.restingHeartRate)} bpm`)}
         ${chartShell('respiration', respiration, 'Latest valid positive reading')}
       </div>
-      <div class="fz-live-footnote">Persisted physiology renders immediately. Garmin refreshes in the background on load, every 5 minutes while visible, and whenever the app regains focus. Intraday traces use persisted 15-minute Garmin observations.</div>
+      <div class="fz-live-footnote">Persisted physiology paints first. Garmin is checked on load, every 5 minutes while visible, and after focus/online wake-up. When fresher source evidence persists, the canonical PWA views are reread immediately; no shell deployment is involved.</div>
     </div>`;
 }
 
@@ -232,9 +235,21 @@ function renderLivePhysiology() {
   FZ_LIVE_PHYSIOLOGY.mountedRoot = mount;
 }
 
-async function refreshSource({ force = false } = {}) {
-  if (FZ_LIVE_PHYSIOLOGY.refreshBusy) return;
+function canonicalReread(reason) {
+  document.dispatchEvent(new CustomEvent('fz:source-persisted', { detail: { source: 'wellness', reason } }));
+  // Compatibility bridge for the current clean shell: focus is its canonical reread trigger.
+  queueMicrotask(() => window.dispatchEvent(new Event('focus')));
+}
+
+async function refreshSource({ force = false, reason = 'background' } = {}) {
+  const now = Date.now();
+  if (FZ_LIVE_PHYSIOLOGY.refreshBusy) return false;
+  if (!force && FZ_LIVE_PHYSIOLOGY.lastSourceCheckAt && now - FZ_LIVE_PHYSIOLOGY.lastSourceCheckAt < FZ_LIVE_PHYSIOLOGY.minWakeMs) return false;
+  if (document.visibilityState !== 'visible' && reason === 'interval') return false;
+
   FZ_LIVE_PHYSIOLOGY.refreshBusy = true;
+  FZ_LIVE_PHYSIOLOGY.lastSourceCheckAt = now;
+  FZ_LIVE_PHYSIOLOGY.lastReason = reason;
   const button = document.querySelector('[data-live-refresh]');
   if (force && button) { button.disabled = true; button.textContent = 'Refreshing…'; }
   try {
@@ -242,12 +257,14 @@ async function refreshSource({ force = false } = {}) {
     const response = await FZ_LIVE_PHYSIOLOGY.originalFetch(url, { cache: 'no-store', headers: { accept: 'application/json' } });
     if (!response.ok) throw new Error(`wellness ${response.status}`);
     const payload = await response.json();
-    if (payload?.ok && payload?.wellness) {
-      FZ_LIVE_PHYSIOLOGY.payload = payload;
-      renderLivePhysiology();
-    }
+    if (!payload?.ok || !payload?.wellness) throw new Error('wellness payload invalid');
+    FZ_LIVE_PHYSIOLOGY.payload = payload;
+    renderLivePhysiology();
+    canonicalReread(reason);
+    return true;
   } catch {
     if (force && button) button.textContent = 'Refresh failed · retry';
+    return false;
   } finally {
     FZ_LIVE_PHYSIOLOGY.refreshBusy = false;
     const next = document.querySelector('[data-live-refresh]');
@@ -255,12 +272,8 @@ async function refreshSource({ force = false } = {}) {
   }
 }
 
-function backgroundRefresh() {
-  refreshSource({ force: false });
-}
-
 function forceRefresh() {
-  refreshSource({ force: true });
+  refreshSource({ force: true, reason: 'manual' });
 }
 
 document.addEventListener('click', event => {
@@ -273,9 +286,25 @@ const observer = new MutationObserver(() => {
   if (section && !section.querySelector('.fz-live-physiology-v3')) queueMicrotask(renderLivePhysiology);
 });
 
+function wakeRefresh(reason) {
+  if (Date.now() - FZ_LIVE_PHYSIOLOGY.lastSourceCheckAt > FZ_LIVE_PHYSIOLOGY.minWakeMs) {
+    refreshSource({ reason });
+  }
+}
+
 function startLivePhysiology() {
   const today = document.getElementById('today');
   if (today) observer.observe(today, { childList: true, subtree: true });
+  setTimeout(() => refreshSource({ reason: 'initial' }), 300);
+  if (FZ_LIVE_PHYSIOLOGY.timer) clearInterval(FZ_LIVE_PHYSIOLOGY.timer);
+  FZ_LIVE_PHYSIOLOGY.timer = setInterval(() => {
+    if (document.visibilityState === 'visible') refreshSource({ reason: 'interval' });
+  }, FZ_LIVE_PHYSIOLOGY.autoRefreshMs);
+  window.addEventListener('focus', () => wakeRefresh('focus'));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') wakeRefresh('visibility');
+  });
+  window.addEventListener('online', () => wakeRefresh('online'));
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startLivePhysiology, { once: true });

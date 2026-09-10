@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { buildObjectiveContext } from '../lib/event-objective-model.js';
+import { resolveMeasurementHierarchy, resolvePrimaryObjectiveMeasurementHierarchy, validateMeasurementRegistry } from '../lib/measurement-hierarchy.js';
+const registry=JSON.parse(await fs.readFile('config/measurement-hierarchies.json','utf8'));
+const formats=JSON.parse(await fs.readFile('config/event-format-profiles.json','utf8'));
+const objectives=JSON.parse(await fs.readFile('config/objective-seed.json','utf8'));
+assert.equal(validateMeasurementRegistry(registry).ok,true);
+const canonicalCapabilityIds=new Set(objectives.capabilities.map(x=>x.id));
+for(const h of registry.hierarchies) for(const m of h.measurements) for(const capability of m.capabilities) assert.ok(canonicalCapabilityIds.has(capability),`non-canonical capability ${capability}`);
+const hyrox=formats.profiles.find(x=>x.id==='hyrox-open-men-2025-26');
+const hierarchy=resolveMeasurementHierarchy({registry,eventProfile:hyrox,evidence:{MATCHED_RUN_AET:{date:'synthetic'},DEADLY_DOZEN_RUN_SPLITS:{source:'synthetic'}}});
+assert.equal(hierarchy.status,'READY');
+assert.equal(hierarchy.hierarchyId,'hyrox-singles-v1');
+assert.equal(hierarchy.measurements[0].id,'running.compromised_repeatability');
+assert.equal(hierarchy.measurements.find(x=>x.id==='running.controlled_efficiency').evidence.quality,'DIRECT_OR_PREFERRED');
+assert.equal(hierarchy.measurements.find(x=>x.id==='station.sled_capability').evidence.status,'UNKNOWN');
+assert.ok(hierarchy.gaps.some(x=>x.measurementId==='station.sled_capability'&&x.meaning==='UNMEASURED_NOT_WEAK'));
+const context=buildObjectiveContext(objectives,'2026-09-10');
+const primary=resolvePrimaryObjectiveMeasurementHierarchy({objectiveContext:context,formatRegistry:formats,measurementRegistry:registry,evidence:{}});
+assert.equal(primary.primaryEvent.id,'hyrox-johannesburg-2026-11-28');
+assert.equal(primary.status,'READY');
+
+const halfPrimaryRegistry={...objectives,events:objectives.events.map(event=>({...event,role:event.id==='hoka-half-pretoria-2026-09-24'?'PRIMARY':event.id==='hyrox-johannesburg-2026-11-28'?'SECONDARY':event.role}))};
+const halfPrimaryContext=buildObjectiveContext(halfPrimaryRegistry,'2026-09-10');
+const halfPrimary=resolvePrimaryObjectiveMeasurementHierarchy({objectiveContext:halfPrimaryContext,formatRegistry:formats,measurementRegistry:registry,evidence:{}});
+assert.equal(halfPrimary.primaryEvent.id,'hoka-half-pretoria-2026-09-24');
+assert.equal(halfPrimary.status,'NO_HIERARCHY','changing the primary objective must not leave the HYROX hierarchy active');
+
+const noPrimary=resolvePrimaryObjectiveMeasurementHierarchy({objectiveContext:{primaryEvent:null},formatRegistry:formats,measurementRegistry:registry});
+assert.equal(noPrimary.status,'NO_PRIMARY_OBJECTIVE');
+console.log('PASS HYROX measurement hierarchy: primary objective resolves dynamically; missing evidence stays unknown, not weak');

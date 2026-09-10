@@ -1,98 +1,92 @@
 # FZ Performance Deployment Path
 
-Status: ACTIVE BASELINE from v0.6.1
+Status: v0.7 release-candidate operating standard
 
-## Principle
+## Core principle
 
-Product/platform releases must be boring, deterministic and attributable.
+**Data movement is not a product deployment.**
 
-Routine intelligence runs occur at 06:00 and 20:00 SAST. Their corresponding state publish/verify runs occur at 06:30 and 20:30 SAST. Routine state publication is separate from product deployment and MUST NOT deploy the PWA shell.
+FZ Performance has three separate change classes:
 
-An explicit user-requested intraday publication may also run as `MANUAL_AD_HOC` after the canonical master has already been reconciled and `PWA State` is validated and `READY_FOR_PUBLISH`. This is not a third intelligence cycle and not a second deployment mechanism: it invokes the same locked state publisher sooner. See `docs/MANUAL_STATE_PUBLICATION.md`.
+1. **Dynamic source refresh** — physiology/training source evidence changes during the day.
+2. **Intelligence/state refresh** — validated FZ interpretation/readiness/recommendation state changes.
+3. **Product/platform release** — executable shell/API/schema/hosting capability changes.
 
-## Canonical Vercel project registry
+Only the third class should consume Vercel deployments.
 
-FZ Performance uses exactly two persistent Vercel projects:
+## Canonical architecture
 
-1. **Application / main product**
-   - Project: `fz-performance-mvp`
-   - Project ID: `prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq`
-   - Canonical public URL: `https://fz-performance-mvp.vercel.app`
-   - Purpose: the production PWA shell plus same-origin `/api/runtime-state` gateway.
+`Garmin / Tredict / Athlete Memory → Neon operational truth → FZ intelligence → PWA runtime reads`
 
-2. **Runtime state transport**
-   - Project: `fz-performance-state`
-   - Project ID: `prj_vAhaOqu3dlQibh7BbUMqjhboqwrJ`
-   - Canonical state URL: `https://fz-performance-state.vercel.app`
-   - Purpose: immutable runtime-state generations and the current/previous pointer contract.
+Google Drive is the human-owned audit / flight-recorder representation. It is not a runtime dependency.
 
-The machine-readable copy of this registry is `config/vercel-projects.json`.
+### Vercel projects
 
-**Anti-proliferation rule:** do not create additional Vercel projects for previews, schema tests, restore tests, file-path tests, runtime experiments, deployment tooling tests, manual state publications, or one-off recovery work. Product previews belong inside `fz-performance-mvp`; schema/build tests belong in repository CI/local artifacts; all state publications belong only in `fz-performance-state`.
+FZ keeps exactly two persistent projects:
 
-Any legacy Vercel project outside this two-project registry is non-canonical and may be retired after confirming that it is not referenced by production code or automation.
+- `fz-performance-mvp` — canonical PWA shell + same-origin APIs.
+- `fz-performance-state` — retained fail-stale immutable fallback only.
 
-## Canonical product-release path
+Do not create temporary projects for previews, schema experiments, recovery work or state publication.
 
-1. GitHub `main` is the canonical application source.
-2. The release commit must pass the repository `quality` workflow before deployment.
-3. Preview is built from the exact pinned Git commit, not from an uncommitted local copy.
-4. Vercel builds that pinned commit through a minimal bootstrap deployment **into the existing `fz-performance-mvp` project**:
-   - clone `https://github.com/franna700-creator/fz-performance.git`;
-   - checkout the exact approved commit SHA;
-   - run the canonical deterministic build and product-release transforms/tests;
-   - copy the validated `dist/` artifact into the Vercel deployment output.
-5. Verify preview root, generated `assets/app.js`, and `/api/runtime-state` before production promotion.
-6. Production is deployed from the same pinned commit and the same bootstrap/build process into `fz-performance-mvp`. Creating a new project is a release-path failure.
-7. Production is not considered complete until all of the following are verified on `https://fz-performance-mvp.vercel.app`:
-   - root returns HTTP 200 and the FZ Performance shell;
-   - generated app reports the intended shell version/release markers;
-   - the shell schedule is 06:00 / 20:00 SAST with no 13:00 slot;
-   - `/api/runtime-state` returns HTTP 200;
-   - `masterValidated=true`;
-   - state generation/checksum headers are present and internally consistent;
-   - required release functionality/interaction markers are present.
-8. On failure, do not invent a second deployment path or Vercel project. Restore or redeploy the last known-good pinned commit through the same deterministic process.
+## Dynamic source refresh — zero deployments
 
-## Authentication rule
+While the PWA is open:
 
-Do not use one-off GitHub Actions device-login workflows, personal tokens embedded in workflows, or ad-hoc credential workarounds for normal FZ releases or manual state publications.
+- persisted wellness and training render first;
+- Garmin physiology is source-checked on load, every 5 minutes while visible, and after focus/online wake-up;
+- training sources are source-checked on load, every 5 minutes while visible, and after focus/online wake-up;
+- server-side source throttles prevent unnecessary upstream calls;
+- successful persistence invalidates the canonical runtime views;
+- TODAY / TRENDS / TRAIN / SYSTEM reread current Neon-backed contracts;
+- manual `Refresh Garmin` and `Sync workouts` actions remain available.
 
-The current supported in-chat product-release mechanism is direct Vercel deployment of the small pinned bootstrap described above into the pre-existing canonical application project. This requires no new plugins and does not alter the FZ runtime architecture.
+No Git commit and no Vercel deployment is permitted for these routine updates.
 
-State publication uses the canonical publisher execution environment and project-scoped path already proven for `fz-performance-state`. A manual request must invoke that same publisher contract rather than introducing new Vercel credentials into the PWA, repository, or a new CI workflow.
+## Intelligence/state refresh — zero deployments
 
-If native Vercel Git Integration is configured later, it may replace the bootstrap transport only after proving the same guarantees: exact commit identity, preview gate, deterministic build, production verification and rollback safety. It must not introduce automatic shell deployment for ordinary intelligence/state refreshes.
+Scheduled intelligence runs remain 06:00 and 20:00 SAST, with verified database publication after reconciliation. Explicit athlete feedback may create a material intraday state update when warranted.
 
-## Separation of release classes
+Normal state publication writes append-only validated state to Neon and atomically advances the current pointer. Production `/api/runtime-state` must report `X-FZ-State-Source: database`.
 
-### INTELLIGENCE / STATE REFRESH
-Data/readiness/interpretation/datasets only.
+The immutable `fz-performance-state` project is a fail-stale fallback, not the primary publication target.
 
-Flow: Garmin + Tredict + athlete feedback → reconciled Drive master → `PWA State` → validated immutable runtime generation → `fz-performance-state` publication.
+## Tranche 4.1 boundary
 
-Operational cadence:
-- 06:00 intelligence → 06:30 publish/verify
-- 20:00 intelligence → 20:30 publish/verify
+The v4.1 materiality engine evaluates new evidence and persists an auditable result. SYSTEM exposes the latest assessment read-only. A `RECOMPUTE_RECOMMENDATION` or `SAFETY_OVERRIDE` assessment records what must happen next; actual recommendation recomputation remains Tranche 4.2.
 
-On-demand mode:
-- a material intraday update is reconciled into the master first;
-- `PWA State` is validated and marked `READY_FOR_PUBLISH` with an explicit manual handoff;
-- `MANUAL_AD_HOC` invokes the same state publisher immediately;
-- normal `scheduleSAST=[6,20]` and `nextRefreshAt` remain unchanged.
+## Product release path
 
-No PWA shell deployment.
+Automatic Git deployments are disabled.
 
-### PRODUCT RELEASE
-HTML/CSS/JS/components/interactions/schema capability.
+A product release should be deliberately boring:
 
-Flow: branch/main source → quality gate → exact pinned preview in `fz-performance-mvp` → browser/smoke verification → exact pinned production in `fz-performance-mvp` → production readback.
+1. Prepare and validate the candidate without Vercel.
+2. Batch related UI/reliability changes into one release candidate.
+3. Run deterministic build/static/schema/materiality/dynamic-runtime gates.
+4. Create **one deliberate pinned Preview** in `fz-performance-mvp`.
+5. Verify desktop + mobile + live runtime contracts.
+6. Promote/deploy that exact candidate to production once.
+7. Verify production runtime, source freshness, training memory, Trends, SYSTEM, materiality observability and rollback readiness.
 
-### PLATFORM RELEASE
-Hosting/routing/caching/runtime transport/security/infrastructure.
+If the preview fails, fix the candidate off-Vercel before spending another deployment unless the defect can only be observed on Vercel.
 
-Uses the strictest gate and must preserve fail-stale behavior and last-known-good recovery. The two-project registry remains the default unless a future architecture decision explicitly supersedes it.
+## Deployment-protection rule
 
-## v0.6.1 baseline
+`vercel.json` sets `git.deploymentEnabled=false` so ordinary development pushes do not create Preview deployments. Direct/manual product releases remain available and are the canonical release mechanism.
 
-v0.6.1 is the production patch level for the v0.6 longitudinal TRENDS product. It retains the revised longitudinal TRENDS experience while aligning the shell, countdown and runtime-state schedule contract with the user-approved two-cycle operating cadence. It removes stale v0.5 shell labels and removes the legacy 13:00 runtime slot. The immutable state-generation transport and fail-stale architecture remain unchanged.
+## Production acceptance invariants
+
+Production tests must validate rules that remain true as athlete data changes. They must not freeze moving values such as current 7-day/28-day NCL totals.
+
+Examples of stable invariants:
+
+- runtime is database-backed and master-validated;
+- dynamic endpoints are no-store and healthy;
+- a canonical training day is never represented as a false zero load day;
+- known historical benchmark classifications remain correct;
+- new matched AET rows may extend the series without breaking the smoke test;
+- Athlete Memory remains canonical subjective history;
+- Drive remains audit-only;
+- materiality engine remains observable and auditable;
+- desktop/mobile pages render without console/page errors or horizontal overflow.

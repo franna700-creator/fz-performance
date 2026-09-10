@@ -51,6 +51,7 @@ function mountTrainingSyncToolbar() {
     toolbar = document.createElement('div');
     toolbar.className = 'fz-training-sync-toolbar';
     toolbar.setAttribute('data-training-auto-sync', '');
+    toolbar.setAttribute('data-dynamic-source', 'training');
     toolbar.innerHTML = '<span data-training-sync-status></span><button type="button" data-training-sync-now>Sync workouts</button>';
     head.after(toolbar);
   }
@@ -61,6 +62,12 @@ function mountTrainingSyncToolbar() {
     button.disabled = FZ_TRAINING_AUTO_SYNC.busy;
     button.textContent = FZ_TRAINING_AUTO_SYNC.busy ? 'Syncing…' : 'Sync workouts';
   }
+}
+
+function canonicalReread(reason) {
+  document.dispatchEvent(new CustomEvent('fz:source-persisted', { detail: { source: 'training', reason } }));
+  // Compatibility bridge for the clean shell: focus triggers immediate canonical reread.
+  queueMicrotask(() => window.dispatchEvent(new Event('focus')));
 }
 
 async function sourceSyncTraining({ force = false, reason = 'background' } = {}) {
@@ -83,13 +90,11 @@ async function sourceSyncTraining({ force = false, reason = 'background' } = {})
     });
     if (!response.ok) throw new Error(`training source sync ${response.status}`);
     const payload = await response.json();
+    if (!payload?.ok) throw new Error(payload?.error || 'training source sync invalid payload');
     FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt = Date.now();
     FZ_TRAINING_AUTO_SYNC.lastResult = payload;
     FZ_TRAINING_AUTO_SYNC.lastError = null;
-
-    // app-clean owns canonical rendering. Its focus handler rereads Neon-backed
-    // training, trends and system state after this source sync has persisted.
-    queueMicrotask(() => window.dispatchEvent(new Event('focus')));
+    canonicalReread(reason);
     return true;
   } catch (error) {
     FZ_TRAINING_AUTO_SYNC.lastError = error instanceof Error ? error.message : String(error);

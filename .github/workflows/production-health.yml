@@ -1,0 +1,27 @@
+name: production-health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 4,18 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-production-health
+  cancel-in-progress: true
+
+jobs:
+  invariant-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      FZ_PROD_URL: https://fz-performance-mvp.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check version-tolerant production invariants
+        run: node scripts/production-health.mjs

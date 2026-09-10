@@ -1,10 +1,17 @@
 {
-  "buildCommand": "npm run build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node -e \"const fs=require('fs');const p='vercel.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.git.deploymentEnabled=false;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n')\" && npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "git": {
+    "deploymentEnabled": true
+  },
   "headers": [
     {"source":"/api/runtime-state","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/wellness/today","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/training/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/trends/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/system/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/source/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
