@@ -3,7 +3,11 @@ const FZ_SYSTEM_INTELLIGENCE = {
   training: null,
   trends: null,
   originalFetch: window.fetch.bind(window),
-  mountedRoot: null
+  mountedRoot: null,
+  observer: null,
+  observerConnected: false,
+  renderScheduled: false,
+  rendering: false
 };
 
 function canonicalRoute(input) {
@@ -19,12 +23,21 @@ function canonicalRoute(input) {
   } catch { return null; }
 }
 
+function scheduleRenderObservability() {
+  if (FZ_SYSTEM_INTELLIGENCE.renderScheduled) return;
+  FZ_SYSTEM_INTELLIGENCE.renderScheduled = true;
+  queueMicrotask(() => {
+    FZ_SYSTEM_INTELLIGENCE.renderScheduled = false;
+    renderObservability();
+  });
+}
+
 function captureCanonicalResponse(response, route) {
   if (!response?.ok || !route) return;
   response.clone().json().then(payload => {
     if (!payload?.ok) return;
     FZ_SYSTEM_INTELLIGENCE[route] = payload;
-    queueMicrotask(renderObservability);
+    scheduleRenderObservability();
   }).catch(() => {});
 }
 
@@ -92,9 +105,12 @@ function dynamicIntegritySection() {
 
 function placeSection(attribute, html, afterAttribute = null) {
   const root = document.getElementById('system');
-  if (!root || !html) return;
+  if (!root || !html) return false;
   const existing = root.querySelector(`[${attribute}]`);
-  if (existing) { existing.outerHTML = html; return; }
+  if (existing) {
+    if (existing.outerHTML !== html) existing.outerHTML = html;
+    return true;
+  }
   const after = afterAttribute ? root.querySelector(`[${afterAttribute}]`) : null;
   if (after) after.insertAdjacentHTML('afterend', html);
   else {
@@ -102,21 +118,40 @@ function placeSection(attribute, html, afterAttribute = null) {
     if (first) first.insertAdjacentHTML('afterend', html);
     else root.insertAdjacentHTML('beforeend', html);
   }
+  return true;
+}
+
+function observeSystemRoot() {
+  const root = document.getElementById('system');
+  const observer = FZ_SYSTEM_INTELLIGENCE.observer;
+  if (!root || !observer) return;
+  observer.disconnect();
+  observer.observe(root, { childList: true, subtree: false });
+  FZ_SYSTEM_INTELLIGENCE.observerConnected = true;
 }
 
 function renderObservability() {
-  placeSection('data-materiality-observability', materialitySection(FZ_SYSTEM_INTELLIGENCE.system));
-  placeSection('data-dynamic-integrity', dynamicIntegritySection(), 'data-materiality-observability');
-  FZ_SYSTEM_INTELLIGENCE.mountedRoot = document.getElementById('system');
+  if (FZ_SYSTEM_INTELLIGENCE.rendering) return;
+  FZ_SYSTEM_INTELLIGENCE.rendering = true;
+  const observer = FZ_SYSTEM_INTELLIGENCE.observer;
+  if (observer) observer.disconnect();
+  try {
+    placeSection('data-materiality-observability', materialitySection(FZ_SYSTEM_INTELLIGENCE.system));
+    placeSection('data-dynamic-integrity', dynamicIntegritySection(), 'data-materiality-observability');
+    FZ_SYSTEM_INTELLIGENCE.mountedRoot = document.getElementById('system');
+  } finally {
+    FZ_SYSTEM_INTELLIGENCE.rendering = false;
+    observeSystemRoot();
+  }
 }
 
 const observer = new MutationObserver(() => {
-  if (!FZ_SYSTEM_INTELLIGENCE.system?.ok && !FZ_SYSTEM_INTELLIGENCE.training?.ok && !FZ_SYSTEM_INTELLIGENCE.trends?.ok) return;
-  queueMicrotask(renderObservability);
+  scheduleRenderObservability();
 });
+FZ_SYSTEM_INTELLIGENCE.observer = observer;
+
 function startSystemIntelligence() {
-  const root = document.getElementById('system');
-  if (root) observer.observe(root, { childList: true, subtree: false });
+  observeSystemRoot();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startSystemIntelligence, { once: true });
 else startSystemIntelligence();
