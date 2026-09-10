@@ -7,6 +7,7 @@ let revision = null;
 let converging = false;
 let refreshButtonBusy = false;
 let initialIntelligenceApplied = false;
+let intelligenceError = false;
 
 function requestUrl(input) {
   try { return new URL(typeof input === 'string' ? input : input.url, window.location.href); }
@@ -14,6 +15,7 @@ function requestUrl(input) {
 }
 function methodOf(input, init = {}) { return String(init.method || input?.method || 'GET').toUpperCase(); }
 function cloneJson(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
+function setText(element, value) { if (element && element.textContent !== value) element.textContent = value; }
 function jsonResponse(payload, original, extraHeaders = {}) {
   const headers = new Headers(original?.headers || {});
   headers.set('Content-Type','application/json; charset=utf-8');
@@ -91,16 +93,14 @@ function dispatchCanonicalReread() {
   window.dispatchEvent(new Event('focus'));
 }
 
-async function converge({ sources = false, forceWellness = false } = {}) {
+async function converge({ sources = false } = {}) {
   if (converging) return null;
   converging = true;
   decorateRecommendation();
   try {
-    const query = new URLSearchParams();
-    if (sources) query.set('sources','1');
-    if (sources && forceWellness) query.set('forceWellness','1');
-    const suffix = query.toString() ? `?${query}` : '';
+    const suffix = sources ? '?sources=1' : '';
     const result = await nativeJson(`/api/intelligence/refresh${suffix}`, sources ? 45000 : 20000);
+    intelligenceError = false;
     if (result?.afterRevision) revision = result.afterRevision;
     if (result?.activeRecommendation) {
       intelligence = { ...(intelligence || {}), activeRecommendation: result.activeRecommendation, pendingPropagation: result.pendingPropagation, pending: result.pending, revision: result.afterRevision, affectedSurfaces: result.affectedSurfaces };
@@ -116,6 +116,7 @@ async function converge({ sources = false, forceWellness = false } = {}) {
 async function pollIntelligence() {
   try {
     const next = await nativeJson('/api/intelligence/current', 12000);
+    intelligenceError = false;
     const previousRevision = revision;
     intelligence = next;
     revision = next.revision || revision;
@@ -128,6 +129,7 @@ async function pollIntelligence() {
     initialIntelligenceApplied = true;
     decorateRecommendation();
   } catch {
+    intelligenceError = true;
     decorateRecommendation();
   }
 }
@@ -136,6 +138,7 @@ function statusText() {
   if (refreshButtonBusy) return 'Refreshing canonical sources and intelligence…';
   if (converging) return 'Reconciling new evidence through FZ intelligence…';
   if (stalePaths.size) return `Showing last known canonical state · ${stalePaths.size} live read${stalePaths.size === 1 ? '' : 's'} unavailable.`;
+  if (intelligenceError) return 'Intelligence refresh is temporarily unavailable · current canonical display retained.';
   if (intelligence?.pendingPropagation) return 'New evidence detected · recommendation propagation pending.';
   if (intelligence?.activeRecommendation?.status === 'WITHHELD') return 'Recommendation withheld by the intelligence contract · no stale lane substituted.';
   if (intelligence?.activeRecommendation) return 'Active recommendation reconciled to canonical truth.';
@@ -148,22 +151,23 @@ function decorateRecommendation() {
   const active = intelligence?.activeRecommendation || null;
   const heading = card.querySelector('h3');
   const paragraph = card.querySelector('p');
-  if (active && heading) heading.textContent = active.status === 'WITHHELD' ? 'RECOMMENDATION WITHHELD' : (active.fzRecommendedLane || 'FZ RECOMMENDATION');
-  if (active && paragraph) paragraph.textContent = activeText(active);
+  if (active && heading) setText(heading, active.status === 'WITHHELD' ? 'RECOMMENDATION WITHHELD' : (active.fzRecommendedLane || 'FZ RECOMMENDATION'));
+  if (active && paragraph) setText(paragraph, activeText(active));
   let controls = card.querySelector('[data-fz-intelligence-controls]');
   if (!controls) {
     controls = document.createElement('div');
     controls.dataset.fzIntelligenceControls = '1';
     controls.className = 'fz-intelligence-controls';
-    controls.innerHTML = '<div class="fz-intelligence-status" aria-live="polite"></div><button class="fz-link-button" type="button" data-refresh-fz>Refresh FZ</button>';
+    controls.innerHTML = '<div class="fz-intelligence-status muted" aria-live="polite"></div><button class="fz-link-button" type="button" data-refresh-fz>Refresh FZ</button>';
     card.appendChild(controls);
   }
   const status = controls.querySelector('.fz-intelligence-status');
   const button = controls.querySelector('[data-refresh-fz]');
-  if (status) status.textContent = statusText();
+  setText(status, statusText());
   if (button) {
-    button.disabled = refreshButtonBusy || converging;
-    button.textContent = refreshButtonBusy ? 'Refreshing…' : 'Refresh FZ';
+    const disabled = refreshButtonBusy || converging;
+    if (button.disabled !== disabled) button.disabled = disabled;
+    setText(button, refreshButtonBusy ? 'Refreshing…' : 'Refresh FZ');
   }
 }
 
@@ -172,10 +176,10 @@ async function manualRefresh() {
   refreshButtonBusy = true;
   decorateRecommendation();
   try {
-    await converge({ sources: true, forceWellness: true });
+    await converge({ sources: true });
     await pollIntelligence();
   } catch {
-    stalePaths.add('/api/intelligence/refresh');
+    intelligenceError = true;
     decorateRecommendation();
   } finally {
     refreshButtonBusy = false;
