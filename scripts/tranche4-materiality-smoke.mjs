@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { evaluateMateriality, MATERIALITY_ENGINE_VERSION } from '../lib/materiality-engine.js';
+import { materialitySemanticPayload } from '../lib/materiality-store.js';
+import { sourceHash } from '../lib/training-store.js';
 
 function level(input) { return evaluateMateriality(input).level; }
 
@@ -98,5 +100,33 @@ const safety = evaluateMateriality({
 });
 assert.equal(safety.blocksExistingRecommendation, true);
 assert.equal(safety.shouldRecomputeRecommendation, true);
+
+const semanticAssessment = evaluateMateriality({
+  sourceType: 'ATHLETE_FEEDBACK',
+  eventType: 'CONTEXT',
+  certainty: 'REPORTED',
+  categories: ['STATE'],
+  summary: 'State is stable.'
+});
+const semanticPayloadA = materialitySemanticPayload({
+  evidenceKey: 'athlete:event:stable',
+  sourceType: 'ATHLETE_FEEDBACK',
+  sourceKey: 'conversation',
+  sourceRecordPk: 42,
+  athleteEventId: 77,
+  summary: 'State is stable.',
+  assessment: semanticAssessment
+});
+const semanticPayloadB = materialitySemanticPayload({
+  evidenceKey: 'athlete:event:stable',
+  sourceType: 'ATHLETE_FEEDBACK',
+  sourceKey: 'conversation',
+  sourceRecordPk: 42,
+  athleteEventId: 77,
+  summary: 'State is stable.',
+  assessment: semanticAssessment
+});
+assert.equal(Object.hasOwn(semanticPayloadA, 'assessedAt'), false, 'volatile processing time must not participate in canonical materiality content');
+assert.equal(sourceHash(semanticPayloadA), sourceHash(semanticPayloadB), 'same evidence and assessment must retain one semantic source hash across no-op replays');
 
 console.log('PASS Tranche 4.1 deterministic materiality engine');
