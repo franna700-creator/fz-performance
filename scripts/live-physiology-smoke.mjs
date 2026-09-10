@@ -1,3 +1,35 @@
 import fs from 'node:fs';
-const html=fs.readFileSync('dist/index.html','utf8');const live=fs.readFileSync('dist/assets/live-physiology.js','utf8');const css=fs.readFileSync('dist/assets/live-physiology.css','utf8');const app=fs.readFileSync('dist/assets/app-clean.js','utf8');const wellness=fs.readFileSync('api/wellness/today.js','utf8');
-const checks=[['live component loads before clean app',html.includes('/assets/live-physiology.js')&&html.indexOf('/assets/live-physiology.js')<html.indexOf('/assets/app-clean.js')],['live component stylesheet wired',html.includes('/assets/live-physiology.css')&&css.includes('.fz-live-physiology')],['persisted wellness paints first',app.includes("getJson('/api/wellness/today?refresh=0')")],['source refresh is explicit rather than DB-read side effect',live.includes('/api/wellness/today?refresh=1')],['background refresh uses source endpoint',live.includes('refreshSource')],['automatic source cadence is five minutes',live.includes('autoRefreshMs: 300000')],['focus visibility and online wake checks exist',live.includes("window.addEventListener('focus'")&&live.includes("document.addEventListener('visibilitychange'")&&live.includes("window.addEventListener('online'")],['wake source checks are throttled',live.includes('minWakeMs: 120000')],['manual Garmin refresh exists',live.includes('Refresh Garmin')],['source persistence invalidates canonical views',live.includes("window.dispatchEvent(new Event('focus'))")],['all four intraday scrub graphs restored',['stress','bodyBattery','heartRate','respiration'].every(metric=>live.includes(`data-metric="${metric}"`))],['respiration excludes zero placeholders',live.includes('value<=0')],['freshness is explicit',live.includes('freshnessLabel')],['source and persistence timestamps visible',live.includes('Source')&&live.includes('Persisted')],['backend source refresh path retained',wellness.includes('syncLiveWellness')],['no extra serverless route added for UI correction',!fs.existsSync('api/wellness/live.js')]];let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok)bad++;}if(bad)process.exit(1);console.log('PASS Live Physiology dynamic runtime contract');
+
+const html = fs.readFileSync('dist/index.html', 'utf8');
+const live = fs.readFileSync('dist/assets/live-physiology.js', 'utf8');
+const css = fs.readFileSync('dist/assets/live-physiology.css', 'utf8');
+const app = fs.readFileSync('dist/assets/app-clean.js', 'utf8');
+const wellnessApi = fs.readFileSync('api/wellness/today.js', 'utf8');
+const wellnessSync = fs.readFileSync('lib/wellness-sync.js', 'utf8');
+
+const checks = [
+  ['live component loads before clean app', html.includes('/assets/live-physiology.js') && html.indexOf('/assets/live-physiology.js') < html.indexOf('/assets/app-clean.js')],
+  ['live component stylesheet wired', html.includes('/assets/live-physiology.css') && css.includes('.fz-live-chart-v3')],
+  ['persisted wellness paints first', app.includes("getJson('/api/wellness/today?refresh=0')") && live.includes('captureWellnessResponse')],
+  ['source refresh is explicit rather than DB-read side effect', !live.includes("requestUrl?.searchParams.get('refresh') === '0'") && live.includes("setTimeout(() => refreshSource({ reason: 'initial' })")],
+  ['background refresh uses source endpoint', live.includes("const url = force ? '/api/wellness/today?refresh=1' : '/api/wellness/today'")],
+  ['automatic source cadence is five minutes', live.includes('autoRefreshMs: 300000') && live.includes('setInterval')],
+  ['focus visibility and online wake checks exist', live.includes("window.addEventListener('focus'") && live.includes("document.addEventListener('visibilitychange'") && live.includes("window.addEventListener('online'")],
+  ['wake source checks are throttled', live.includes('minWakeMs: 120000')],
+  ['manual Garmin refresh exists', live.includes("'/api/wellness/today?refresh=1'") && live.includes('Refresh Garmin')],
+  ['source persistence invalidates canonical views', live.includes("new Event('focus')") && live.includes("source: 'wellness'")],
+  ['all four intraday scrub graphs restored', ['body_battery','stress','heart_rate','respiration'].every(key => live.includes(key)) && live.includes('fz-live-scrub-line') && live.includes('ArrowLeft') && live.includes('pointerdown')],
+  ['respiration excludes zero placeholders', live.includes("respiration: { label: 'Respiration'") && live.includes('value > 0')],
+  ['freshness is explicit', live.includes('freshnessClass') && live.includes('data-freshness') && css.includes('.fz-live-freshness.bad')],
+  ['source and persistence timestamps visible', live.includes('Garmin ${sourceTime}') && live.includes('FZ persisted ${persistedTime}')],
+  ['backend source refresh path retained', wellnessApi.includes('const dbOnly') && wellnessApi.includes('syncWellnessToday') && wellnessSync.includes('MIN_SYNC_INTERVAL_MS = 2 * 60 * 1000')],
+  ['no extra serverless route added for UI correction', !fs.existsSync('api/wellness/live-physiology.js')]
+];
+
+let bad = 0;
+for (const [name, ok] of checks) {
+  console.log(ok ? 'PASS' : 'FAIL', name);
+  if (!ok) bad += 1;
+}
+if (bad) process.exit(1);
+console.log('PASS Live Physiology dynamic runtime contract');
