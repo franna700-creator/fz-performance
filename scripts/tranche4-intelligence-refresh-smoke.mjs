@@ -17,8 +17,11 @@ assert.match(training, /recommendationMateriality/, 'training recomputation must
 assert.match(training, /source_key <> 'fz-intelligence'/, 'training revision marker must be isolated from intelligence ledger writes');
 assert.match(wellness, /assessWellnessCurrentMateriality/, 'Garmin wellness must pass through 4.1 materiality after canonical persistence');
 
-assert.match(api, /req\.method !== 'GET'/, 'refresh endpoint must expose one bounded method');
-assert.match(api, /const refreshSources = flag\(req\.query\?\.sources\)/, 'external source refresh must be explicit rather than automatic on every intelligence poll');
+assert.match(api, /req\.method !== 'POST'/, 'state-changing intelligence convergence must be POST-only');
+assert.match(api, /input\.sources === true/, 'external source refresh must be explicit in the POST contract rather than automatic on intelligence polling');
+assert.match(api, /forceWellness:\s*false/, 'public refresh may not bypass the Garmin wellness throttle');
+assert.match(api, /cross_site_refresh_forbidden/, 'cross-site browser refresh requests must be rejected');
 assert.match(api, /X-Content-Type-Options/, 'refresh response must retain basic browser hardening');
+assert.doesNotMatch(api, /FZ_STATE_WRITE_TOKEN/, '4.3 convergence may not reuse or expose the runtime state-write bearer token');
 
 console.log('PASS Tranche 4.3 intelligence refresh orchestration');
