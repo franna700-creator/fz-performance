@@ -1,33 +1,42 @@
 {
-  "release": "0.6.1",
-  "releaseDate": "2026-09-07",
-  "classification": "PRODUCT RELEASE — CADENCE ALIGNMENT / SHELL LABEL CLEANUP",
-  "sourceModel": "v0.6.0 longitudinal TRENDS baseline retained; shell/countdown/runtime-state schedule aligned to the approved 06:00 and 20:00 intelligence cadence with 06:30 and 20:30 publish/verify separation",
-  "generatedFiles": {
-    "index.html": "sha256:07aec6f0c7e77334286a37bcfb232332fc832424f230daefe6a784007df68353",
-    "assets/app.css": "sha256:9494e1a74706c8083532a1a2b009c08f46bc57c4cafbce86cc7d991a90c6b637",
-    "assets/app.js": "sha256:8029f25df298bc2d311b061bde91184c706000b6ebcc762fbc05f8aefeb5e2b1",
-    "api/runtime-state.js": "sha256:f0960cd9fde9ff92439502b2b1a547f1e86e2390ca70ac27a95f0ce4fdbb9d1f"
-  },
+  "release": "0.7.0-rc.1",
+  "releaseDate": "2026-09-10",
+  "classification": "PRODUCT RELEASE — DYNAMIC RUNTIME / LIVE SOURCE ORCHESTRATION / TRANCHE 4.1 OBSERVABILITY / DEPLOYMENT HARDENING",
+  "sourceModel": "Neon operational truth with explicit five-minute source refresh for physiology and training; canonical runtime reread after persistence; immutable Vercel state transport retained as fail-stale fallback only",
   "features": [
-    "v0.6 longitudinal TRENDS architecture retained",
-    "shell version marker advanced to v0.6.1",
-    "shell and countdown schedule aligned to 06:00 / 20:00 SAST",
-    "legacy 13:00 slot removed from generated shell and runtime-state schedule schema",
-    "stale v0.5 shell labels removed from generated HTML",
-    "06:00 / 06:30 and 20:00 / 20:30 intelligence-publisher separation documented",
-    "all immutable-generation, fail-stale and previous-generation fallback controls retained",
-    "TODAY / TRENDS / TRAIN / SYSTEM navigation and longitudinal interactions retained",
-    "pointer/touch/keyboard chart scrubbing retained"
+    "explicit Garmin physiology source refresh on load, every five minutes while visible, and wake-up checks",
+    "persisted-first Live Physiology with four scrubbed intraday traces",
+    "persisted-first training memory with five-minute source reconciliation and manual Sync workouts",
+    "immediate canonical reread after source persistence so downstream Trends/System/Training views move without shell deployment",
+    "read-only Tranche 4.1 materiality observability in SYSTEM",
+    "production smoke uses dynamic invariants instead of frozen rolling NCL totals",
+    "automatic Vercel Git deployments disabled; deliberate pinned release only",
+    "Neon-primary runtime/state documentation aligned with current production architecture"
   ],
+  "dynamicRuntime": {
+    "canonicalRereadMs": 300000,
+    "physiologySourceCheckMs": 300000,
+    "trainingSourceCheckMs": 300000,
+    "wakeThrottleMs": 120000,
+    "manualGarminRefresh": true,
+    "manualWorkoutSync": true,
+    "requiresShellDeploymentForDataRefresh": false
+  },
+  "intelligenceBoundary": {
+    "materialityEngine": "4.1.0",
+    "observability": true,
+    "automaticRecommendationRecompute": false,
+    "nextTranche": "4.2"
+  },
   "releaseGate": {
     "deterministicBuild": "required",
     "staticChecks": "required",
     "schemaChecks": "required",
-    "longitudinalMarkerChecks": "required",
-    "preview": "required",
-    "browserSmoke": "required where available",
-    "productionPromotion": "exact-tested-artifact-only",
+    "dynamicRuntimeChecks": "required",
+    "materialityChecks": "required",
+    "preview": "one deliberate pinned preview",
+    "browserSmoke": "required desktop + mobile",
+    "productionPromotion": "exact-tested-candidate only",
     "productionReadback": "required",
     "rollback": "required"
   }

@@ -12,6 +12,7 @@ jobs:
       - run: npm run build
       - run: node --check dist/assets/app-clean.js
       - run: node --check dist/assets/live-physiology.js
+      - run: node --check dist/assets/system-intelligence.js
       - run: node --check dist/assets/training-auto-sync.js
       - run: node --check api/runtime-state.js
       - run: node --check api/runtime-state-write.js
@@ -43,7 +44,10 @@ jobs:
       - run: node --check scripts/clean-smoke.mjs
       - run: node --check scripts/live-physiology-smoke.mjs
       - run: node --check scripts/training-auto-sync-smoke.mjs
+      - run: node --check scripts/system-intelligence-smoke.mjs
+      - run: node --check scripts/dynamic-runtime-smoke.mjs
       - run: node --check scripts/tranche4-materiality-smoke.mjs
+      - run: node --check scripts/production-smoke.mjs
       - run: node -e "Promise.all([import('@neondatabase/serverless'),import('@modelcontextprotocol/client')]).then(() => console.log('Runtime drivers OK'))"
       - run: node scripts/schema-smoke.mjs
       - run: node scripts/tranche3-training-smoke.mjs
@@ -52,11 +56,13 @@ jobs:
       - run: node scripts/clean-smoke.mjs
       - run: node scripts/live-physiology-smoke.mjs
       - run: node scripts/training-auto-sync-smoke.mjs
+      - run: node scripts/system-intelligence-smoke.mjs
+      - run: node scripts/dynamic-runtime-smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: fz-consolidated-release-${{ github.sha }}
+          name: fz-v0.7.0-release-${{ github.sha }}
           path: |
             dist/
             api/
