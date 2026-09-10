@@ -29,8 +29,9 @@ const runtimeSources=[objectiveStore,adaptive,fs.readFileSync('lib/recommendatio
 for(const forbidden of ['hyrox-johannesburg-2026-11-28','deadly-dozen-uj-2026-09-20','hoka-half-pretoria-2026-09-24']) {
   assert.equal(runtimeSources.includes(forbidden),false,`runtime logic must not hard-code current event id ${forbidden}`);
 }
-assert.equal(objectiveStore.includes('CONFIG_SEED_FALLBACK'),false,'empty runtime graph must not resurrect static event seed');
-assert.equal(objectiveStore.includes('reference.transferRules'),false,'live event transfer must not be injected from static config');
+for(const forbiddenConfig of ['objective-seed.json','event-format-profiles.json','CONFIG_SEED_FALLBACK','reference.transferRules']) {
+  assert.equal(objectiveStore.includes(forbiddenConfig),false,`runtime objective loader must not contain static event fallback/reference: ${forbiddenConfig}`);
+}
 assert.equal(objectiveStore.includes('fz_event_transfer_assessments'),true,'live transfer calibration must come from Neon assessment history');
 assert.equal(objectiveStore.includes('fz_event_source_evidence'),true,'runtime event provenance must include athlete/research source evidence');
 assert.equal(adaptive.includes('eventDataIsRuntimeVariable:true'),true,'adaptive context must declare runtime-variable event semantics');
@@ -52,4 +53,4 @@ const baseDecision={
 const revisedDecision={...baseDecision,evidence:[baseDecision.evidence[0],{...baseDecision.evidence[1],ref:'event:window-event:r2:overlap:0.7'}]};
 assert.notEqual(recommendationContextFingerprint(baseDecision),recommendationContextFingerprint(revisedDecision),'event revision/overlap evidence must change recommendation identity');
 
-console.log('PASS event runtime variability: no live seed resurrection, dynamic dates/participation, Neon transfer provenance, revision-sensitive shadow identity');
+console.log('PASS event runtime variability: no static runtime event seed, dynamic dates/participation, Neon transfer provenance, revision-sensitive shadow identity');
