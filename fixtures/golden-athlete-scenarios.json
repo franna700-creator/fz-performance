@@ -1,0 +1,16 @@
+{
+  "version":"1.0",
+  "purpose":"Synthetic regression scenarios for FZ athlete-state intelligence. They test invariants, not athlete-specific outcomes.",
+  "scenarios":[
+    {"id":"high-readiness-after-heavy-load","expectedInvariants":["READINESS_DOES_NOT_ERASE_RECENT_LOAD","NO_AUTOMATIC_ADAPT_FROM_SINGLE_POSITIVE_SIGNAL","OBJECTIVE_CONTEXT_RETAINED"]},
+    {"id":"poor-sleep-fresh-legs-discordance","expectedInvariants":["SUBJECTIVE_OBJECTIVE_DISCORDANCE_PRESERVED","NO_SINGLE_SIGNAL_VETO_WITHOUT_SAFETY","UNCERTAINTY_EXPLICIT"]},
+    {"id":"newer-sparse-training-evidence","expectedInvariants":["MONOTONIC_BEST_AVAILABLE_EVIDENCE","ZERO_FALSE_VALUES_PRESERVED","NEWER_SPARSE_DOES_NOT_ERASE_RICHER_HISTORY"]},
+    {"id":"feedback-before-workout-source","expectedInvariants":["ATHLETE_MEMORY_PERSISTS_UNLINKED_FIRST","LATE_BINDING_ALLOWED","LINK_METHOD_CONFIDENCE_PROVENANCE_PERSISTED"]},
+    {"id":"aborted-aet-gi","expectedInvariants":["AET_NON_COMPARABLE_FOR_PERFORMANCE","TRAINING_LOAD_STILL_COUNTS","MATERIAL_RESPONSE_CAN_RECOMPUTE_RECOMMENDATION"]},
+    {"id":"two-sessions-same-day","expectedInvariants":["CANONICAL_SESSION_IDENTITIES_REMAIN_DISTINCT","DAY_LOAD_AGGREGATES_BOTH","FEEDBACK_ASSOCIATION_MUST_NOT_GUESS"]},
+    {"id":"ambiguous-session-feedback","expectedInvariants":["AMBIGUOUS_FEEDBACK_REMAINS_UNLINKED","CANDIDATES_MAY_BE_RETAINED","NO_GUESSED_RELATIONSHIP"]},
+    {"id":"rest-zero-vs-pending-detail","expectedInvariants":["VERIFIED_REST_MAY_BE_ZERO","WORKOUT_WITH_MISSING_DETAIL_IS_NULL_PENDING","MISSING_NEVER_ZERO"]},
+    {"id":"athlete-overrides-recommended-lane","expectedInvariants":["RECOMMENDED_AND_SELECTED_LANES_BOTH_PERSIST","OVERRIDE_REASON_IS_EVIDENCE","SAFETY_REMAINS_ABOVE_PREFERENCE"]},
+    {"id":"stale-source-not-live","expectedInvariants":["STALE_SOURCE_NEVER_PRESENTED_AS_LIVE","LAST_VALIDATED_STATE_MAY_DISPLAY_WITH_STALE_FLAG","NO_FALSE_FRESHNESS_ANIMATION"]}
+  ]
+}

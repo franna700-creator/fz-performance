@@ -1,13 +1,13 @@
 {
   "name": "fz-performance",
-  "version": "0.7.0-rc.7",
+  "version": "0.7.0-rc.8",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/build.mjs && node scripts/clean-shell.mjs && node scripts/clean-smoke.mjs && node scripts/live-physiology-smoke.mjs && node scripts/training-auto-sync-smoke.mjs && node scripts/system-intelligence-smoke.mjs && node scripts/dynamic-runtime-smoke.mjs && node scripts/training-evidence-smoke.mjs && node scripts/training-classifier-smoke.mjs && node scripts/athlete-memory-reconcile-smoke.mjs && node scripts/athlete-input-ingestion-standard-smoke.mjs && node scripts/runtime-consistency-smoke.mjs && node scripts/adaptive-choice-schema-smoke.mjs && node scripts/design-system-smoke.mjs && node scripts/systemic-repair-smoke.mjs && node scripts/event-objective-schema-smoke.mjs && node scripts/event-objective-smoke.mjs && node scripts/data-contract-smoke.mjs && node scripts/dependency-graph-smoke.mjs && node scripts/reconciliation-sweep-smoke.mjs && node scripts/event-format-smoke.mjs && node scripts/event-intake-schema-smoke.mjs && node scripts/event-intelligence-smoke.mjs && node scripts/contract-dependency-closure-smoke.mjs"
+    "build": "node scripts/build.mjs && node scripts/clean-shell.mjs && node scripts/clean-smoke.mjs && node scripts/live-physiology-smoke.mjs && node scripts/training-auto-sync-smoke.mjs && node scripts/system-intelligence-smoke.mjs && node scripts/dynamic-runtime-smoke.mjs && node scripts/training-evidence-smoke.mjs && node scripts/training-classifier-smoke.mjs && node scripts/athlete-memory-reconcile-smoke.mjs && node scripts/athlete-input-ingestion-standard-smoke.mjs && node scripts/runtime-consistency-smoke.mjs && node scripts/adaptive-choice-schema-smoke.mjs && node scripts/design-system-smoke.mjs && node scripts/systemic-repair-smoke.mjs && node scripts/event-objective-schema-smoke.mjs && node scripts/event-objective-smoke.mjs && node scripts/data-contract-smoke.mjs && node scripts/dependency-graph-smoke.mjs && node scripts/reconciliation-sweep-smoke.mjs && node scripts/event-format-smoke.mjs && node scripts/event-intake-schema-smoke.mjs && node scripts/event-intelligence-smoke.mjs && node scripts/contract-dependency-closure-smoke.mjs && node scripts/event-demand-taxonomy-smoke.mjs && node scripts/hyrox-measurement-hierarchy-smoke.mjs && node scripts/recommendation-explainability-smoke.mjs && node scripts/golden-athlete-scenarios-smoke.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.0.0",

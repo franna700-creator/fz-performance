@@ -1,0 +1,233 @@
+{
+  "version": "1.0",
+  "principles": {
+    "primaryObjectiveDrivesHierarchy": true,
+    "missingEvidenceIsUnknownNotWeakness": true,
+    "directEventEvidenceOutranksProxyEvidence": true,
+    "measurementPriorityIsNotSessionPrescription": true,
+    "recoveryCostIsPartOfPerformanceEvidence": true
+  },
+  "hierarchies": [
+    {
+      "id": "hyrox-singles-v1",
+      "eventFamilies": [
+        "HYROX"
+      ],
+      "variants": [
+        "SINGLES_OPEN_MEN",
+        "SINGLES_OPEN_WOMEN",
+        "SINGLES_PRO_MEN",
+        "SINGLES_PRO_WOMEN"
+      ],
+      "measurements": [
+        {
+          "id": "running.compromised_repeatability",
+          "priority": 1.0,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "compromised_running",
+            "mixed_modality_repeatability"
+          ],
+          "preferredEvidence": [
+            "HYROX_SIMULATION_RUN_SPLITS",
+            "RUN_WORK_INTERVAL_SPLITS"
+          ],
+          "proxyEvidence": [
+            "DEADLY_DOZEN_RUN_SPLITS"
+          ],
+          "question": "Can event-relevant running output be restored repeatedly after work?"
+        },
+        {
+          "id": "running.fade",
+          "priority": 0.98,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "compromised_running",
+            "race_pacing"
+          ],
+          "preferredEvidence": [
+            "RUN_SPLIT_DECAY",
+            "HYROX_SIMULATION_RUN_SPLITS"
+          ],
+          "proxyEvidence": [
+            "REPEATED_RUN_WORK_SPLITS"
+          ],
+          "question": "How much does running deteriorate across repeated compromised bouts?"
+        },
+        {
+          "id": "running.controlled_efficiency",
+          "priority": 0.95,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "running_economy",
+            "threshold_aerobic_power"
+          ],
+          "preferredEvidence": [
+            "MATCHED_RUN_AET",
+            "CONTROLLED_STEADY_RUN"
+          ],
+          "proxyEvidence": [
+            "ROAD_RACE_RUNNING"
+          ],
+          "question": "What external running output is produced for a controlled internal cost?"
+        },
+        {
+          "id": "station.recovery_cost",
+          "priority": 0.94,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "mixed_modality_repeatability",
+            "local_tissue_tolerance"
+          ],
+          "preferredEvidence": [
+            "POST_STATION_RUN_RESPONSE",
+            "NEXT_DAY_RESPONSE",
+            "LOCAL_SORENESS_RESPONSE"
+          ],
+          "proxyEvidence": [
+            "ATHLETE_MEMORY"
+          ],
+          "question": "What does a station exposure cost the next run and the following recovery window?"
+        },
+        {
+          "id": "station.work_rate",
+          "priority": 0.92,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "station_strength_endurance"
+          ],
+          "preferredEvidence": [
+            "STANDARDISED_STATION_SPLIT",
+            "SIMULATION_STATION_SPLIT"
+          ],
+          "proxyEvidence": [
+            "TRAINING_SET_COMPLETION"
+          ],
+          "question": "Can station output be produced at a repeatable race-relevant rate?"
+        },
+        {
+          "id": "station.sled_capability",
+          "priority": 0.91,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "station_strength_endurance",
+            "mixed_modality_repeatability"
+          ],
+          "preferredEvidence": [
+            "STANDARDISED_SLED_PUSH",
+            "STANDARDISED_SLED_PULL"
+          ],
+          "proxyEvidence": [
+            "HORIZONTAL_FORCE_STRENGTH"
+          ],
+          "question": "Is race-load sled work measurable and repeatable without disproportionate downstream cost?"
+        },
+        {
+          "id": "station.wall_ball_tolerance",
+          "priority": 0.9,
+          "tier": "PRIMARY",
+          "capabilities": [
+            "station_strength_endurance",
+            "local_tissue_tolerance"
+          ],
+          "preferredEvidence": [
+            "STANDARDISED_WALL_BALL_SET",
+            "WALL_BALL_AET",
+            "POST_WALL_BALL_RESPONSE"
+          ],
+          "proxyEvidence": [
+            "SQUAT_OVERHEAD_ENDURANCE"
+          ],
+          "question": "Can wall-ball volume be completed efficiently without excessive local recovery cost?"
+        },
+        {
+          "id": "transition.cost",
+          "priority": 0.86,
+          "tier": "SECONDARY",
+          "capabilities": [
+            "transition_efficiency",
+            "race_pacing"
+          ],
+          "preferredEvidence": [
+            "ROXZONE_OR_TRANSITION_SPLITS",
+            "RUN_TO_STATION_TRANSITION"
+          ],
+          "proxyEvidence": [
+            "HYBRID_SESSION_TRANSITIONS"
+          ],
+          "question": "How much time and physiological disruption is lost changing between running and work?"
+        },
+        {
+          "id": "station.erg_efficiency",
+          "priority": 0.84,
+          "tier": "SECONDARY",
+          "capabilities": [
+            "aerobic_durability",
+            "mixed_modality_repeatability"
+          ],
+          "preferredEvidence": [
+            "SKIERG_1000M_STANDARDISED",
+            "ROWERG_1000M_STANDARDISED"
+          ],
+          "proxyEvidence": [
+            "ERG_AET",
+            "ERG_STEADY_OUTPUT"
+          ],
+          "question": "Can SkiErg and row output be produced efficiently without compromising subsequent running?"
+        },
+        {
+          "id": "station.carry_grip",
+          "priority": 0.8,
+          "tier": "SECONDARY",
+          "capabilities": [
+            "station_strength_endurance",
+            "mixed_modality_repeatability"
+          ],
+          "preferredEvidence": [
+            "STANDARDISED_FARMERS_CARRY"
+          ],
+          "proxyEvidence": [
+            "DEADLY_DOZEN_CARRY",
+            "GRIP_ENDURANCE_SET"
+          ],
+          "question": "Is carry speed and grip endurance adequate at race load?"
+        },
+        {
+          "id": "strength_endurance.repeatability",
+          "priority": 0.84,
+          "tier": "SECONDARY",
+          "capabilities": [
+            "station_strength_endurance",
+            "mixed_modality_repeatability"
+          ],
+          "preferredEvidence": [
+            "REPEATED_STATION_BLOCKS",
+            "HYBRID_SIMULATION"
+          ],
+          "proxyEvidence": [
+            "DEADLY_DOZEN_STATIONS"
+          ],
+          "question": "Can useful muscular output be repeated without large decay?"
+        },
+        {
+          "id": "recovery.post_hybrid_cost",
+          "priority": 0.82,
+          "tier": "SECONDARY",
+          "capabilities": [
+            "local_tissue_tolerance",
+            "mixed_modality_repeatability"
+          ],
+          "preferredEvidence": [
+            "NEXT_DAY_RESPONSE",
+            "HRV_RHR_SLEEP_RESPONSE",
+            "ATHLETE_MEMORY"
+          ],
+          "proxyEvidence": [
+            "SESSION_RPE"
+          ],
+          "question": "Can race-specific work be absorbed while preserving the next valuable training opportunity?"
+        }
+      ]
+    }
+  ]
+}

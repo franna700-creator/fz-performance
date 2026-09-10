@@ -19,67 +19,45 @@ Athlete Memory can late-bind. Pre-workout context may remain standalone, but cle
 
 Raw source labels remain provenance. The PWA may derive a more useful canonical workout identity from Tredict, Garmin and linked Athlete Memory, with explicit confidence. Historical ABSORB / MAINTAIN / ADAPT intent is descriptive only in v0.7.
 
-SYSTEM exposes both Tranche 4.1 materiality and broad Dynamic Runtime Integrity so stale/missing relationships can be seen as system state rather than discovered ad hoc from an individual page.
+SYSTEM exposes both Tranche 4.1 materiality and broad Dynamic Runtime Integrity so stale/missing relationships can be seen as system state rather than discovered ad hoc from an individual chart.
 
-## Event + objective intelligence foundation
-
-v0.7 also introduces a generic event/objective graph. Events, objectives and reusable capabilities are separate concepts:
-
-- an event has a date, lifecycle and role;
-- strategic priority is distinct from proximity;
-- events map to reusable capability demands;
-- secondary/validation events contribute transferable evidence without becoming interchangeable with the primary objective;
-- new events can be inserted/rescheduled without changing recommendation code;
-- evergreen objectives can exist independently from the race calendar;
-- dynamic event/objective persistence is prepared as migration 005 but remains inactive until the release migration gate.
-
-Current seeded planning hierarchy is explicit: HYROX Johannesburg 28 Nov 2026 is PRIMARY; Hoka Half Marathon Pretoria 24 Sep carries the explicit 1:50:00 secondary target; Deadly Dozen UJ is a VALIDATION event where sub-60 is desirable but not an active development target.
-
-## Event-format intelligence
-
-A race name is not enough evidence for FZ to infer its training value. New events enter an event-knowledge gate. Athlete-described or adequately researched structure is converted into a reusable demand fingerprint; unknown structure remains `RESEARCH_REQUIRED` and cannot influence capability priority until resolved.
-
-Deadly Dozen and HYROX are therefore not represented simply as two HYBRID events. Their exact run/station structures are retained and transferable elements are mapped explicitly. Deadly Dozen can strengthen evidence for compromised running, transitions, farmer carry, burpee-broad-jump locomotion, lunging and general strength-endurance while leaving HYROX-specific ergs, sleds, wall balls and 1 km compromised-running repeatability under-measured.
-
-`TRANSFER_POTENTIAL` is deliberately separate from `NET_TRAINING_VALUE`; event similarity is not an automatic recommendation to race.
+See `docs/DYNAMIC_RUNTIME_CONSISTENCY_STANDARD.md`, `docs/RELEASE_V0_7_0_ACCEPTANCE.md` and `docs/TRANCHE_4_ADAPTIVE_CHOICE_ARCHITECTURE.md`.
 
 ## FZ design and systemic repair contract
 
-`src/fz-design-system.css` is the authoritative visual semantics layer and must load last. FZ black `#050505` and FZ yellow `#f5cf19` are canonical brand anchors. All pages share surface, type, control, focus, status and chart semantics. Motion is reserved for truthful living-state transitions and honours `prefers-reduced-motion`.
+FZ visual semantics are centralised in `src/fz-design-system.css`, loaded last. The brand anchors are `#050505` black and `#f5cf19` yellow, matching the application mark. Page-specific modules may own layout, but they do not invent independent colour, status, control or focus semantics.
 
-Repairs follow `docs/SYSTEMIC_REPAIR_STANDARD.md`: diagnose the owning layer, state the invariant, repair the earliest safe layer, reconcile dependants, test the invariant, and verify every affected surface. Date-specific hard-coding is permitted only as an explicit migration/backfill after the systemic rule exists.
+The project also follows `docs/SYSTEMIC_REPAIR_STANDARD.md`: fixes are made at the earliest safe invariant layer, propagated through dependent contracts, and protected by regression tests. Date-specific corrections may exist only as documented backfills after the systemic rule is repaired.
 
-The intended outcome is **fix once, stay fixed**: source refreshes propagate through canonical persistence, reconciliation, derivation, intelligence and presentation without shell deployments.
+The intended development habit is therefore: **diagnose once → fix the invariant → reconcile dependants → test the invariant → keep it fixed.**
 
-## Data contracts + dependency graph
+## Adaptive roadmap
 
-`lib/data-contract-registry.js` is the canonical contract catalogue for current decision-driving data. It declares each concept's owner, source/derivation, freshness class, missing semantics, fallback, provenance, primary UI home and downstream consumers.
+The prepared Adaptive Choice contract defines the future three-lane model: **ABSORB / MAINTAIN / ADAPT**. It is intentionally not activated in v0.7. Tranche 4.2 owns recommendation recomputation, 4.3 athlete accept/override, and 4.4 ranked session composition.
 
-`lib/runtime-dependency-graph.js` defines the transitive invalidation path from source evidence through canonical truth, derivations, intelligence and UI surfaces. `scripts/contract-dependency-closure-smoke.mjs` cross-checks the two so they cannot silently drift apart.
+## Runtime truth
 
-A new workout, Garmin wellness refresh, athlete feedback, event change or objective change should invalidate the dependency graph once; pages reread the resulting truth rather than maintaining their own refresh logic.
+Neon is operational truth for runtime state, wellness, training and Athlete Memory. Google Drive remains the human-owned audit/flight-recorder representation. The legacy immutable Vercel state project is fail-stale recovery only and is not used for routine publication.
 
-## Data and UI ownership
+## RC4 objective intelligence foundation
+The release candidate now also prepares the dynamic event/objective layer that later adaptive recommendations will consume. Strategic event priority is separated from near-term event pressure; events share capability evidence through weighted transfer rather than direct equivalence; and an evergreen maintenance objective can be surfaced after event-specific goals change without activating silently.
 
-- Neon is the operational runtime truth.
-- Drive remains an audit/human representation, not the app data backend.
-- Static HTML is a neutral shell; athlete-state values live in runtime APIs.
-- TODAY owns current state and recommendation.
-- TRENDS owns longitudinal change and performance relationships.
-- TRAIN owns canonical training execution and Athlete Memory.
-- SYSTEM owns source/freshness/provenance and adaptive-intelligence observability.
+Architecture hardening also includes an executable data-contract registry, transitive dependency graph and read-only systemic reconciliation sweep so future fixes propagate across dependent contracts rather than remaining page-local.
 
-## Release gate
+## RC5 event-demand correction
+RC5 replaces generic event-family assumptions with exact demand profiles. Deadly Dozen Track is encoded as 12 x 400 m Journeys + 12 ordered Labours with South African male loads, HYROX Open Men as 8 x 1 km + 8 official workout stations, and the half marathon as continuous 21.0975 km road running. Cross-event evidence now transfers at station/capability level rather than by vague hybrid-sport similarity. Source date conflicts are surfaced rather than silently corrected.
 
-Pre-release changes are prepared off-branch/off-Vercel. Before production:
+## RC6 event-intelligence ingestion
+RC6 makes future event handling systemic. A new event can be captured immediately, but it does not influence capability priorities merely because FZ knows its name or date. The event must first pass a format knowledge gate using athlete-confirmed structure or adequate sourced research. Qualified profiles are converted into demand fingerprints and compared directionally with the current primary objective across running structure, stations/movements, modalities, transitions and reusable capabilities.
 
-1. create one exact candidate commit;
-2. run full repository CI/build;
-3. confirm deployment quota/headroom;
-4. create one pinned Vercel Preview;
-5. verify desktop/mobile rendered UI and live APIs against that exact deployment;
-6. run candidate-pinned release smoke;
-7. promote that exact candidate only;
-8. verify production readback and keep rollback ready.
+This separates **transfer potential** from **net training value**. Similar or overlapping events can provide useful evidence toward the primary objective without being interchangeable; whether doing the event is strategically positive on a given date still depends on recovery and opportunity cost and belongs to Tranche 4.2.
 
-Routine data refreshes do not deploy.
+Deadly Dozen UJ is now resolved to the athlete-confirmed race date of Sunday 20 Sep 2026. The previously observed external 19 Sep discrepancy remains provenance only.
+
+## RC7 release preparation
+RC7 completes the 21–26 pre-deployment preparation pass: release metadata is normalized, the data-contract registry is expanded to every current decision-driving concept, and the dependency graph is cross-validated against each contract's declared triggers/consumers. The exact candidate remains off Vercel until quota headroom is confirmed.
+
+
+## Event demand, measurement and explainability foundation
+
+RC8 preparation adds four reusable intelligence contracts on top of the RC7 systemic foundation: Event Demand Taxonomy v1, a primary-objective-resolved measurement hierarchy (HYROX v1 first), a recommendation explainability contract, and ten synthetic golden athlete scenarios. These are software/intelligence primitives, not athlete-state hard-coding. Once deployed, athlete event additions, event changes and ordinary feedback remain runtime data operations under the Athlete Input Intelligence Ingestion Standard.

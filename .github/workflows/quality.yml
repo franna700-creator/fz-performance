@@ -54,6 +54,13 @@ jobs:
       - run: node --check lib/systemic-reconciliation-sweep.js
       - run: node --check lib/event-format-model.js
       - run: node --check lib/event-intelligence.js
+      - run: node --check lib/event-demand-taxonomy.js
+      - run: node --check lib/measurement-hierarchy.js
+      - run: node --check lib/recommendation-explainability.js
+      - run: node --check scripts/event-demand-taxonomy-smoke.mjs
+      - run: node --check scripts/hyrox-measurement-hierarchy-smoke.mjs
+      - run: node --check scripts/recommendation-explainability-smoke.mjs
+      - run: node --check scripts/golden-athlete-scenarios-smoke.mjs
       - run: node --check scripts/event-objective-schema-smoke.mjs
       - run: node --check scripts/event-objective-smoke.mjs
       - run: node --check scripts/data-contract-smoke.mjs
@@ -106,6 +113,10 @@ jobs:
       - run: node scripts/event-intake-schema-smoke.mjs
       - run: node scripts/event-intelligence-smoke.mjs
       - run: node scripts/contract-dependency-closure-smoke.mjs
+      - run: node scripts/event-demand-taxonomy-smoke.mjs
+      - run: node scripts/hyrox-measurement-hierarchy-smoke.mjs
+      - run: node scripts/recommendation-explainability-smoke.mjs
+      - run: node scripts/golden-athlete-scenarios-smoke.mjs
       - name: Package validated release bundle
         if: success() && github.event_name == 'push'
         uses: actions/upload-artifact@v4
