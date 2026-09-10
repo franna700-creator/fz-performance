@@ -1,11 +1,12 @@
 {
   "schemaVersion": "1.0",
-  "enabled": true,
+  "enabled": false,
   "scope": "PINNED_RELEASE_ONLY",
   "release": "TRANCHE_4_2_SHADOW",
   "validatedCandidateSha": "9e07978432f156bc0c2b0ef9516fd49fa8dcf3cc",
   "validatedCandidateTree": "199a2800b8486ad3cb0d3a2889e155421fb46134",
   "releaseBranch": "release-4-2-pinned",
   "createdOn": "2026-09-10",
-  "purpose": "Permit one validated preview and production deployment while ordinary Git deployments remain locked before and after the release."
+  "closedOn": "2026-09-10",
+  "purpose": "Closed one-time Tranche 4.2 release gate. Ordinary Git deployments remain locked."
 }
