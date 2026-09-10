@@ -22,3 +22,7 @@ jobs:
         env:
           FZ_BASELINE_SHA: 51da79dfc680d9bac9f9e82589f1e37446ef7a2d
         run: node scripts/mobile-refresh-browser-confidence.mjs
+      - name: Verify live production canonical refresh in WebKit
+        env:
+          FZ_PRODUCTION_URL: https://fz-performance-mvp.vercel.app/
+        run: node scripts/production-mobile-refresh-smoke.mjs
