@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { publishDatabaseRuntimeState } from '../lib/runtime-store.js';
+import { recomputeRecommendationShadowSafely } from '../lib/recommendation-shadow-orchestrator.js';
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
@@ -65,17 +66,28 @@ export default async function handler(req, res) {
     }
 
     const payloadSha256 = createHash('sha256').update(serialized).digest('hex');
-    const pointer = await publishDatabaseRuntimeState({
-      state,
-      payloadSha256,
-      sourceClass: String(req.headers?.['x-fz-source-class'] || 'FZ_RUNTIME_INGEST')
+    const sourceClass = String(req.headers?.['x-fz-source-class'] || 'FZ_RUNTIME_INGEST');
+    const pointer = await publishDatabaseRuntimeState({ state, payloadSha256, sourceClass });
+
+    // 4.2 shadow is downstream and failure-isolated: successful canonical state publication
+    // must never be rolled back because shadow intelligence cannot be recomputed.
+    const recommendationShadow = await recomputeRecommendationShadowSafely({
+      trigger:{type:'RUNTIME_STATE_PUBLISH',stateId:state.stateId,sourceClass},
+      now:new Date(),
+      persist:true
     });
 
     return res.status(200).json({
       ok: true,
       stateId: state.stateId,
       payloadSha256,
-      pointer
+      pointer,
+      recommendationShadow:{
+        status:recommendationShadow?.status || recommendationShadow?.evaluation?.status || null,
+        recommendationId:recommendationShadow?.evaluation?.recommendationId || null,
+        lane:recommendationShadow?.evaluation?.lane || null,
+        error:recommendationShadow?.status==='ERROR'?recommendationShadow.error:null
+      }
     });
   } catch (error) {
     console.error('FZ database runtime publish failed', error instanceof Error ? error.message : String(error));
