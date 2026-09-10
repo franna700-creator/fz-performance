@@ -26,7 +26,7 @@ const checks=[
  ['canonical AET expectation',trendsStore.includes("'2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'")&&trendsStore.includes('expectedMatchedAetMissing')],
  ['athlete voice can identify AET',trendsStore.includes("/\\b(run\\s+)?aet\\b/.test(text)")],
  ['canonical system architecture',app.includes('Operational truth')&&app.includes('NEON')&&app.includes('flight recorder')],
- ['Fitness AI source key is truthful',systemStatus.includes("source_key === 'fitness-ai'")],
+ ['Fitness AI source key is truthful',/source_key\s*===\s*['"]fitness-ai['"]/.test(systemStatus)],
  ['safe area preserved',css.includes('safe-area-inset-top')&&css.includes('safe-area-inset-bottom')],
  ['legacy injector tower removed from active build',!pkg.scripts.build.includes('longitudinal-trends-v4')&&!pkg.scripts.build.includes('tranche3-option-b-ui')&&!pkg.scripts.build.includes('tranche2-live-wellness')],
  ['canonical APIs',fs.existsSync('api/trends/current.js')&&fs.existsSync('api/system/status.js')&&fs.existsSync('lib/trends-store.js')]
