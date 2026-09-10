@@ -57,10 +57,17 @@ jobs:
       - run: node --check lib/event-demand-taxonomy.js
       - run: node --check lib/measurement-hierarchy.js
       - run: node --check lib/recommendation-explainability.js
+      - run: node --check lib/objective-runtime-store.js
+      - run: node --check lib/adaptive-context.js
+      - run: node --check lib/recommendation-engine.js
+      - run: node --check lib/recommendation-shadow-store.js
+      - run: node --check lib/recommendation-shadow-orchestrator.js
       - run: node --check scripts/event-demand-taxonomy-smoke.mjs
       - run: node --check scripts/hyrox-measurement-hierarchy-smoke.mjs
       - run: node --check scripts/recommendation-explainability-smoke.mjs
       - run: node --check scripts/golden-athlete-scenarios-smoke.mjs
+      - run: node --check scripts/tranche4-recommendation-shadow-smoke.mjs
+      - run: node --check scripts/tranche4-recommendation-adversarial-smoke.mjs
       - run: node --check scripts/event-objective-schema-smoke.mjs
       - run: node --check scripts/event-objective-smoke.mjs
       - run: node --check scripts/data-contract-smoke.mjs
@@ -117,15 +124,19 @@ jobs:
       - run: node scripts/hyrox-measurement-hierarchy-smoke.mjs
       - run: node scripts/recommendation-explainability-smoke.mjs
       - run: node scripts/golden-athlete-scenarios-smoke.mjs
-      - name: Package validated release bundle
+      - run: node scripts/tranche4-recommendation-shadow-smoke.mjs
+      - run: node scripts/tranche4-recommendation-adversarial-smoke.mjs
+      - name: Package validated shadow candidate
         if: success() && github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: fz-v0.7.0-release-${{ github.sha }}
+          name: fz-v0.8.0-rc1-shadow-${{ github.sha }}
           path: |
             dist/
             api/
             lib/
+            config/
+            schemas/
             docs/
           if-no-files-found: error
           retention-days: 14

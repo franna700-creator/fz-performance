@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { evaluateRecommendation, recommendationContextFingerprint, RECOMMENDATION_ENGINE_VERSION } from '../lib/recommendation-engine.js';
+
+const schema=JSON.parse(await fs.readFile('schemas/recommendation-shadow.schema.json','utf8'));
+assert.equal(schema.properties.mode.const,'SHADOW');
+assert.equal(schema.properties.rules.properties.mayNotAlterToday.const,true);
+
+function base(overrides={}){
+  return {asOf:'2026-09-10',primaryObjective:{id:'primary',name:'Primary event',role:'PRIMARY',runwayDays:79,knowledgeStatus:'QUALIFIED'},recovery:{readinessScore:82,status:'READY',systemicState:'Recovered',localConstraint:'No material local limiter',constraintSeverity:'NONE',safetyBlock:false},load:{rolling7d:100,rolling28d:400,ratio7dTo28dQuarter:1,recentAdaptCount:0},sequencing:{nextPlannedLane:null,nextPlannedWithinHours:null,nextPlannedSessionId:null},eventPressure:[],measurement:{status:'READY',hierarchyId:'hyrox-singles-v1',topGaps:[{measurementId:'running.compromised_repeatability',priority:1,tier:'PRIMARY',question:'Can compromised running repeat?'}]},materiality:{level:'UPDATE_STATE',reasonCodes:[],blocksExistingRecommendation:false},evidence:[{ref:'objective:primary',fact:'Primary objective resolved.',provenance:'fixture',quality:'DIRECT'}],uncertainty:{missing:[],assumptions:[],confidence:'HIGH'},...overrides};
+}
+const adapt=evaluateRecommendation(base());assert.equal(adapt.status,'READY');assert.equal(adapt.lane,'ADAPT');assert.equal(adapt.mode,'SHADOW');assert.equal(adapt.engineVersion,RECOMMENDATION_ENGINE_VERSION);assert.equal(adapt.rules.mayNotAlterToday,true);assert.equal(adapt.rules.mayNotWriteRecommendationCurrent,true);
+const safety=evaluateRecommendation(base({materiality:{level:'SAFETY_OVERRIDE',reasonCodes:['SAFETY_RED_FLAG'],blocksExistingRecommendation:true}}));assert.equal(safety.lane,'ABSORB');assert.equal(safety.explanation.safety.override,true);
+const constraint=evaluateRecommendation(base({recovery:{readinessScore:72,status:'READY',systemicState:'Okay',localConstraint:'GI limiter',constraintSeverity:'HIGH',safetyBlock:false},materiality:{level:'RECOMPUTE_RECOMMENDATION',reasonCodes:['GI_LIMITER_HIGH'],blocksExistingRecommendation:false}}));assert.equal(constraint.lane,'ABSORB');
+const mixed=evaluateRecommendation(base({recovery:{readinessScore:61,status:'MIXED',systemicState:'Systemically okay',localConstraint:'Residual local soreness',constraintSeverity:'MODERATE',safetyBlock:false}}));assert.equal(mixed.lane,'MAINTAIN');
+const recentAdapt=evaluateRecommendation(base({load:{rolling7d:100,rolling28d:400,ratio7dTo28dQuarter:1,recentAdaptCount:2}}));assert.equal(recentAdapt.lane,'MAINTAIN');
+const planned=evaluateRecommendation(base({sequencing:{nextPlannedLane:'ADAPT',nextPlannedWithinHours:18,nextPlannedSessionId:'tomorrow-quality'}}));assert.equal(planned.lane,'MAINTAIN');
+const validation=evaluateRecommendation(base({eventPressure:[{id:'validation',role:'VALIDATION',runwayDays:2,knowledgeStatus:'QUALIFIED'}]}));assert.equal(validation.lane,'MAINTAIN');assert.equal(validation.explanation.objectiveRelevance[0].objective,'Primary event');
+const highLoad=evaluateRecommendation(base({load:{rolling7d:150,rolling28d:400,ratio7dTo28dQuarter:1.5,recentAdaptCount:1}}));assert.equal(highLoad.lane,'MAINTAIN');
+const noPrimary=evaluateRecommendation(base({primaryObjective:null}));assert.equal(noPrimary.status,'WITHHELD');assert.equal(noPrimary.lane,null);assert.equal(noPrimary.reasonCode,'NO_PRIMARY_OBJECTIVE');
+const pendingPrimary=evaluateRecommendation(base({primaryObjective:{id:'primary',name:'Primary',role:'PRIMARY',runwayDays:50,knowledgeStatus:'PENDING_RESEARCH'}}));assert.equal(pendingPrimary.status,'WITHHELD');assert.equal(pendingPrimary.reasonCode,'PRIMARY_OBJECTIVE_STRUCTURE_PENDING');
+const incomplete=evaluateRecommendation(base({uncertainty:{missing:['readiness','load','materiality'],assumptions:[],confidence:'LOW'}}));assert.notEqual(incomplete.confidence,'HIGH');
+const unknownGap=evaluateRecommendation(base());assert.match(unknownGap.explanation.interpretation.join(' '),/unknown rather than being labelled weak/i);
+const first=base(),second=JSON.parse(JSON.stringify(first));assert.equal(recommendationContextFingerprint(first),recommendationContextFingerprint(second));assert.equal(evaluateRecommendation(first).recommendationId,evaluateRecommendation(second).recommendationId,'unchanged evidence must not manufacture a new recommendation version');second.load.recentAdaptCount=1;assert.notEqual(recommendationContextFingerprint(first),recommendationContextFingerprint(second),'decision-relevant context change must change fingerprint');
+console.log('PASS Tranche 4.2 shadow recommendation engine: safety, recovery, load, sequencing, event pressure, measurement gaps, withholding, stable identity, and TODAY isolation');

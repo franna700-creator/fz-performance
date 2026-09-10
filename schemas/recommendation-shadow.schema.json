@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://fz-performance.local/schemas/recommendation-shadow.schema.json",
+  "title":"FZ Tranche 4.2 Shadow Recommendation",
+  "type":"object",
+  "required":["schemaVersion","engineVersion","mode","status","recommendationId","contextFingerprint","lane","confidence","rules"],
+  "properties":{
+    "schemaVersion":{"const":"1.0"},
+    "engineVersion":{"type":"string","minLength":5},
+    "mode":{"const":"SHADOW"},
+    "status":{"enum":["READY","WITHHELD"]},
+    "recommendationId":{"type":"string","minLength":12},
+    "contextFingerprint":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+    "lane":{"type":["string","null"],"enum":["ABSORB","MAINTAIN","ADAPT",null]},
+    "confidence":{"enum":["LOW","MODERATE","HIGH"]},
+    "scores":{"type":["object","null"]},
+    "explanation":{"type":["object","null"]},
+    "rules":{"type":"object","required":["shadowOnly","mayNotWriteRecommendationCurrent","mayNotAlterToday","missingEvidenceNeverMeansWeakness"],"properties":{"shadowOnly":{"const":true},"mayNotWriteRecommendationCurrent":{"const":true},"mayNotAlterToday":{"const":true},"missingEvidenceNeverMeansWeakness":{"const":true}},"additionalProperties":true}
+  },
+  "allOf":[
+    {"if":{"properties":{"status":{"const":"READY"}}},"then":{"properties":{"lane":{"enum":["ABSORB","MAINTAIN","ADAPT"]},"explanation":{"type":"object"}}}},
+    {"if":{"properties":{"status":{"const":"WITHHELD"}}},"then":{"properties":{"lane":{"const":null},"explanation":{"const":null}}}}
+  ],
+  "additionalProperties":true
+}
