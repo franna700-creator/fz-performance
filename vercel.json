@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node -e \"const fs=require('fs');const p='vercel.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.git.deploymentEnabled=false;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n')\" && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "git": {
-    "deploymentEnabled": true
+    "deploymentEnabled": false
   },
   "headers": [
     {"source":"/api/runtime-state","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
