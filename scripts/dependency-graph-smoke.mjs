@@ -18,9 +18,15 @@ for(const node of ['event.intake','event.format','event.intelligence','capabilit
 }
 if(event.includes('recommendation.current')) throw new Error('Event/objective changes may not directly activate recommendation.current during 4.2 shadow');
 
+const runtimePublish=affectedNodes('source.fz.runtime.publish');
+for(const node of ['adaptive.context','recommendation.shadow','ui.system']) {
+  if(!runtimePublish.includes(node)) throw new Error(`Canonical runtime publication does not reach ${node}`);
+}
+if(runtimePublish.includes('recommendation.current')||runtimePublish.includes('ui.today')) throw new Error('Canonical runtime publication may recompute shadow but may not activate TODAY during 4.2');
+
 const publish=affectedNodes('source.fz.recommendation.publish');
 for(const node of ['recommendation.current','recommendation.explanation','ui.today']) {
   if(!publish.includes(node)) throw new Error(`Explicit recommendation publish path does not reach ${node}`);
 }
 
-console.log('PASS v0.8 RC1 dependency graph: source changes reach isolated shadow recomputation; active TODAY recommendation requires explicit publish');
+console.log('PASS v0.8 RC1 dependency graph: source and canonical-state changes reach isolated shadow recomputation; active TODAY recommendation requires explicit publish');
