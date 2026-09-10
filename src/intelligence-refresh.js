@@ -77,11 +77,16 @@ window.fetch = async function fzFailStaleFetch(input, init = {}) {
   }
 };
 
-async function nativeJson(url, timeoutMs = 20000) {
+async function nativeJson(url, { timeoutMs = 20000, method = 'GET', payload = null } = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const response = await nativeFetch(url, { cache: 'no-store', signal: ctrl.signal, headers: { 'Accept': 'application/json' } });
+    const options = { cache: 'no-store', signal: ctrl.signal, method, headers: { 'Accept': 'application/json' } };
+    if (payload !== null) {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(payload);
+    }
+    const response = await nativeFetch(url, options);
     if (!response.ok && response.status !== 202) throw new Error(`${response.status} ${response.statusText}`);
     return await response.json();
   } finally {
@@ -98,8 +103,11 @@ async function converge({ sources = false } = {}) {
   converging = true;
   decorateRecommendation();
   try {
-    const suffix = sources ? '?sources=1' : '';
-    const result = await nativeJson(`/api/intelligence/refresh${suffix}`, sources ? 45000 : 20000);
+    const result = await nativeJson('/api/intelligence/refresh', {
+      timeoutMs: sources ? 45000 : 20000,
+      method: 'POST',
+      payload: { sources }
+    });
     intelligenceError = false;
     if (result?.afterRevision) revision = result.afterRevision;
     if (result?.activeRecommendation) {
@@ -115,7 +123,7 @@ async function converge({ sources = false } = {}) {
 
 async function pollIntelligence() {
   try {
-    const next = await nativeJson('/api/intelligence/current', 12000);
+    const next = await nativeJson('/api/intelligence/current', { timeoutMs: 12000 });
     intelligenceError = false;
     const previousRevision = revision;
     intelligence = next;
