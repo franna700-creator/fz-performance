@@ -15,13 +15,13 @@ jobs:
       - name: Checkout exact UI recovery candidate
         uses: actions/checkout@v4
         with:
-          ref: 214e4d96be052e71a40e0c80b64485cf4402e2d4
+          ref: cfdea44409b7540858836f7dcd9e98763c4bcbb6
           path: candidate
           fetch-depth: 1
 
       - name: Verify frozen source identity
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = "214e4d96be052e71a40e0c80b64485cf4402e2d4"
+        run: test "$(git rev-parse HEAD)" = "cfdea44409b7540858836f7dcd9e98763c4bcbb6"
 
       - name: Set up Node 24
         uses: actions/setup-node@v4
@@ -65,7 +65,7 @@ jobs:
         run: |
           cat > release-source-identity.json <<'JSON'
           {
-            "sourceSha": "214e4d96be052e71a40e0c80b64485cf4402e2d4",
+            "sourceSha": "cfdea44409b7540858836f7dcd9e98763c4bcbb6",
             "shell": "4.3-context-recovery",
             "buildCommand": "npm run build",
             "bootstrapAllowed": false,
@@ -76,7 +76,7 @@ jobs:
       - name: Upload deployable source
         uses: actions/upload-artifact@v4
         with:
-          name: fz-4-3-ui-recovery-deploy-source-214e4d96
+          name: fz-4-3-ui-recovery-deploy-source-cfdea444
           path: |
             deployment-source/
             release-source-identity.json
@@ -87,7 +87,7 @@ jobs:
       - name: Upload validated built dist for byte-level comparison
         uses: actions/upload-artifact@v4
         with:
-          name: fz-4-3-ui-recovery-validated-dist-214e4d96
+          name: fz-4-3-ui-recovery-validated-dist-cfdea444
           path: candidate/dist/
           include-hidden-files: true
           if-no-files-found: error
