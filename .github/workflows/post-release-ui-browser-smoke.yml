@@ -1,0 +1,44 @@
+name: post-release-ui-browser-smoke
+
+on:
+  push:
+    branches:
+      - release-source-packager
+    paths:
+      - .github/workflows/post-release-ui-browser-smoke.yml
+
+permissions:
+  contents: read
+
+env:
+  FZ_CANDIDATE_SHA: cfdea44409b7540858836f7dcd9e98763c4bcbb6
+  FZ_PROD_URL: https://fz-performance-mvp.vercel.app
+  FZ_ARTIFACT_DIR: artifacts
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact released candidate tests
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FZ_CANDIDATE_SHA }}
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise live recovered UI
+        run: node scripts/production-smoke.mjs
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-post-release-ui-smoke-failure
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
