@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { reconstructHeartRateIntensityDistribution } from '../lib/tredict-client.js';
 
 const zones = [
@@ -58,4 +59,9 @@ assert.ok(partialSamples.summary.intensityDistribution.heartrate[0] > 0);
 assert.ok(partialSamples.summary.intensityDistribution.heartrate[1] > 0);
 assert.ok(partialSamples.summary.intensityDistribution.heartrate[2] > 0);
 
-console.log('PASS Tredict NCL fallback: source aggregate priority, zone-bucket reconstruction, duration conservation, and missing-data isolation');
+const clientSource = fs.readFileSync('lib/tredict-client.js', 'utf8');
+const activityListBlock = clientSource.match(/async function activityList\(args = \{\}\) \{[\s\S]*?\n\}/)?.[0] || '';
+assert.ok(activityListBlock.includes('endDate: args.endDate'), 'Tredict executed-activity requests must honor the lower endDate bound supplied by canonical sync');
+assert.ok(activityListBlock.includes('startDate: args.startDate'), 'Tredict executed-activity requests must honor the upper startDate bound supplied by canonical sync');
+
+console.log('PASS Tredict NCL fallback + bounded activity ingestion: source aggregate priority, zone reconstruction, duration conservation, missing-data isolation, and explicit date bounds');
