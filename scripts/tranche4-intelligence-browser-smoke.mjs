@@ -20,6 +20,6 @@ const intelligenceScript = '/assets/intelligence-refresh.js';
 const appScript = '/assets/app-clean.js';
 assert(cleanShell.includes(intelligenceScript), 'clean shell must package the 4.3 intelligence controller');
 assert(cleanShell.indexOf(intelligenceScript) < cleanShell.indexOf(appScript), '4.3 intelligence controller must load before app-clean reads canonical APIs');
-assert.match(cleanShell, /fs\.copyFileSync\(intelligenceRefreshJs/, '4.3 controller must be copied into the build artifact');
+assert.match(cleanShell, /\[intelligenceRefreshJs,'intelligence-refresh\.js'\]/, '4.3 controller must be copied into the build artifact through the canonical asset-copy list');
 
 console.log('PASS Tranche 4.3 PWA revision, fail-stale and recommendation-surface wiring');

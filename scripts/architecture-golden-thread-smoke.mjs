@@ -34,7 +34,12 @@ assert.match(trainingSync,/source\.garmin\.activity/,'Garmin changes must enter 
 assert.match(trainingSync,/process\.reconcileAthleteMemory/,'Late binding must enter dependency graph');
 
 const athleteApi=fs.readFileSync('api/training/athlete-event.js','utf8');
-for(const contract of ['interpretedSummaryPrimary: true','rawTextRetainedAsProvenanceWhenAvailable: true','propagatesCanonicalDependenciesSameTurn: true','routineAthleteStateRequiresDeployment: false'])assert.ok(athleteApi.includes(contract),`Athlete API contract missing ${contract}`);
+for(const [name,pattern] of [
+  ['interpretedSummaryPrimary',/interpretedSummaryPrimary\s*:\s*true/],
+  ['rawTextRetainedAsProvenanceWhenAvailable',/rawTextRetainedAsProvenanceWhenAvailable\s*:\s*true/],
+  ['propagatesCanonicalDependenciesSameTurn',/propagatesCanonicalDependenciesSameTurn\s*:\s*true/],
+  ['routineAthleteStateRequiresDeployment',/routineAthleteStateRequiresDeployment\s*:\s*false/]
+]) assert.match(athleteApi,pattern,`Athlete API contract missing ${name}`);
 assert.doesNotMatch(athleteApi,/materialityDoesNotYetRecomputeRecommendation:\s*true/,'Stale non-recompute contract must not survive');
 
 const refresh=fs.readFileSync('lib/intelligence-refresh.js','utf8');
