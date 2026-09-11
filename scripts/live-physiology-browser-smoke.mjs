@@ -89,6 +89,14 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
   console.log('PASS', message);
 }
+async function waitForNode(predicate, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return true;
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  return predicate();
+}
 
 try {
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'domcontentloaded' });
@@ -96,7 +104,7 @@ try {
   assert(await page.locator('.fz-live-grid').evaluate(el => el.hidden), 'persisted static grid is hidden after immediate DB render');
   assert(await page.locator('.fz-live-chart-v3').count() === 4, 'four Live Physiology scrub graphs render immediately');
   assert((await page.locator('[data-live-key="respiration"] [data-live-value]').textContent()).startsWith('13.8'), 'respiration zero placeholders are excluded');
-  assert(backgroundRefreshes === 1, 'DB-only render triggers one background Garmin refresh');
+  assert(await waitForNode(() => backgroundRefreshes === 1, 1500), 'DB-only render triggers one background Garmin refresh');
 
   await page.waitForSelector('.fz-live-physiology-v3[data-freshness="LIVE"]', { timeout: 2500 });
   assert((await page.locator('.fz-live-toolbar').textContent()).includes('auto-refresh 5 min'), 'freshness toolbar states automatic refresh cadence');
