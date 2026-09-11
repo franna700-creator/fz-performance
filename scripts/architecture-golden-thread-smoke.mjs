@@ -11,11 +11,14 @@ const trainingClosure=affectedNodes('source.tredict.activity');
 for(const node of ['training.session','training.evidence','trends.ncl','load.rolling','capability.evidence','adaptive.context','recommendation.shadow','recommendation.current','ui.train','ui.trends'])assert.ok(trainingClosure.includes(node),`Training dependency closure missing ${node}`);
 
 const athleteCapture=fs.readFileSync('lib/athlete-response-capture.js','utf8');
-const memoryIndex=athleteCapture.indexOf('recordAthleteMemory(normalized)');
-const materialityIndex=athleteCapture.indexOf('persistMaterialityAssessment');
-const propagationIndex=athleteCapture.indexOf('propagateCanonicalChangeSafely');
+const responseFunctionStart=athleteCapture.indexOf('export async function recordExerciseAthleteResponse');
+assert.ok(responseFunctionStart>=0,'Athlete response capture function must exist');
+const responseBody=athleteCapture.slice(responseFunctionStart);
+const memoryIndex=responseBody.indexOf('await recordAthleteMemory(normalized)');
+const materialityIndex=responseBody.indexOf('await persistMaterialityAssessment(');
+const propagationIndex=responseBody.indexOf('await propagateCanonicalChangeSafely(');
 assert.ok(memoryIndex>=0&&materialityIndex>memoryIndex&&propagationIndex>materialityIndex,'Athlete evidence must persist before materiality and propagation');
-assert.match(athleteCapture,/changedNodes:\['source\.athlete\.feedback','athlete\.memory','materiality\.current'\]/,'Athlete ingestion must enter canonical dependency propagation');
+assert.match(responseBody,/changedNodes:\['source\.athlete\.feedback','athlete\.memory','materiality\.current'\]/,'Athlete ingestion must enter canonical dependency propagation');
 
 const propagation=fs.readFileSync('lib/canonical-propagation.js','utf8');
 assert.match(propagation,/affectedNodes/,'Propagation must execute dependency graph closure');
