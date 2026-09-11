@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const orchestrator = fs.readFileSync('lib/intelligence-refresh.js', 'utf8');
+const propagation = fs.readFileSync('lib/canonical-propagation.js', 'utf8');
 const current = fs.readFileSync('lib/intelligence-current.js', 'utf8');
 const api = fs.readFileSync('api/system/status.js', 'utf8');
 const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
@@ -12,7 +13,9 @@ const wellness = fs.readFileSync('lib/wellness-sync.js', 'utf8');
 assert.match(orchestrator, /syncTrainingSources\(\{[\s\S]*recomputeRecommendation:\s*false/, 'central refresh must prevent nested training recommendation recomputation');
 assert.ok(orchestrator.indexOf('repairUnassessedAthleteMateriality') < orchestrator.indexOf('current.pending.shadowRecommendation'), 'Athlete Voice materiality repair must precede recommendation staleness evaluation');
 assert.ok(orchestrator.indexOf('current.pending.shadowRecommendation') < orchestrator.indexOf('current.pending.activeRecommendation'), '4.2 shadow convergence must precede 4.3 activation');
-assert.match(orchestrator, /persistActiveRecommendationFromShadow/, '4.3 active recommendation must be projected from persisted shadow');
+assert.match(orchestrator, /propagateCanonicalChangeSafely/, 'systemic refresh must converge through the canonical propagation controller');
+assert.match(orchestrator, /changedNodes:\['recommendation\.shadow'\]/, 'pending 4.3 projection must be requested from persisted shadow through canonical propagation');
+assert.match(propagation, /persistActiveRecommendationFromShadow/, 'canonical propagation must own 4.3 projection from persisted shadow');
 assert.doesNotMatch(orchestrator, /recordAthleteMemory|recordExerciseAthleteResponse|record_type\s*:\s*['"]decision['"]/, 'system refresh may not manufacture Athlete Voice or athlete decisions');
 
 assert.match(training, /assessTrainingSourceChanges/, 'training source evolution must pass through 4.1 materiality');
@@ -40,4 +43,4 @@ assert.equal(rewriteMap.get('/api/intelligence/refresh'), '/api/system/status?op
 assert.equal(fs.existsSync('api/intelligence/current.js'), false, 'standalone current function must stay removed to preserve Hobby function budget');
 assert.equal(fs.existsSync('api/intelligence/refresh.js'), false, 'standalone refresh function must stay removed to preserve Hobby function budget');
 
-console.log('PASS Tranche 4.3 intelligence refresh orchestration + consolidated Vercel routing');
+console.log('PASS Tranche 4.3 intelligence refresh orchestration + centralized propagation + consolidated Vercel routing');
