@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const js = fs.readFileSync('src/ui-context-recovery.js','utf8');
+const css = fs.readFileSync('src/ui-context-recovery.css','utf8');
+const shell = fs.readFileSync('scripts/clean-shell.mjs','utf8');
+const html = fs.readFileSync('dist/index.html','utf8');
+
+assert.match(js,/FZ UI context recovery v1/,'context recovery controller must be versioned');
+assert.match(js,/Decision Context/,'TODAY must retain decision context');
+assert.match(js,/Current Training Direction/,'TRAIN must retain current training intent');
+assert.match(js,/Latest Executions & Response/,'TRAIN must retain execution and response depth');
+assert.match(js,/HYROX Objective Lens/,'TRENDS must retain objective hierarchy');
+assert.match(js,/HYROX Capability Priorities/,'TRENDS capability hierarchy must be explicit');
+assert.match(css,/max-height:164px/,'desktop trend charts must be bounded');
+assert.match(css,/max-height:142px/,'mobile trend charts must be bounded');
+assert.match(shell,/ui-context-recovery\.js/,'clean shell must wire UI recovery controller');
+assert.match(shell,/ui-context-recovery\.css/,'clean shell must wire UI recovery styles');
+assert.ok(fs.existsSync('dist/assets/ui-context-recovery.js'),'built recovery controller missing');
+assert.ok(fs.existsSync('dist/assets/ui-context-recovery.css'),'built recovery styles missing');
+assert.match(html,/name="fz-shell"/,'release shell identity meta missing');
+assert.match(html,/4\.3-context-recovery/,'release shell identity must be 4.3 context recovery');
+assert.match(html,/\/assets\/ui-context-recovery\.js/,'built HTML must load recovery controller');
+assert.match(html,/\/assets\/ui-context-recovery\.css/,'built HTML must load recovery styles');
+assert.doesNotMatch(html,/\/assets\/app\.js/,'legacy app.js must not be deployed');
+assert.doesNotMatch(html,/v0\.5 reliability shell|FZ Performance · HYROX System|06:00 \/ 13:00 \/ 20:00/,'legacy static shell markers must not survive the release artifact');
+const releaseIdentity = JSON.parse(fs.readFileSync('dist/release-ui-contract.json','utf8'));
+assert.equal(releaseIdentity.shell,'4.3-context-recovery');
+assert.equal(releaseIdentity.legacyAppJs,false);
+assert.equal(releaseIdentity.canonicalRuntime,true);
+console.log('PASS UI context recovery + release artifact identity: TODAY/TRAIN depth retained, TRENDS bounded, legacy shell blocked');
