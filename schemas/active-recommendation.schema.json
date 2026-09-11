@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://fz-performance.local/schemas/active-recommendation.schema.json",
-  "title": "FZ Tranche 4.3 Active Recommendation",
+  "title": "FZ Tranche 4.4 Active Recommendation",
   "type": "object",
   "required": ["schemaVersion", "contextType", "status", "recommendationVersion", "shadowRecommendationId", "contextFingerprint", "fzRecommendedLane", "safetyOverride", "confidence", "lanes", "athleteSelection", "context", "provenance", "rules"],
   "properties": {
@@ -19,13 +19,14 @@
     "reasonCode": { "type": ["string", "null"] },
     "reason": { "type": ["string", "null"] },
     "explanation": { "type": ["object", "null"] },
+    "sessionOptionComposerVersion": { "type": ["string", "null"] },
     "lanes": {
       "type": "object",
       "required": ["ABSORB", "MAINTAIN", "ADAPT"],
       "properties": {
-        "ABSORB": { "type": "array", "maxItems": 0 },
-        "MAINTAIN": { "type": "array", "maxItems": 0 },
-        "ADAPT": { "type": "array", "maxItems": 0 }
+        "ABSORB": { "$ref": "#/$defs/laneOptions" },
+        "MAINTAIN": { "$ref": "#/$defs/laneOptions" },
+        "ADAPT": { "$ref": "#/$defs/laneOptions" }
       },
       "additionalProperties": false
     },
@@ -66,7 +67,31 @@
     }
   ],
   "$defs": {
-    "lane": { "enum": ["ABSORB", "MAINTAIN", "ADAPT"] }
+    "lane": { "enum": ["ABSORB", "MAINTAIN", "ADAPT"] },
+    "laneOptions": { "type": "array", "minItems": 0, "maxItems": 3, "items": { "$ref": "#/$defs/sessionOption" } },
+    "sessionOption": {
+      "type": "object",
+      "required": ["optionId", "title", "modality", "objective", "dose", "expectedCost", "whyNow", "confidence"],
+      "properties": {
+        "optionId": { "type": "string", "minLength": 1 },
+        "rank": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "title": { "type": "string", "minLength": 1 },
+        "modality": { "type": "string", "minLength": 1 },
+        "sessionKind": { "type": ["string", "null"] },
+        "objective": { "type": "string", "minLength": 1 },
+        "dose": { "type": "string", "minLength": 1 },
+        "expectedCost": { "enum": ["LOW", "LOW_TO_MODERATE", "MODERATE", "MODERATE_TO_HIGH", "HIGH"] },
+        "whyNow": { "type": "string", "minLength": 1 },
+        "successCondition": { "type": ["string", "null"] },
+        "stopCondition": { "type": ["string", "null"] },
+        "targetedGaps": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "enum": ["LOW", "MODERATE", "HIGH"] },
+        "matchHints": { "type": "object" },
+        "evidenceBasis": { "type": "array", "items": { "type": "string" } },
+        "composerVersion": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
   },
   "additionalProperties": true
 }
