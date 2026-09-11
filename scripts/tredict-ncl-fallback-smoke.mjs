@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { reconstructHeartRateIntensityDistribution } from '../lib/tredict-client.js';
+import { reconstructHeartRateIntensityDistribution, tredictNextCursor } from '../lib/tredict-client.js';
 
 const zones = [
   { from: -1, to: 143, intensity: 0 },
@@ -59,9 +59,18 @@ assert.ok(partialSamples.summary.intensityDistribution.heartrate[0] > 0);
 assert.ok(partialSamples.summary.intensityDistribution.heartrate[1] > 0);
 assert.ok(partialSamples.summary.intensityDistribution.heartrate[2] > 0);
 
+assert.equal(tredictNextCursor({ pagination: { nextCursor: '2026-09-10T00:00:00Z' } }), '2026-09-10T00:00:00Z');
+assert.equal(tredictNextCursor({ _pagination: { nextCursor: '2026-09-09T00:00:00Z' } }), '2026-09-09T00:00:00Z');
+assert.equal(tredictNextCursor({ page: { nextCursor: '2026-09-08T00:00:00Z' } }), '2026-09-08T00:00:00Z');
+assert.equal(tredictNextCursor({ pagination: {} }), null);
+
 const clientSource = fs.readFileSync('lib/tredict-client.js', 'utf8');
 const activityListBlock = clientSource.match(/async function activityList\(args = \{\}\) \{[\s\S]*?\n\}/)?.[0] || '';
-assert.ok(activityListBlock.includes('endDate: args.endDate'), 'Tredict executed-activity requests must honor the lower endDate bound supplied by canonical sync');
-assert.ok(activityListBlock.includes('startDate: args.startDate'), 'Tredict executed-activity requests must honor the upper startDate bound supplied by canonical sync');
+assert.ok(activityListBlock.includes('endDate: requestedEndDate'), 'Tredict executed-activity requests must honor the lower endDate bound supplied by canonical sync');
+assert.ok(activityListBlock.includes('startDate: pageStartDate'), 'Tredict executed-activity requests must honor the upper startDate/cursor bound supplied by canonical sync');
+assert.ok(activityListBlock.includes('tredictNextCursor(data)'), 'Tredict activity ingestion must follow server pagination when a nextCursor is present');
+assert.ok(activityListBlock.includes('seenCursors.has(nextCursor)'), 'Tredict pagination must fail closed rather than loop on a repeated cursor');
+assert.ok(activityListBlock.includes('byId.has(key)'), 'Tredict pagination must de-duplicate cursor-boundary rows before canonical ingestion');
+assert.ok(activityListBlock.includes('exceeded ${maxPages} pages'), 'Tredict pagination must expose incomplete-range exhaustion instead of silently truncating');
 
-console.log('PASS Tredict NCL fallback + bounded activity ingestion: source aggregate priority, zone reconstruction, duration conservation, missing-data isolation, and explicit date bounds');
+console.log('PASS Tredict NCL fallback + complete bounded activity ingestion: aggregate priority, reconstruction, missing-data isolation, date bounds, cursor continuation, de-duplication, and fail-closed pagination');
