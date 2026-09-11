@@ -2,15 +2,16 @@
 const api = {
   runtime: '/api/runtime-state',
   intelligence: '/api/intelligence/current',
+  wellness: '/api/wellness/today?refresh=0',
   trends: '/api/trends/current?days=45',
   training: '/api/training/memory?backDays=45&forwardDays=0'
 };
 
-let snapshot = { runtime:null, intelligence:null, trends:null, training:null };
+let snapshot = { runtime:null, intelligence:null, wellness:null, trends:null, training:null };
 let enhancing = false;
 let refreshTimer = null;
 
-const esc = value => String(value ?? '—').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = value => String(value ?? '—').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const words = value => String(value || '').replaceAll('_',' ').replace(/\b\w/g, c => c.toUpperCase());
 const number = value => { const n = Number(value); return Number.isFinite(n) ? n : null; };
 const fmt = (value, digits=0) => number(value) === null ? '—' : Number(value).toLocaleString('en-ZA',{minimumFractionDigits:digits,maximumFractionDigits:digits});
@@ -45,6 +46,20 @@ function primaryObjectiveName() {
 }
 function eventFacts() { return evidence().filter(x => String(x.ref||'').startsWith('event:')).slice(0,3); }
 function first(items, fallback='—') { return Array.isArray(items) && items.length ? items[0] : fallback; }
+function runtimeAnchorDate() { return String(snapshot.runtime?.stateId || snapshot.runtime?.masterAsOf || '').slice(0,10) || null; }
+function wellnessDate() { return snapshot.wellness?.date || snapshot.wellness?.wellness?.date || null; }
+function runtimeAnchorIsCurrent() { return Boolean(runtimeAnchorDate() && wellnessDate() && runtimeAnchorDate() === wellnessDate()); }
+function currentWellnessSummary() {
+  const w = snapshot.wellness?.wellness?.current;
+  if (!w) return 'Current physiology is unavailable; the last validated readiness anchor is retained without being presented as current.';
+  const values = [];
+  if (number(w.sleepHours)!==null || number(w.sleepScore)!==null) values.push(`sleep ${fmt(w.sleepHours,2)} h / ${fmt(w.sleepScore)}`);
+  if (number(w.hrv)!==null) values.push(`HRV ${fmt(w.hrv)} ms`);
+  if (number(w.restingHeartRate)!==null) values.push(`RHR ${fmt(w.restingHeartRate)} bpm`);
+  if (number(w.bodyBatteryHigh)!==null || number(w.bodyBattery)!==null) values.push(`Body Battery high ${fmt(w.bodyBatteryHigh)} / current ${fmt(w.bodyBattery)}`);
+  if (number(w.stressAvg)!==null) values.push(`stress avg ${fmt(w.stressAvg)}`);
+  return `Current physiology: ${values.join(' · ') || 'live source values available'}.`;
+}
 
 function insertAfter(reference, node) {
   if (!reference?.parentNode) return;
@@ -56,6 +71,23 @@ function section(markup, marker) {
   div.dataset.fzContextRecovery = marker;
   div.innerHTML = markup;
   return div;
+}
+function decorateReadinessFreshness() {
+  const card = document.querySelector('#today .fz-clean-readiness');
+  if (!card) return;
+  let note = card.querySelector('[data-fz-readiness-anchor-note]');
+  if (runtimeAnchorIsCurrent()) {
+    note?.remove();
+    return;
+  }
+  if (!note) {
+    note = document.createElement('div');
+    note.dataset.fzReadinessAnchorNote = '1';
+    note.className = 'fz-readiness-anchor-note';
+    card.appendChild(note);
+  }
+  const anchor = runtimeAnchorDate() || 'unknown date';
+  note.textContent = `Readiness score = last validated anchor (${anchor}). Current physiology and the active 4.3 recommendation are newer and remain separate.`;
 }
 
 function renderTodayContext() {
@@ -71,13 +103,16 @@ function renderTodayContext() {
   const events = eventFacts();
   const lane = active?.fzRecommendedLane || r?.recommendationLane || '—';
   const confidence = active?.confidence || '—';
+  const anchorCurrent = runtimeAnchorIsCurrent();
+  const systemic = anchorCurrent ? (r?.systemicRecovery || currentWellnessSummary()) : currentWellnessSummary();
+  const localContext = anchorCurrent ? (r?.localTissueState || first(rec.stopModifyConditions,'No current local constraint has been recorded.')) : first(rec.stopModifyConditions,facing.whyNow || 'No current local constraint has been recorded.');
 
   const decision = section(`
     <div class="section-head"><h2>Decision Context</h2><p>Why the current lane exists · what it protects · what changes it</p></div>
     <div class="fz-context-grid">
       <div class="card rich fz-context-card"><div class="eyebrow">WHY NOW</div><h3>${esc(lane)} · ${esc(confidence)} confidence</h3><p>${esc(facing.whyNow || r?.primaryDecision || 'Current decision context is unavailable.')}</p></div>
-      <div class="card rich fz-context-card"><div class="eyebrow">SYSTEMIC RECOVERY</div><h3>Current capacity</h3><p>${esc(r?.systemicRecovery || 'No current systemic interpretation available.')}</p></div>
-      <div class="card rich fz-context-card"><div class="eyebrow">LOCAL / CONSTRAINT</div><h3>What can still limit execution</h3><p>${esc(r?.localTissueState || first(rec.stopModifyConditions,'No current local constraint has been recorded.'))}</p></div>
+      <div class="card rich fz-context-card"><div class="eyebrow">${anchorCurrent?'SYSTEMIC RECOVERY':'CURRENT PHYSIOLOGY'}</div><h3>${anchorCurrent?'Current capacity':'Current source state · readiness anchor older'}</h3><p>${esc(systemic)}</p></div>
+      <div class="card rich fz-context-card"><div class="eyebrow">LOCAL / CONSTRAINT</div><h3>What can still limit execution</h3><p>${esc(localContext)}</p></div>
       <div class="card rich fz-context-card"><div class="eyebrow">SUCCESS CONDITION</div><h3>What a good decision looks like</h3><p>${esc(first(rec.successConditions,r?.successCriteria || 'Reassess when material new evidence arrives.'))}</p></div>
     </div>`, 'today-decision');
   insertAfter(hero, decision);
@@ -225,6 +260,7 @@ function enhance() {
   if (enhancing) return;
   enhancing = true;
   try {
+    decorateReadinessFreshness();
     renderTodayContext();
     renderTrainContext();
     enhanceTrends();
