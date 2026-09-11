@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "hosting": {
     "provider": "Vercel",
     "plan": "Hobby",
@@ -21,11 +21,14 @@
     }
   ],
   "promotionPolicy": {
-    "previewRequired": true,
-    "previewMustBeReady": true,
-    "previewEnvironmentMustPass": true,
-    "previewRuntimeAcceptanceRequired": true,
-    "productionPromotionFromExactPreviewCandidateOnly": true,
+    "releaseMode": "STAGED_PRODUCTION_SINGLE_BUILD",
+    "stagedProductionRequired": true,
+    "stagedProductionUsesProductionEnvironment": true,
+    "skipDomainOnInitialDeployment": true,
+    "candidateRuntimeAcceptanceRequired": true,
+    "promotionMustNotRebuild": true,
+    "productionPromotionFromExactStagedDeploymentOnly": true,
+    "previewEnvironmentScopeMustBeAuditedSeparately": true,
     "rollbackCandidateRequiredBeforePromotion": true,
     "directProductionTroubleshootingForbidden": true
   },
@@ -38,8 +41,10 @@
     "/api/trends/current?days=45"
   ],
   "notes": [
+    "The release candidate is created once as a Production-target deployment with domain assignment skipped, so it is built with Production environment variables but does not receive production traffic.",
+    "The staged deployment is fully exercised at its immutable deployment URL before promotion; promotion must point production traffic to that exact deployment and must not rebuild it.",
+    "Preview environment-variable scope is audited separately for future preview workflows and must not be used as evidence that the staged Production candidate has Production configuration.",
     "Environment presence is validated by boolean runtime probes only; secret values must never be returned.",
-    "A preview that does not satisfy this contract is never promotable.",
     "Routine athlete-state evolution remains a runtime data operation and does not open this release process."
   ]
 }
