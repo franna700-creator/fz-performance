@@ -1,0 +1,191 @@
+name: deploy-ui-recovery
+
+on:
+  push:
+    branches:
+      - release-source-packager
+    paths:
+      - .github/workflows/deploy-ui-recovery.yml
+
+permissions:
+  contents: read
+
+env:
+  FZ_CANDIDATE_SHA: cfdea44409b7540858836f7dcd9e98763c4bcbb6
+  FZ_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+  FZ_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+  FZ_PRODUCTION_URL: https://fz-performance-mvp.vercel.app
+  FZ_PREVIOUS_DEPLOYMENT: dpl_5dPCRpZwVfkXMtnACPDAbXZWD35V
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN_PRIMARY: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TOKEN_ALT: ${{ secrets.VERCEL_ACCESS_TOKEN }}
+    steps:
+      - name: Resolve Vercel credential without exposing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="${VERCEL_TOKEN_PRIMARY:-}"
+          if [ -z "$TOKEN" ]; then TOKEN="${VERCEL_TOKEN_ALT:-}"; fi
+          if [ -z "$TOKEN" ]; then
+            echo "No repository Vercel deployment credential is configured." >&2
+            exit 86
+          fi
+          echo "VERCEL_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+      - name: Checkout exact frozen UI recovery candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FZ_CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Verify immutable candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$FZ_CANDIDATE_SHA"
+          test ! -e bootstrap.mjs
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install candidate dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Re-run candidate build and UI identity gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          node scripts/ui-context-recovery-smoke.mjs
+          node scripts/runtime-config-bundle-smoke.mjs
+          node - <<'NODE'
+          const fs = require('fs');
+          const c = JSON.parse(fs.readFileSync('dist/release-ui-contract.json','utf8'));
+          if (c.shell !== '4.3-context-recovery') throw new Error('wrong UI shell');
+          if (c.legacyAppJs !== false) throw new Error('legacy app.js allowed');
+          const html = fs.readFileSync('dist/index.html','utf8');
+          if (!html.includes('4.3-context-recovery')) throw new Error('shell identity absent');
+          if (html.includes('/assets/app.js')) throw new Error('legacy app.js wired');
+          NODE
+
+      - name: Link exact Vercel project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$FZ_ORG_ID" "$FZ_PROJECT_ID" > .vercel/project.json
+
+      - name: Pull Production environment and settings
+        run: npx --yes vercel@59.6.0 pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Build exact candidate with Production environment
+        run: npx --yes vercel@59.6.0 build --prod --token "$VERCEL_TOKEN"
+
+      - name: Verify prebuilt function and shell envelope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .vercel/output/config.json
+          FUNCTIONS=$(find .vercel/output/functions -type d -name '*.func' 2>/dev/null | wc -l | tr -d ' ')
+          echo "Prebuilt functions: $FUNCTIONS"
+          test "$FUNCTIONS" -eq 12
+          ROOT=.vercel/output/static/index.html
+          test -f "$ROOT"
+          grep -q '4.3-context-recovery' "$ROOT"
+          ! grep -q '/assets/app.js' "$ROOT"
+          test -f .vercel/output/static/assets/ui-context-recovery.js
+          test -f .vercel/output/static/assets/ui-context-recovery.css
+          grep -q 'max-height:164px' .vercel/output/static/assets/ui-context-recovery.css
+          grep -q 'max-height:142px' .vercel/output/static/assets/ui-context-recovery.css
+
+      - name: Create staged Production deployment without domains
+        id: staged
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=$(npx --yes vercel@59.6.0 deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN")
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Staged deployment created."
+
+      - name: Read-only acceptance on staged deployment
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.staged.outputs.url }}
+        run: |
+          set -euo pipefail
+          VC='npx --yes vercel@59.6.0'
+          $VC curl "$DEPLOYMENT_URL/" --token "$VERCEL_TOKEN" -sS --fail -o /tmp/root.html
+          grep -q '4.3-context-recovery' /tmp/root.html
+          grep -q '/assets/ui-context-recovery.js' /tmp/root.html
+          ! grep -q '/assets/app.js' /tmp/root.html
+          for path in \
+            '/api/system/status' \
+            '/api/intelligence/current' \
+            '/api/runtime-state' \
+            '/api/wellness/today?refresh=0' \
+            '/api/training/memory?backDays=45&forwardDays=0' \
+            '/api/trends/current?days=45'; do
+            echo "Checking $path"
+            $VC curl "$DEPLOYMENT_URL$path" --token "$VERCEL_TOKEN" -sS --fail -o /tmp/response.json
+            node -e "JSON.parse(require('fs').readFileSync('/tmp/response.json','utf8'))"
+          done
+
+      - name: Promote the same staged Production deployment
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.staged.outputs.url }}
+        run: |
+          set -euo pipefail
+          npx --yes vercel@59.6.0 promote "$DEPLOYMENT_URL" --yes --token "$VERCEL_TOKEN"
+
+      - name: Verify Production after promotion
+        id: prodcheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sS --fail "$FZ_PRODUCTION_URL/" -o /tmp/prod-root.html
+          grep -q '4.3-context-recovery' /tmp/prod-root.html
+          grep -q '/assets/ui-context-recovery.js' /tmp/prod-root.html
+          ! grep -q '/assets/app.js' /tmp/prod-root.html
+          for path in \
+            '/api/system/status' \
+            '/api/intelligence/current' \
+            '/api/runtime-state' \
+            '/api/wellness/today?refresh=0' \
+            '/api/training/memory?backDays=45&forwardDays=0' \
+            '/api/trends/current?days=45'; do
+            curl -sS --fail "$FZ_PRODUCTION_URL$path" -o /tmp/prod-response.json
+            node -e "JSON.parse(require('fs').readFileSync('/tmp/prod-response.json','utf8'))"
+          done
+
+      - name: Roll back immediately if post-promotion verification failed
+        if: failure() && steps.staged.outputs.url != ''
+        shell: bash
+        run: |
+          set +e
+          echo "A release verification step failed; requesting immediate rollback to previous Production."
+          npx --yes vercel@59.6.0 rollback "$FZ_PREVIOUS_DEPLOYMENT" --token "$VERCEL_TOKEN"
+
+      - name: Record successful release
+        if: success()
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.staged.outputs.url }}
+        run: |
+          {
+            echo '### FZ 4.3 UI recovery deployed'
+            echo ''
+            echo "- Candidate: $FZ_CANDIDATE_SHA"
+            echo "- Staged/promoted deployment: $DEPLOYMENT_URL"
+            echo '- Shell: 4.3-context-recovery'
+            echo '- Functions: 12'
+            echo '- Staged read-only acceptance: PASS'
+            echo '- Production acceptance: PASS'
+          } >> "$GITHUB_STEP_SUMMARY"
