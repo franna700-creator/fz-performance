@@ -13,22 +13,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  restore-verified-production:
+  staged-git-source-release:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 30
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
       VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      VERCEL_PROJECT_NAME: fz-performance-mvp
+      PROD_DOMAIN: https://fz-performance-mvp-franna700-2546.vercel.app
+      CANDIDATE_SOURCE_SHA: eecda8bd57e0357eb27a59924458f72c74af9585
       ROLLBACK_DEPLOYMENT_ID: dpl_JCwZJuwaHkBUkJtjwTciTFAF1rRj
-      ROLLBACK_DEPLOYMENT_URL: https://fz-performance-mv3t0bm88-franna700-2546.vercel.app
 
     steps:
       - name: Require Vercel deployment credential
         shell: bash
         run: |
+          set -euo pipefail
           if [ -z "$VERCEL_TOKEN" ]; then
-            echo "::error::VERCEL_TOKEN is not configured. Rollback cannot proceed."
+            echo "::error::VERCEL_TOKEN is not configured. Release stopped before any deployment."
             exit 1
           fi
 
@@ -37,19 +40,217 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install pinned Vercel CLI
-        run: npm install --global vercel@59.15.1
-
-      - name: Verify rollback deployment remains READY
-        run: vercel inspect "$ROLLBACK_DEPLOYMENT_URL" --token="$VERCEL_TOKEN"
-
-      - name: Restore verified production without rebuild
+      - name: Capture current project and production truth
         shell: bash
         run: |
           set -euo pipefail
-          printf '{}' > /tmp/empty.json
-          vercel --token="$VERCEL_TOKEN" api POST "/v10/projects/$VERCEL_PROJECT_ID/promote/$ROLLBACK_DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" --input /tmp/empty.json
-          echo "Restored production deployment: $ROLLBACK_DEPLOYMENT_ID"
+          curl --fail-with-body -sS \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" > /tmp/project-before.json
+          curl --fail-with-body -sS \
+            "$PROD_DOMAIN/api/trends/current?days=45" > /tmp/prod-before-trends.json
+          ORIGINAL_AUTO_ASSIGN="$(node -e "const p=require('/tmp/project-before.json'); process.stdout.write(p.autoAssignCustomDomains===false?'false':'true')")"
+          echo "ORIGINAL_AUTO_ASSIGN=$ORIGINAL_AUTO_ASSIGN" >> "$GITHUB_ENV"
+          node <<'NODE'
+          const p=require('/tmp/project-before.json');
+          const t=require('/tmp/prod-before-trends.json');
+          console.log(`Current latest deployment: ${p.latestDeployment?.id || 'unknown'}`);
+          console.log(`Current TRENDS voice: ${t.summaries?.voice || 'missing'}`);
+          NODE
 
-      - name: Confirm production promotion state
-        run: vercel --token="$VERCEL_TOKEN" promote status fz-performance-mvp
+      - name: Disable automatic production-domain reassignment during staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sS -X PATCH \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"autoAssignCustomDomains":false}' > /tmp/project-staging.json
+          node -e "const p=require('/tmp/project-staging.json'); if(p.autoAssignCustomDomains!==false) throw new Error('autoAssignCustomDomains did not disable'); console.log('Automatic domain assignment disabled for staged acceptance')"
+
+      - name: Create exact Git-source Production-environment candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/create-deployment.json <<JSON
+          {
+            "name": "$VERCEL_PROJECT_NAME",
+            "project": "$VERCEL_PROJECT_ID",
+            "target": "production",
+            "gitSource": {
+              "type": "github",
+              "org": "franna700-creator",
+              "repo": "fz-performance",
+              "ref": "$CANDIDATE_SOURCE_SHA"
+            }
+          }
+          JSON
+          curl --fail-with-body -sS -X POST \
+            "https://api.vercel.com/v13/deployments?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/create-deployment.json > /tmp/deployment-created.json
+          node <<'NODE'
+          const fs=require('node:fs');
+          const d=require('/tmp/deployment-created.json');
+          if(!d.id || !d.url) throw new Error(`Deployment creation returned no id/url: ${JSON.stringify(d)}`);
+          fs.appendFileSync(process.env.GITHUB_ENV, `DEPLOYMENT_ID=${d.id}\nDEPLOYMENT_URL=https://${String(d.url).replace(/^https?:\/\//,'')}\n`);
+          console.log(`Created staged candidate ${d.id} at ${d.url}`);
+          NODE
+
+      - name: Wait for immutable candidate READY
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 90); do
+            curl --fail-with-body -sS \
+              "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID&withGitRepoInfo=true" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" > /tmp/deployment-current.json
+            STATE="$(node -e "const d=require('/tmp/deployment-current.json'); process.stdout.write(String(d.readyState||d.status||d.state||''))")"
+            echo "Candidate state: $STATE"
+            if [ "$STATE" = "READY" ]; then break; fi
+            if [ "$STATE" = "ERROR" ] || [ "$STATE" = "CANCELED" ]; then cat /tmp/deployment-current.json; exit 1; fi
+            sleep 5
+          done
+          node <<'NODE'
+          const d=require('/tmp/deployment-current.json');
+          const state=d.readyState||d.status||d.state;
+          if(state!=='READY') throw new Error(`Candidate did not become READY: ${state}`);
+          const meta=d.meta||{};
+          if(meta.githubCommitSha !== process.env.CANDIDATE_SOURCE_SHA) throw new Error(`Wrong Git SHA: ${meta.githubCommitSha}`);
+          if(String(meta.gitDirty||'0') === '1') throw new Error('Candidate provenance is dirty');
+          console.log(`PASS clean Git provenance: ${meta.githubCommitSha}`);
+          console.log(`Deployment source: ${d.source || 'git-source API'}`);
+          NODE
+
+      - name: Prove staged candidate has not moved production traffic
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sS "$PROD_DOMAIN/api/trends/current?days=45" > /tmp/prod-during-stage-trends.json
+          node <<'NODE'
+          const before=require('/tmp/prod-before-trends.json');
+          const during=require('/tmp/prod-during-stage-trends.json');
+          const a=before.summaries?.voice;
+          const b=during.summaries?.voice;
+          if(a!==b) throw new Error(`Production voice changed during staging. Before=${a} During=${b}`);
+          console.log('PASS production traffic unchanged during staged acceptance');
+          NODE
+
+      - name: Exercise immutable candidate canonical routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sS "$DEPLOYMENT_URL/api/system/status" > /tmp/system.json
+          curl --fail-with-body -sS "$DEPLOYMENT_URL/api/intelligence/current" > /tmp/intelligence.json
+          curl --fail-with-body -sS "$DEPLOYMENT_URL/api/runtime-state" > /tmp/runtime.json
+          curl --fail-with-body -sS "$DEPLOYMENT_URL/api/wellness/today?refresh=0" > /tmp/wellness.json
+          curl --fail-with-body -sS "$DEPLOYMENT_URL/api/training/memory?backDays=45&forwardDays=0" > /tmp/training.json
+          curl --fail-with-body -sS "$DEPLOYMENT_URL/api/trends/current?days=45" > /tmp/trends.json
+
+      - name: Validate both executable golden threads and Training Memory
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const read=n=>require(`/tmp/${n}.json`);
+          const system=read('system'), intelligence=read('intelligence'), runtime=read('runtime'), wellness=read('wellness'), training=read('training'), trends=read('trends');
+          const fail=m=>{ throw new Error(`RELEASE_ACCEPTANCE_FAIL: ${m}`); };
+          if(system.ok!==true) fail('SYSTEM unhealthy');
+          if(system.architecture?.operationalTruth!=='Neon') fail('SYSTEM operational truth is not Neon');
+          if(system.releaseEnvironment?.databaseConfigured!==true) fail('Production DB missing');
+          if(system.releaseEnvironment?.writeTokenConfigured!==true) fail('Write token missing');
+          if(system.runtime?.masterValidated!==true) fail('Runtime not master validated');
+          if(system.intelligence?.pendingPropagation===true) fail('Canonical propagation is pending');
+          if(intelligence.ok!==true) fail('intelligence.current unavailable');
+          if(runtime.ok!==true) fail('runtime-state unavailable');
+          if(wellness.ok!==true || !wellness.wellness) fail('wellness canonical read unavailable');
+          if(training.ok!==true || !Array.isArray(training.sessions)) fail('Training Memory unavailable');
+          if(trends.ok!==true) fail('TRENDS unavailable');
+
+          const strength=training.sessions.find(s=>s.session_id==='exec:tredict:msjYGFLpxZrevGBX5fny8a');
+          if(!strength) fail('10 Sep Strength canonical session missing');
+          const strengthEvent=(strength.events||[]).find(e=>Number(e.event_id??e.eventId)===1623);
+          if(!strengthEvent) fail('Athlete Memory event 1623 is not linked to Strength');
+          if(!String(strengthEvent.summary||'').includes('Controlled upper-body pump')) fail('Strength Athlete Voice canonical summary missing');
+          if(!strength.metrics || strength.metrics.durationSeconds==null || strength.metrics.avgHeartRate==null) fail('Strength canonical metrics missing');
+
+          const richSessions=training.sessions.filter(s=>s.metrics && Object.values(s.metrics).some(v=>v!==null&&v!==undefined));
+          if(!richSessions.length) fail('No Training Memory canonical metrics');
+          const noVoiceRich=richSessions.find(s=>!(s.events||[]).some(e=>e.actor==='ATHLETE'));
+          if(!noVoiceRich) fail('No metric-rich session without Athlete Voice');
+
+          const latestVoice=trends.athleteVoice?.latest;
+          if(Number(latestVoice?.eventId)!==1623) fail(`TRENDS latest Athlete Voice is not event 1623: ${latestVoice?.eventId}`);
+          if(latestVoice?.verbatim!==false) fail('TRENDS Athlete Voice is not explicitly non-verbatim');
+          if(trends.athleteVoice?.rawTranscriptIsPrimary!==false) fail('TRENDS incorrectly treats transcript as primary');
+          if(!String(trends.summaries?.voice||'').includes('Controlled upper-body pump')) fail('TRENDS did not consume canonical Athlete Memory summary');
+          if(/No new .* subjective feedback is captured/i.test(String(trends.summaries?.voice||''))) fail('Stale no-feedback TRENDS wording survived canonical Athlete Memory');
+
+          console.log('PASS athlete conversation → canonical Athlete Memory → TRAIN + TRENDS');
+          console.log('PASS Tredict/Garmin → canonical evidence → rich Training Memory');
+          console.log(`PASS metrics without Athlete Voice: ${noVoiceRich.session_id}`);
+          console.log('PASS SYSTEM/intelligence/runtime/wellness canonical reads');
+          NODE
+
+      - name: Promote exact accepted deployment without rebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sS -X POST \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' > /tmp/promote.json
+          echo "PROMOTED=true" >> "$GITHUB_ENV"
+          echo "Promoted exact deployment $DEPLOYMENT_ID"
+
+      - name: Verify production golden threads after promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            curl --fail-with-body -sS "$PROD_DOMAIN/api/trends/current?days=45" > /tmp/prod-after-trends.json
+            if node -e "const t=require('/tmp/prod-after-trends.json'); process.exit(Number(t.athleteVoice?.latest?.eventId)===1623?0:1)"; then break; fi
+            sleep 2
+          done
+          curl --fail-with-body -sS "$PROD_DOMAIN/api/training/memory?backDays=45&forwardDays=0" > /tmp/prod-after-training.json
+          curl --fail-with-body -sS "$PROD_DOMAIN/api/system/status" > /tmp/prod-after-system.json
+          node <<'NODE'
+          const t=require('/tmp/prod-after-trends.json');
+          const m=require('/tmp/prod-after-training.json');
+          const s=require('/tmp/prod-after-system.json');
+          if(Number(t.athleteVoice?.latest?.eventId)!==1623) throw new Error('Production TRENDS not on accepted golden thread');
+          if(!String(t.summaries?.voice||'').includes('Controlled upper-body pump')) throw new Error('Production TRENDS voice not canonical');
+          const strength=(m.sessions||[]).find(x=>x.session_id==='exec:tredict:msjYGFLpxZrevGBX5fny8a');
+          if(!strength?.metrics?.durationSeconds) throw new Error('Production Strength metrics missing');
+          if(!(strength.events||[]).some(e=>Number(e.event_id??e.eventId)===1623)) throw new Error('Production Strength Athlete Voice link missing');
+          if(s.ok!==true || s.intelligence?.pendingPropagation===true) throw new Error('Production SYSTEM integrity failed');
+          console.log('PASS production post-promotion golden-thread verification');
+          NODE
+
+      - name: Roll back if post-promotion verification fails
+        if: ${{ failure() && env.PROMOTED == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Post-promotion verification failed; restoring known READY deployment $ROLLBACK_DEPLOYMENT_ID"
+          curl --fail-with-body -sS -X POST \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$ROLLBACK_DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+
+      - name: Restore automatic domain setting
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VALUE="${ORIGINAL_AUTO_ASSIGN:-true}"
+          curl --fail-with-body -sS -X PATCH \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"autoAssignCustomDomains\":$VALUE}" > /tmp/project-restored.json
+          echo "Restored autoAssignCustomDomains=$VALUE"
