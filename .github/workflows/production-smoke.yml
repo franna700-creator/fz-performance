@@ -2,6 +2,12 @@ name: production-release-smoke
 
 on:
   workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Immutable staged deployment URL or current production URL'
+        required: true
+        default: 'https://fz-performance-mvp.vercel.app'
+        type: string
 
 permissions:
   contents: read
@@ -15,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
-      FZ_PROD_URL: https://fz-performance-mvp.vercel.app
+      FZ_PROD_URL: ${{ inputs.target_url }}
       FZ_ARTIFACT_DIR: artifacts
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +32,7 @@ jobs:
         run: npm install --no-save playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Exercise the deliberately promoted release
+      - name: Exercise the immutable release target
         run: node scripts/production-smoke.mjs
       - name: Upload failure screenshots
         if: failure()

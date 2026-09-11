@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance.local/schemas/active-recommendation.schema.json",
+  "title": "FZ Tranche 4.3 Active Recommendation",
+  "type": "object",
+  "required": ["schemaVersion", "contextType", "status", "recommendationVersion", "shadowRecommendationId", "contextFingerprint", "fzRecommendedLane", "safetyOverride", "confidence", "lanes", "athleteSelection", "context", "provenance", "rules"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "contextType": { "const": "ACTIVE_RECOMMENDATION" },
+    "status": { "enum": ["READY", "WITHHELD"] },
+    "engineVersion": { "type": ["string", "null"] },
+    "recommendationVersion": { "type": "string", "minLength": 1 },
+    "shadowRecommendationId": { "type": "string", "minLength": 1 },
+    "contextFingerprint": { "type": "string", "minLength": 1 },
+    "localDate": { "type": ["string", "null"], "format": "date" },
+    "fzRecommendedLane": { "oneOf": [{ "$ref": "#/$defs/lane" }, { "type": "null" }] },
+    "safetyOverride": { "type": "boolean" },
+    "confidence": { "enum": ["LOW", "MODERATE", "HIGH"] },
+    "reasonCode": { "type": ["string", "null"] },
+    "reason": { "type": ["string", "null"] },
+    "explanation": { "type": ["object", "null"] },
+    "lanes": {
+      "type": "object",
+      "required": ["ABSORB", "MAINTAIN", "ADAPT"],
+      "properties": {
+        "ABSORB": { "type": "array", "maxItems": 0 },
+        "MAINTAIN": { "type": "array", "maxItems": 0 },
+        "ADAPT": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    },
+    "athleteSelection": { "type": "null" },
+    "context": {
+      "type": "object",
+      "required": ["runtimeStateId", "materialityAssessmentId", "primaryObjective", "assumptions"],
+      "properties": {
+        "runtimeStateId": { "type": ["string", "null"] },
+        "materialityAssessmentId": { "type": ["string", "number", "null"] },
+        "primaryObjective": { "type": ["string", "null"] },
+        "objectiveSource": { "type": ["string", "null"] },
+        "measurementHierarchyId": { "type": ["string", "null"] },
+        "assumptions": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["sourceContract", "sourceRecommendationId", "sourceContextFingerprint"],
+      "properties": {
+        "sourceContract": { "const": "RECOMMENDATION_SHADOW" },
+        "sourceRecommendationId": { "type": "string", "minLength": 1 },
+        "sourceContextFingerprint": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "rules": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "READY" } } },
+      "then": { "properties": { "fzRecommendedLane": { "$ref": "#/$defs/lane" } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "WITHHELD" } } },
+      "then": { "properties": { "fzRecommendedLane": { "type": "null" } } }
+    }
+  ],
+  "$defs": {
+    "lane": { "enum": ["ABSORB", "MAINTAIN", "ADAPT"] }
+  },
+  "additionalProperties": true
+}

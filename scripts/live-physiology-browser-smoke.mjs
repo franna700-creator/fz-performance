@@ -46,6 +46,7 @@ const forced = wellnessPayload({
   freshness: 'LIVE', sourceAsOf: '2026-09-09T18:45:15.000Z', ingestedAt: '2026-09-09T18:49:54.000Z',
   syncStatus: 'SYNCED', steps: 11325, bodyBattery: 30
 });
+let persistedWellness = persisted;
 
 function json(res, value) {
   res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -67,16 +68,21 @@ function staticFile(res, pathname) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   if (url.pathname === '/api/wellness/today') {
-    if (url.searchParams.get('refresh') === '0') return json(res, persisted);
-    if (url.searchParams.get('refresh') === '1') { forcedRefreshes += 1; return json(res, forced); }
+    if (url.searchParams.get('refresh') === '0') return json(res, persistedWellness);
+    if (url.searchParams.get('refresh') === '1') {
+      forcedRefreshes += 1;
+      persistedWellness = forced;
+      return json(res, forced);
+    }
     backgroundRefreshes += 1;
     await new Promise(resolve => setTimeout(resolve, 650));
+    persistedWellness = refreshed;
     return json(res, refreshed);
   }
   if (url.pathname === '/api/runtime-state') return json(res, { ok:true, renderContract:{ readiness:{ score:82,status:'READY',systemicRecovery:'Systemic recovery is good.',localTissueState:'No material local limiter.',primaryDecision:'Proceed with the current recommendation.',successCriteria:'Reassess when new evidence arrives.' } } });
   if (url.pathname === '/api/training/memory') return json(res, { ok:true, sessions:[], contextEvents:[] });
   if (url.pathname === '/api/trends/current') return json(res, { ok:true, summaries:{}, recovery:{wellnessHistory:[]}, load:{series:[],rolling7d:{value:null},rolling28d:{value:null},formula:'test'}, performance:{matchedAet:[],runningRelationship:[],excludedAet:[]}, quality:{loadMissingDates:[]}, capabilities:[], provenance:{operationalTruth:'Neon',auditRepresentation:'Drive'} });
-  if (url.pathname === '/api/system/status') return json(res, { ok:true, runtime:{masterValidated:true}, garmin:{connection:{status:'CONNECTED'},latestWellness:{source_as_of:'2026-09-09T18:30:15.000Z'}}, tredict:{configured:true,latestEvidence:[]}, trainingEvidence:[], athleteMemory:{events:0} });
+  if (url.pathname === '/api/system/status') return json(res, { ok:true, runtime:{masterValidated:true}, garmin:{connection:{status:'CONNECTED'},latestWellness:{source_as_of:persistedWellness.wellness.sourceAsOf}}, tredict:{configured:true,latestEvidence:[]}, trainingEvidence:[], athleteMemory:{events:0} });
   return staticFile(res, url.pathname);
 });
 
@@ -89,6 +95,14 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
   console.log('PASS', message);
 }
+async function waitForNode(predicate, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return true;
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  return predicate();
+}
 
 try {
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'domcontentloaded' });
@@ -96,10 +110,10 @@ try {
   assert(await page.locator('.fz-live-grid').evaluate(el => el.hidden), 'persisted static grid is hidden after immediate DB render');
   assert(await page.locator('.fz-live-chart-v3').count() === 4, 'four Live Physiology scrub graphs render immediately');
   assert((await page.locator('[data-live-key="respiration"] [data-live-value]').textContent()).startsWith('13.8'), 'respiration zero placeholders are excluded');
-  assert(backgroundRefreshes === 1, 'DB-only render triggers one background Garmin refresh');
+  assert(await waitForNode(() => backgroundRefreshes === 1, 1500), 'DB-only render triggers one background Garmin refresh');
 
   await page.waitForSelector('.fz-live-physiology-v3[data-freshness="LIVE"]', { timeout: 2500 });
-  assert((await page.locator('.fz-live-toolbar').textContent()).includes('auto-refresh 5 min'), 'freshness toolbar states automatic refresh cadence');
+  assert((await page.locator('.fz-live-toolbar').textContent()).includes('source check 5 min'), 'freshness toolbar states automatic refresh cadence');
   assert((await page.locator('.fz-live-toolbar').textContent()).includes('SYNCED'), 'background source refresh visibly reports sync state');
   assert((await page.locator('.fz-live-anchor-row').textContent()).includes('11 278') || (await page.locator('.fz-live-anchor-row').textContent()).includes('11,278') || (await page.locator('.fz-live-anchor-row').textContent()).includes('11278'), 'background refresh advances persisted physiology');
 
