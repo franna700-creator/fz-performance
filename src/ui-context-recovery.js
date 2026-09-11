@@ -38,6 +38,11 @@ function recommendation() { return activeRecommendation()?.explanation?.recommen
 function athleteFacing() { return activeRecommendation()?.explanation?.athleteFacing || {}; }
 function evidence() { return activeRecommendation()?.explanation?.evidence || []; }
 function primaryObjectiveFact() { return evidence().find(x => String(x.ref||'').startsWith('objective:'))?.fact || 'Primary objective context is not currently available.'; }
+function primaryObjectiveName() {
+  const fact = primaryObjectiveFact();
+  const marker = ' is the resolved PRIMARY objective';
+  return fact.includes(marker) ? fact.split(marker)[0] : 'Primary objective';
+}
 function eventFacts() { return evidence().filter(x => String(x.ref||'').startsWith('event:')).slice(0,3); }
 function first(items, fallback='—') { return Array.isArray(items) && items.length ? items[0] : fallback; }
 
@@ -192,10 +197,11 @@ function enhanceTrends() {
   if (firstSection && !root.querySelector('[data-fz-context-recovery="trends-objective"]')) {
     const active = activeRecommendation();
     const facing = athleteFacing();
+    const objectiveName = primaryObjectiveName();
     const objective = section(`
-      <div class="section-head"><h2>HYROX Objective Lens</h2><p>Primary objective → current lane → biggest unresolved measurement</p></div>
+      <div class="section-head"><h2>Primary Objective Lens</h2><p>Primary objective → current lane → biggest unresolved measurement</p></div>
       <div class="fz-objective-lens">
-        <div><small>PRIMARY</small><b>HYROX Johannesburg Solo Male</b><p>${esc(primaryObjectiveFact())}</p></div>
+        <div><small>PRIMARY</small><b>${esc(objectiveName)}</b><p>${esc(primaryObjectiveFact())}</p></div>
         <div><small>CURRENT LANE</small><b>${esc(active?.fzRecommendedLane || '—')}</b><p>${esc(facing.whyNow || 'Current recommendation context unavailable.')}</p></div>
         <div><small>OBJECTIVE CONNECTION</small><b>What matters next</b><p>${esc(facing.objectiveConnection || '—')}</p></div>
       </div>`, 'trends-objective');
@@ -208,7 +214,7 @@ function enhanceTrends() {
     if (title === 'Trajectory & Measurement Gaps') {
       const h2 = sectionEl.querySelector('.section-head h2');
       const p = sectionEl.querySelector('.section-head p');
-      if (h2) h2.textContent = 'HYROX Capability Priorities';
+      if (h2) h2.textContent = 'Primary Objective Capability Priorities';
       if (p) p.textContent = 'Priority hierarchy first · evidence detail available without turning the page into a wall of cards';
     }
   }
