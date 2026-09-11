@@ -1,0 +1,91 @@
+name: promote-existing-ui-recovery
+
+on:
+  push:
+    branches:
+      - release-source-packager
+    paths:
+      - .github/workflows/promote-existing-ui-recovery.yml
+
+permissions:
+  contents: read
+
+env:
+  FZ_CANDIDATE_SHA: cfdea44409b7540858836f7dcd9e98763c4bcbb6
+  FZ_STAGED_DEPLOYMENT_ID: dpl_JCwZJuwaHkBUkJtjwTciTFAF1rRj
+  FZ_STAGED_DEPLOYMENT_URL: https://fz-performance-mv3t0bm88-franna700-2546.vercel.app
+  FZ_PRODUCTION_URL: https://fz-performance-mvp.vercel.app
+  FZ_PREVIOUS_DEPLOYMENT: dpl_5dPCRpZwVfkXMtnACPDAbXZWD35V
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TOKEN_PRIMARY: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TOKEN_ALT: ${{ secrets.VERCEL_ACCESS_TOKEN }}
+    steps:
+      - name: Resolve Vercel credential without exposing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="${VERCEL_TOKEN_PRIMARY:-}"
+          if [ -z "$TOKEN" ]; then TOKEN="${VERCEL_TOKEN_ALT:-}"; fi
+          if [ -z "$TOKEN" ]; then
+            echo "No repository Vercel deployment credential is configured." >&2
+            exit 86
+          fi
+          echo "VERCEL_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+      - name: Promote exact staged deployment without rebuilding
+        id: promote
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@59.15.1 promote "$FZ_STAGED_DEPLOYMENT_URL" --yes --token "$VERCEL_TOKEN"
+
+      - name: Verify live Production shell and canonical APIs
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sS --fail "$FZ_PRODUCTION_URL/" -o /tmp/prod-root.html
+          grep -q '4.3-context-recovery' /tmp/prod-root.html
+          grep -q '/assets/ui-context-recovery.js' /tmp/prod-root.html
+          ! grep -q '/assets/app.js' /tmp/prod-root.html
+          curl -sS --fail "$FZ_PRODUCTION_URL/assets/ui-context-recovery.css" -o /tmp/recovery.css
+          grep -q 'max-height:164px' /tmp/recovery.css
+          grep -q 'max-height:142px' /tmp/recovery.css
+          for path in \
+            '/api/system/status' \
+            '/api/intelligence/current' \
+            '/api/runtime-state' \
+            '/api/wellness/today?refresh=0' \
+            '/api/training/memory?backDays=45&forwardDays=0' \
+            '/api/trends/current?days=45'; do
+            echo "Checking $path"
+            curl -sS --fail "$FZ_PRODUCTION_URL$path" -o /tmp/prod-response.json
+            node -e "JSON.parse(require('fs').readFileSync('/tmp/prod-response.json','utf8'))"
+          done
+
+      - name: Roll back immediately if live verification fails
+        if: failure() && steps.promote.conclusion == 'success'
+        shell: bash
+        run: |
+          set +e
+          echo "Post-promotion verification failed; requesting rollback to previous known-good Production deployment."
+          npx --yes vercel@59.15.1 rollback "$FZ_PREVIOUS_DEPLOYMENT" --token "$VERCEL_TOKEN"
+
+      - name: Record successful promotion
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo '### FZ 4.3 UI context recovery promoted'
+            echo ''
+            echo "- Candidate: $FZ_CANDIDATE_SHA"
+            echo "- Deployment ID: $FZ_STAGED_DEPLOYMENT_ID"
+            echo "- Deployment URL: $FZ_STAGED_DEPLOYMENT_URL"
+            echo '- Promotion reused exact staged artifact; no rebuild.'
+            echo '- Production shell/API verification: PASS'
+          } >> "$GITHUB_STEP_SUMMARY"
