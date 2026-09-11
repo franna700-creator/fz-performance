@@ -1,0 +1,119 @@
+name: release-training-memory-detail
+
+on:
+  push:
+    branches:
+      - release-training-memory-detail-20260911
+    paths:
+      - '.github/workflows/release-training-memory-detail.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      RELEASE_SHA: 3d4d49cd418d6dc989461ae9f64d71ee49e44a9c
+      VERCEL_TEAM_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      VERCEL_REPO_ID: '1359912263'
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Verify release authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "VERCEL_TOKEN is not available; failing closed."
+            exit 1
+          fi
+
+      - name: Checkout exact approved source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          fetch-depth: 1
+
+      - name: Verify immutable clean source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          git diff --quiet
+          git diff --cached --quiet
+          echo "release_sha=$RELEASE_SHA"
+
+      - name: Create clean Git-sourced Vercel production deployment
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg name "fz-performance-mvp" \
+            --arg project "$VERCEL_PROJECT_ID" \
+            --arg ref "$RELEASE_SHA" \
+            --argjson repoId "$VERCEL_REPO_ID" \
+            '{name:$name,project:$project,target:"production",gitSource:{type:"github",repoId:$repoId,ref:$ref}}' > /tmp/vercel-payload.json
+
+          response=$(curl --fail-with-body -sS \
+            -X POST "https://api.vercel.com/v13/deployments?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/vercel-payload.json)
+
+          deployment_id=$(printf '%s' "$response" | jq -r '.id // empty')
+          deployment_url=$(printf '%s' "$response" | jq -r '.url // empty')
+          if [ -z "$deployment_id" ] || [ -z "$deployment_url" ]; then
+            printf '%s\n' "$response"
+            echo "Vercel did not return a deployment id/url."
+            exit 1
+          fi
+          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "Created $deployment_id at https://$deployment_url"
+
+      - name: Wait for immutable deployment readiness and verify provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          detail=''
+          ready=''
+          for attempt in $(seq 1 120); do
+            detail=$(curl --fail-with-body -sS \
+              "https://api.vercel.com/v13/deployments/$deployment_id?teamId=$VERCEL_TEAM_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN")
+            ready=$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')
+            echo "attempt=$attempt readyState=$ready"
+            if [ "$ready" = "READY" ]; then
+              break
+            fi
+            if [ "$ready" = "ERROR" ] || [ "$ready" = "CANCELED" ]; then
+              printf '%s\n' "$detail"
+              exit 1
+            fi
+            sleep 3
+          done
+          if [ "$ready" != "READY" ]; then
+            echo "Deployment did not become READY within the release window."
+            exit 1
+          fi
+
+          deployed_sha=$(printf '%s' "$detail" | jq -r '.meta.githubCommitSha // empty')
+          dirty=$(printf '%s' "$detail" | jq -r '.meta.gitDirty // empty')
+          target=$(printf '%s' "$detail" | jq -r '.target // empty')
+          if [ "$deployed_sha" != "$RELEASE_SHA" ]; then
+            echo "Expected Git SHA $RELEASE_SHA but deployment reports $deployed_sha"
+            exit 1
+          fi
+          if [ -n "$dirty" ] && [ "$dirty" != "0" ]; then
+            echo "Deployment provenance is dirty: gitDirty=$dirty"
+            exit 1
+          fi
+          if [ "$target" != "production" ]; then
+            echo "Expected production target but got $target"
+            exit 1
+          fi
+          echo "READY deployment=$deployment_id sha=$deployed_sha target=$target gitDirty=${dirty:-absent}"
