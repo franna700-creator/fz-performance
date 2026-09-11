@@ -83,10 +83,10 @@ jobs:
           printf '{"orgId":"%s","projectId":"%s"}\n' "$FZ_ORG_ID" "$FZ_PROJECT_ID" > .vercel/project.json
 
       - name: Pull Production environment and settings
-        run: npx --yes vercel@59.6.0 pull --yes --environment=production --token "$VERCEL_TOKEN"
+        run: npx --yes vercel@59.15.1 pull --yes --environment=production --token "$VERCEL_TOKEN"
 
       - name: Build exact candidate with Production environment
-        run: npx --yes vercel@59.6.0 build --prod --token "$VERCEL_TOKEN"
+        run: npx --yes vercel@59.15.1 build --prod --token "$VERCEL_TOKEN"
 
       - name: Verify prebuilt function and shell envelope
         shell: bash
@@ -110,7 +110,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL=$(npx --yes vercel@59.6.0 deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN")
+          URL=$(npx --yes vercel@59.15.1 deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Staged deployment created."
 
@@ -120,7 +120,7 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.staged.outputs.url }}
         run: |
           set -euo pipefail
-          VC='npx --yes vercel@59.6.0'
+          VC='npx --yes vercel@59.15.1'
           $VC curl "$DEPLOYMENT_URL/" --token "$VERCEL_TOKEN" -sS --fail -o /tmp/root.html
           grep -q '4.3-context-recovery' /tmp/root.html
           grep -q '/assets/ui-context-recovery.js' /tmp/root.html
@@ -143,7 +143,7 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.staged.outputs.url }}
         run: |
           set -euo pipefail
-          npx --yes vercel@59.6.0 promote "$DEPLOYMENT_URL" --yes --token "$VERCEL_TOKEN"
+          npx --yes vercel@59.15.1 promote "$DEPLOYMENT_URL" --yes --token "$VERCEL_TOKEN"
 
       - name: Verify Production after promotion
         id: prodcheck
@@ -171,7 +171,7 @@ jobs:
         run: |
           set +e
           echo "A release verification step failed; requesting immediate rollback to previous Production."
-          npx --yes vercel@59.6.0 rollback "$FZ_PREVIOUS_DEPLOYMENT" --token "$VERCEL_TOKEN"
+          npx --yes vercel@59.15.1 rollback "$FZ_PREVIOUS_DEPLOYMENT" --token "$VERCEL_TOKEN"
 
       - name: Record successful release
         if: success()
