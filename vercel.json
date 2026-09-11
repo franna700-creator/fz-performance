@@ -6,12 +6,17 @@
   "git": {
     "deploymentEnabled": false
   },
+  "rewrites": [
+    {"source":"/api/intelligence/current","destination":"/api/system/status?operation=intelligence-current"},
+    {"source":"/api/intelligence/refresh","destination":"/api/system/status?operation=intelligence-refresh"}
+  ],
   "headers": [
     {"source":"/api/runtime-state","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/wellness/today","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/training/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/trends/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/system/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/intelligence/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/source/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
