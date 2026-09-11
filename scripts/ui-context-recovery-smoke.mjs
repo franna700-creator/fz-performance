@@ -10,8 +10,10 @@ assert.match(js,/FZ UI context recovery v1/,'context recovery controller must be
 assert.match(js,/Decision Context/,'TODAY must retain decision context');
 assert.match(js,/Current Training Direction/,'TRAIN must retain current training intent');
 assert.match(js,/Latest Executions & Response/,'TRAIN must retain execution and response depth');
-assert.match(js,/HYROX Objective Lens/,'TRENDS must retain objective hierarchy');
-assert.match(js,/HYROX Capability Priorities/,'TRENDS capability hierarchy must be explicit');
+assert.match(js,/Primary Objective Lens/,'TRENDS must retain objective hierarchy');
+assert.match(js,/Primary Objective Capability Priorities/,'TRENDS capability hierarchy must be explicit');
+assert.match(js,/primaryObjectiveName\(\)/,'objective display must derive from canonical recommendation evidence');
+assert.doesNotMatch(js,/HYROX Johannesburg Solo Male/,'athlete objective truth must not be hard-coded into the static UI controller');
 assert.match(css,/max-height:164px/,'desktop trend charts must be bounded');
 assert.match(css,/max-height:142px/,'mobile trend charts must be bounded');
 assert.match(shell,/ui-context-recovery\.js/,'clean shell must wire UI recovery controller');
@@ -28,4 +30,4 @@ const releaseIdentity = JSON.parse(fs.readFileSync('dist/release-ui-contract.jso
 assert.equal(releaseIdentity.shell,'4.3-context-recovery');
 assert.equal(releaseIdentity.legacyAppJs,false);
 assert.equal(releaseIdentity.canonicalRuntime,true);
-console.log('PASS UI context recovery + release artifact identity: TODAY/TRAIN depth retained, TRENDS bounded, legacy shell blocked');
+console.log('PASS UI context recovery + release artifact identity: TODAY/TRAIN depth retained, TRENDS bounded, dynamic objective truth, legacy shell blocked');
