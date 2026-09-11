@@ -84,7 +84,7 @@ The authoritative FZ release path is therefore a **staged Production deployment*
 4. verify required Production environment-variable scope and separately audit Preview scope;
 5. create exactly **one** Production-target deployment with domain assignment skipped (`vercel --prod --skip-domain` or equivalent API behaviour);
 6. verify that staged deployment's identity matches the frozen SHA/tree and that it was built using Production configuration;
-7. exercise the staged deployment at its immutable URL: environment probes, canonical APIs, 4.3 propagation, desktop/mobile browser acceptance, refresh behaviour and runtime logs;
+7. exercise the staged deployment at its immutable URL using **read-only canonical API checks**, environment probes, desktop/mobile browser rendering and runtime-log inspection; mutating refresh/source-sync behaviour remains covered by isolated-Neon execution and CI rather than being invoked against Production truth before traffic assignment;
 8. if any check fails, **do not promote**. The release attempt is stopped; the candidate returns to development and a later candidate is a new release attempt;
 9. if all checks pass, point Production traffic to the **same staged deployment ID** using a promotion/alias operation that does not rebuild it;
 10. verify Production health immediately and retain the previous known-good rollback candidate.
@@ -125,9 +125,9 @@ The staged deployment may receive Production traffic only if all of the followin
 - no unexpected 5xx/error/fatal runtime cluster appears;
 - active recommendation matches the exact current shadow ID/fingerprint or is correctly WITHHELD;
 - PWA renders canonical/last-known state without blanking on transient failures;
-- desktop and mobile interaction acceptance passes;
-- Live Physiology and training auto-sync controls remain functional;
-- manual Refresh FZ converges idempotently;
+- desktop and mobile interaction/rendering acceptance passes;
+- Live Physiology and training auto-sync controls remain present and correctly wired;
+- real mutating source refresh / `Refresh FZ` is **not** invoked against Production truth during staged acceptance; its idempotency and write semantics must already be green in isolated Neon and CI;
 - no athlete choice is manufactured;
 - the candidate has not mutated code, config or deployment identity since freeze.
 
@@ -162,4 +162,4 @@ A historical Preview returning `database connection string is not configured` is
 
 ## Core rule
 
-**Find failures in development or preflight. Build the release candidate once with Production configuration but no Production traffic. Test that exact deployment. Then move traffic to it without rebuilding or changing it.**
+**Find failures in development or preflight. Build the release candidate once with Production configuration but no Production traffic. Test that exact deployment read-only against Production truth. Then move traffic to it without rebuilding or changing it.**
