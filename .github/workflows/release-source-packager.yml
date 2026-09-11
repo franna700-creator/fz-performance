@@ -1,0 +1,30 @@
+name: release-source-packager
+
+on:
+  push:
+    branches:
+      - release-source-packager
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout frozen Tranche 4.3 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ac84fae23e9bc437e7cd897f07f6fedec1db4ccd
+          path: candidate
+      - name: Verify frozen identity
+        working-directory: candidate
+        run: test "$(git rev-parse HEAD)" = "ac84fae23e9bc437e7cd897f07f6fedec1db4ccd"
+      - name: Upload exact candidate source
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-tranche-4-3-source-ac84fae
+          path: candidate/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 2
