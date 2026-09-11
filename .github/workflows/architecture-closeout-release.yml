@@ -13,15 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  staged-production-release:
+  restore-verified-production:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 10
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
       VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
-      VERCEL_PROJECT_NAME: fz-performance-mvp
-      CANDIDATE_SOURCE_SHA: f199b0f93f67572dbb036f3296a91a68498ecac3
       ROLLBACK_DEPLOYMENT_ID: dpl_JCwZJuwaHkBUkJtjwTciTFAF1rRj
       ROLLBACK_DEPLOYMENT_URL: https://fz-performance-mv3t0bm88-franna700-2546.vercel.app
 
@@ -30,129 +28,28 @@ jobs:
         shell: bash
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
-            echo "::error::VERCEL_TOKEN is not configured in GitHub Actions. Release stopped before any deployment."
+            echo "::error::VERCEL_TOKEN is not configured. Rollback cannot proceed."
             exit 1
           fi
-
-      - name: Check out exact approved source
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.CANDIDATE_SOURCE_SHA }}
-          fetch-depth: 1
-
-      - name: Verify immutable source identity
-        shell: bash
-        run: |
-          ACTUAL_SHA="$(git rev-parse HEAD)"
-          test "$ACTUAL_SHA" = "$CANDIDATE_SOURCE_SHA"
-          test -z "$(git status --porcelain)"
-          echo "Approved source: $ACTUAL_SHA"
 
       - name: Set up Node 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      - name: Install project dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
-
       - name: Install pinned Vercel CLI
         run: npm install --global vercel@59.15.1
 
-      - name: Link exact Vercel project
-        shell: bash
-        run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json <<JSON
-          {"orgId":"$VERCEL_ORG_ID","projectId":"$VERCEL_PROJECT_ID"}
-          JSON
-
-      - name: Pull Production environment
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-
-      - name: Build once with Production environment
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-
-      - name: Verify rollback candidate remains READY
+      - name: Verify rollback deployment remains READY
         run: vercel inspect "$ROLLBACK_DEPLOYMENT_URL" --token="$VERCEL_TOKEN"
 
-      - name: Create staged Production deployment without domains
-        id: deploy
+      - name: Restore verified production without rebuild
         shell: bash
         run: |
           set -euo pipefail
-          DEPLOYMENT_URL="$(vercel deploy --prebuilt --prod --skip-domain --yes --token="$VERCEL_TOKEN" | tail -n 1)"
-          if [ -z "$DEPLOYMENT_URL" ]; then
-            echo "::error::Vercel returned no deployment URL"
-            exit 1
-          fi
-          echo "deployment_url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
-          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> "$GITHUB_ENV"
-          echo "Staged candidate: $DEPLOYMENT_URL"
+          printf '{}' > /tmp/empty.json
+          vercel --token="$VERCEL_TOKEN" api POST "/v10/projects/$VERCEL_PROJECT_ID/promote/$ROLLBACK_DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID" --input /tmp/empty.json
+          echo "Restored production deployment: $ROLLBACK_DEPLOYMENT_ID"
 
-      - name: Require staged deployment READY
-        run: vercel inspect "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN"
-
-      - name: Exercise immutable staged deployment
-        shell: bash
-        run: |
-          set -euo pipefail
-          vercel curl '/api/system/status' --deployment "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" > /tmp/system.json
-          vercel curl '/api/intelligence/current' --deployment "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" > /tmp/intelligence.json
-          vercel curl '/api/runtime-state' --deployment "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" > /tmp/runtime.json
-          vercel curl '/api/wellness/today?refresh=0' --deployment "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" > /tmp/wellness.json
-          vercel curl '/api/training/memory?backDays=45&forwardDays=0' --deployment "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" > /tmp/training.json
-          vercel curl '/api/trends/current?days=45' --deployment "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" > /tmp/trends.json
-
-      - name: Validate staged golden threads and canonical Training Memory
-        shell: bash
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const read = name => JSON.parse(fs.readFileSync(`/tmp/${name}.json`, 'utf8'));
-          const system = read('system');
-          const intelligence = read('intelligence');
-          const runtime = read('runtime');
-          const wellness = read('wellness');
-          const training = read('training');
-          const trends = read('trends');
-          const fail = message => { console.error(`RELEASE_ACCEPTANCE_FAIL: ${message}`); process.exit(1); };
-
-          if (system.ok !== true) fail('SYSTEM is not healthy');
-          if (system.architecture?.operationalTruth !== 'Neon') fail('SYSTEM operational truth is not Neon');
-          if (system.releaseEnvironment?.databaseConfigured !== true) fail('Production database environment is missing');
-          if (system.releaseEnvironment?.writeTokenConfigured !== true) fail('Production write protection token is missing');
-          if (system.runtime?.masterValidated !== true) fail('Runtime master state is not validated');
-          if (system.intelligence?.recommendationShadow?.activeRecommendationWrite !== true) fail('4.3 active projection is not enabled');
-          if (intelligence.ok !== true) fail('intelligence.current is unavailable');
-          if (runtime.ok !== true) fail('runtime-state is unavailable');
-          if (wellness.ok !== true || !wellness.wellness) fail('wellness canonical read is unavailable');
-          if (training.ok !== true || !Array.isArray(training.sessions)) fail('Training Memory canonical read is unavailable');
-          if (trends.ok !== true) fail('TRENDS canonical read is unavailable');
-
-          const richSessions = training.sessions.filter(session => session?.metrics && Object.values(session.metrics).some(value => value !== null && value !== undefined));
-          if (richSessions.length === 0) fail('No canonical Training Memory session exposes best-available metrics');
-
-          const noVoiceRich = richSessions.find(session => !Array.isArray(session.events) || !session.events.some(event => event?.actor === 'ATHLETE'));
-          if (!noVoiceRich) fail('No metric-rich session without Athlete Voice was found; All Sessions invariant not demonstrated');
-
-          console.log(`PASS staged SYSTEM + intelligence + runtime + wellness + TRAIN + TRENDS acceptance`);
-          console.log(`PASS canonical Training Memory metrics on ${richSessions.length} sessions`);
-          console.log(`PASS session metrics are independent of Athlete Voice (${noVoiceRich.session_id})`);
-          NODE
-
-      - name: Promote exact staged deployment without rebuild
-        shell: bash
-        run: |
-          set -euo pipefail
-          vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
-          echo "Promoted exact deployment: $DEPLOYMENT_URL"
-
-      - name: Verify production now points to promoted deployment
-        shell: bash
-        run: |
-          set -euo pipefail
-          vercel promote status "$VERCEL_PROJECT_NAME" --token="$VERCEL_TOKEN"
-          vercel inspect "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN"
-          echo "Release source SHA: $CANDIDATE_SOURCE_SHA"
-          echo "Production deployment: $DEPLOYMENT_URL"
+      - name: Confirm production promotion state
+        run: vercel --token="$VERCEL_TOKEN" promote status fz-performance-mvp
