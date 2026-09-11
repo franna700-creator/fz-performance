@@ -29,7 +29,7 @@ function parseBody(req) {
 
 function contract() {
   return {
-    version: 'exercise-athlete-response-v3.1+materiality-v4.1',
+    version: 'exercise-athlete-response-v3.2+materiality-v4.1+propagation-v4.3',
     projectScope: EXERCISE_PROJECT_SCOPE,
     athleteId: FZ_ATHLETE_ID,
     speakerResolutions: SPEAKER_RESOLUTIONS,
@@ -41,6 +41,8 @@ function contract() {
     behavior: {
       chatIsPrimaryInput: true,
       projectWideAcrossChats: true,
+      interpretedSummaryPrimary: true,
+      rawTextRetainedAsProvenanceWhenAvailable: true,
       preservesReportedAt: true,
       preservesOccurredAt: true,
       supportsOccurrencePrecision: true,
@@ -49,7 +51,10 @@ function contract() {
       ambiguousSpeakerRequiresConfirmation: true,
       idempotentEventKey: true,
       evaluatesMaterialitySameTurn: true,
-      materialityDoesNotYetRecomputeRecommendation: true
+      propagatesCanonicalDependenciesSameTurn: true,
+      materialityCanRecomputeRecommendation: true,
+      activeRecommendationCanProjectWithoutDeployment: true,
+      routineAthleteStateRequiresDeployment: false
     }
   };
 }
