@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const orchestrator = fs.readFileSync('lib/intelligence-refresh.js', 'utf8');
+const current = fs.readFileSync('lib/intelligence-current.js', 'utf8');
 const api = fs.readFileSync('api/intelligence/refresh.js', 'utf8');
 const training = fs.readFileSync('lib/training-sync-runtime.js', 'utf8');
+const materiality = fs.readFileSync('lib/source-materiality.js', 'utf8');
 const wellness = fs.readFileSync('lib/wellness-sync.js', 'utf8');
 
 assert.match(orchestrator, /syncTrainingSources\(\{[\s\S]*recomputeRecommendation:\s*false/, 'central refresh must prevent nested training recommendation recomputation');
@@ -15,6 +17,11 @@ assert.doesNotMatch(orchestrator, /recordAthleteMemory|recordExerciseAthleteResp
 assert.match(training, /assessTrainingSourceChanges/, 'training source evolution must pass through 4.1 materiality');
 assert.match(training, /recommendationMateriality/, 'training recomputation must be materiality-gated');
 assert.match(training, /source_key <> 'fz-intelligence'/, 'training revision marker must be isolated from intelligence ledger writes');
+assert.match(materiality, /JOIN\s+fz_training_source_latest\s+canonical\s+ON\s+canonical\.id=r\.id/, 'materiality must only assess the canonical latest source revision');
+assert.match(materiality, /ORDER BY previous\.source_updated_at DESC NULLS LAST, previous\.ingested_at DESC, previous\.id DESC/, 'materiality comparison must use canonical revision ordering rather than insertion order');
+assert.match(current, /FROM\s+fz_training_source_latest[\s\S]*record_type IN \('planned_workout','executed_activity'\)[\s\S]*ORDER BY source_updated_at DESC NULLS LAST,ingested_at DESC,id DESC LIMIT 1/, 'intelligence freshness must read canonical training revisions and prefer source freshness over observation time');
+assert.match(current, /const trainingEvidenceAt = firstValue\(rows\.trainingEvidence, \['source_updated_at', 'ingested_at'\]\)/, 'training freshness must prefer source time');
+assert.match(current, /const wellnessEvidenceAt = firstValue\(rows\.wellnessEvidence, \['source_as_of', 'ingested_at'\]\)/, 'wellness freshness must prefer source time');
 assert.match(wellness, /assessWellnessCurrentMateriality/, 'Garmin wellness must pass through 4.1 materiality after canonical persistence');
 
 assert.match(api, /req\.method !== 'POST'/, 'state-changing intelligence convergence must be POST-only');
