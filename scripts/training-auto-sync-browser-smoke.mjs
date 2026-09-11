@@ -14,6 +14,8 @@ function staticFile(res,pathname){const rel=pathname==='/'?'index.html':pathname
 const session={
   session_id:'session-auto-sync-1',local_date:'2026-09-09',actual_start_at:'2026-09-09T18:35:00.000Z',planned_start_at:null,
   title:'Evening Zone 2',sport_type:'running',session_kind:'Z2',status:'COMPLETED',reconciliation_state:'MATCHED',
+  metrics:{durationSeconds:3600,avgHeartRate:132,maxHeartRate:151,distanceMeters:10000,calories:620,avgPowerWatts:245,paceSecPerKm:360,cadence:168,elevationGainMeters:45},
+  evidence:{sourceKeys:['tredict','garmin'],newestAt:'2026-09-09T19:00:00.000Z',hasMetrics:true},
   events:[],sources:[{source_key:'tredict',source_record_id:'td-auto-sync-1',match_method:'SOURCE_NATIVE',match_confidence:1}]
 };
 function trainingPayload(refresh){return {ok:true,date:'2026-09-09',range:{startDate:'2026-07-26',endDate:'2026-09-09'},syncWindow:{startDate:'2026-09-07',endDate:'2026-09-16'},sync:refresh?{tredict:{activities:1},garmin:{activities:1,matched:1}}:null,warning:null,sessions:trainingSynced?[session]:[],supersededSessions:[],contextEvents:[]};}
@@ -53,8 +55,11 @@ try{
   assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after background source reconciliation');
 
   await page.locator('[data-page="train"]:visible').first().click();
-  await page.locator('[data-training-lens="ALL"]').click();
+  await page.waitForSelector('[data-rich-training-lens="ALL"]',{timeout:5000});
+  await page.locator('[data-rich-training-lens="ALL"]').click();
   assert((await page.locator('#train').textContent()).includes('Evening Zone 2'),'TRAIN All sessions reflects newly reconciled canonical workout');
+  assert((await page.locator('#train').textContent()).includes('132')&&(await page.locator('#train').textContent()).includes('avg HR'),'TRAIN All sessions renders canonical execution metrics without Athlete Voice');
+  assert((await page.locator('#train').textContent()).includes('No Athlete Voice is linked to this execution.'),'TRAIN preserves sessions with no Athlete Voice');
 
   await page.locator('[data-page="today"]:visible').first().click();
   await page.locator('[data-training-sync-now]').click();
