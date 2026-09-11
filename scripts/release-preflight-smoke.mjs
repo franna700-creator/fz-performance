@@ -40,6 +40,7 @@ assert.equal(pkg.engines?.node, '24.x', 'Node must be pinned to Vercel Node 24.x
 assert.equal(Number(envContract.hosting?.nodeMajor), 24, 'release environment contract must match Node 24');
 assert.equal(vercel.buildCommand, 'npm run build', 'Vercel must execute the same build gate CI validates');
 assert.equal(vercel.outputDirectory, 'dist', 'Vercel output directory must remain dist');
+assert.equal(vercel.git?.deploymentEnabled, false, 'Git auto-deploy must stay permanently disabled; releases are explicit pinned Preview deployments');
 assert.ok(maxFunctions > 0, 'serverless function limit must be declared');
 assert.ok(functions.length <= maxFunctions, `serverless function budget exceeded: ${functions.length}/${maxFunctions}: ${functions.join(', ')}`);
 
@@ -53,26 +54,17 @@ assert.match(systemApi, /releaseEnvironment:\{databaseConfigured:databaseConfigu
 assert.match(systemApi, /secretsExposed:false/, 'SYSTEM release probes must explicitly remain secret-safe');
 
 const environmentNames = new Set((envContract.requiredRuntimeEnvironment || []).flatMap(item => item.alternatives || []));
-assert.ok(environmentNames.has('DATABASE_URL') && environmentNames.has('POSTGRES_URL'), 'database env alternatives must be declared for preview and production');
+assert.ok(environmentNames.has('DATABASE_URL') && environmentNames.has('POSTGRES_URL'), 'database env alternatives must be declared for Preview and Production');
 assert.ok(environmentNames.has('FZ_STATE_WRITE_TOKEN'), 'runtime write protection env must be declared');
 for (const requirement of envContract.requiredRuntimeEnvironment || []) {
   assert.deepEqual(requirement.targets, ['preview', 'production'], `${requirement.name} must be required in Preview and Production`);
 }
 assert.equal(envContract.promotionPolicy?.previewRequired, true, 'pinned Preview must precede Production promotion');
 assert.equal(envContract.promotionPolicy?.previewEnvironmentMustPass, true, 'Preview env probe is a hard promotion gate');
-assert.equal(envContract.promotionPolicy?.productionPromotionFromExactPreviewCandidateOnly, true, 'Production must promote the exact validated preview candidate');
+assert.equal(envContract.promotionPolicy?.productionPromotionFromExactPreviewCandidateOnly, true, 'Production must promote the exact validated Preview candidate');
+assert.equal(envContract.promotionPolicy?.rollbackCandidateRequiredBeforePromotion, true, 'rollback candidate must exist before promotion');
 assert.equal(envContract.promotionPolicy?.directProductionTroubleshootingForbidden, true, 'Production may not be used as a troubleshooting environment');
 
-if (gate.enabled === true) {
-  assert.equal(vercel.git?.deploymentEnabled, true, 'an armed release gate requires Git deployment enabled in the same pinned release commit');
-  assert.ok(validPinnedReleaseGate(gate), 'armed deployment gate is incomplete or stale');
-} else {
-  assert.equal(vercel.git?.deploymentEnabled, false, 'ordinary development must keep automatic Git deployments disabled');
-}
+if (gate.enabled === true) assert.ok(validPinnedReleaseGate(gate), 'armed release metadata is incomplete or stale');
 
-if (process.env.VERCEL === '1' && vercel.git?.deploymentEnabled === true) {
-  assert.equal(process.env.VERCEL_GIT_COMMIT_SHA, gate.validatedCandidateSha, 'Vercel build SHA must equal the armed candidate SHA');
-  assert.equal(process.env.VERCEL_GIT_COMMIT_REF, gate.releaseBranch, 'Vercel build branch must equal the armed release branch');
-}
-
-console.log(`PASS zero-failure release preflight: ${functions.length}/${maxFunctions} serverless functions, Node ${pkg.engines.node}, deployment aperture ${gate.enabled ? 'PINNED' : 'CLOSED'}`);
+console.log(`PASS zero-failure release preflight: ${functions.length}/${maxFunctions} serverless functions, Node ${pkg.engines.node}, Git auto-deploy OFF, release metadata ${gate.enabled ? 'PINNED' : 'CLOSED'}`);
