@@ -31,7 +31,7 @@ const pages=`<section class="page active" id="today"><div class="fz-clean-loadin
 `;
 html=html.slice(0,start)+pages+html.slice(end);
 html=html
-  .replace(/<meta content="[^"]+" name="fz-build"\/>/, '<meta content="2026-09-11-v0.8.0-rc2-architecture-closeout" name="fz-build"/><meta content="4.3-architecture-closeout" name="fz-shell"/>')
+  .replace(/<meta content="[^"]+" name="fz-build"\/>/, '<meta content="2026-09-11-v0.8.0-rc2-architecture-closeout" name="fz-build"/><meta content="4.3-context-recovery" name="fz-shell"/>')
   .replace('<link href="/assets/app.css" rel="stylesheet"/>','<link href="/assets/app.css" rel="stylesheet"/><link href="/assets/clean.css" rel="stylesheet"/><link href="/assets/live-physiology.css" rel="stylesheet"/><link href="/assets/training-auto-sync.css" rel="stylesheet"/><link href="/assets/fz-design-system.css" rel="stylesheet"/><link href="/assets/ui-context-recovery.css" rel="stylesheet"/>')
   .replace(/<div class="subtitle">[\s\S]*?<\/div><\/div><div class="fresh">/, '<div class="subtitle">Current state → decision context → training memory → longitudinal change → provenance. Canonical evidence propagates through materiality and recommendation without losing athlete-facing context.</div></div><div class="fresh">')
   .replace(/<div class="side-note">[\s\S]*?<\/div><\/aside>/, '<div class="side-note">v0.8 · Neon operational truth · executable golden threads · canonical Training Memory · fail-stale PWA.</div></aside>')
@@ -64,5 +64,5 @@ fs.copyFileSync(uiContextJs,path.join(dist,'assets','ui-context-recovery.js'));
 fs.copyFileSync(uiContextCss,path.join(dist,'assets','ui-context-recovery.css'));
 fs.rmSync(legacyAppPath,{force:true});
 if(fs.existsSync(legacyAppPath))throw new Error('Legacy static app.js survived clean-shell hardening');
-fs.writeFileSync(path.join(dist,'release-ui-contract.json'),JSON.stringify({shell:'4.3-architecture-closeout',canonicalRuntime:true,executableGoldenThreads:true,canonicalTrainingMetrics:true,legacyAppJs:false,requiredAssets:['app-clean.js','intelligence-refresh.js','training-memory-rich.js','ui-context-recovery.js','ui-context-recovery.css']},null,2));
+fs.writeFileSync(path.join(dist,'release-ui-contract.json'),JSON.stringify({shell:'4.3-context-recovery',canonicalRuntime:true,executableGoldenThreads:true,canonicalTrainingMetrics:true,legacyAppJs:false,requiredAssets:['app-clean.js','intelligence-refresh.js','training-memory-rich.js','ui-context-recovery.js','ui-context-recovery.css']},null,2));
 console.log('PASS clean shell v0.8.0-rc2 architecture closeout: executable propagation + canonical Training Memory metrics + contextual UI');
