@@ -12,19 +12,83 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout frozen Tranche 4.3 candidate
+      - name: Checkout exact UI recovery candidate
         uses: actions/checkout@v4
         with:
-          ref: ac84fae23e9bc437e7cd897f07f6fedec1db4ccd
+          ref: 214e4d96be052e71a40e0c80b64485cf4402e2d4
           path: candidate
-      - name: Verify frozen identity
+          fetch-depth: 1
+
+      - name: Verify frozen source identity
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = "ac84fae23e9bc437e7cd897f07f6fedec1db4ccd"
-      - name: Upload exact candidate source
+        run: test "$(git rev-parse HEAD)" = "214e4d96be052e71a40e0c80b64485cf4402e2d4"
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install candidate dependencies
+        working-directory: candidate
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build and validate exact candidate
+        working-directory: candidate
+        run: npm run build
+
+      - name: Verify 4.3 UI release identity
+        working-directory: candidate
+        run: |
+          node --check dist/assets/ui-context-recovery.js
+          test ! -e dist/assets/app.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const contract = JSON.parse(fs.readFileSync('dist/release-ui-contract.json','utf8'));
+          if (contract.shell !== '4.3-context-recovery') throw new Error('wrong shell identity');
+          if (contract.legacyAppJs !== false) throw new Error('legacy app.js permitted');
+          if (contract.canonicalRuntime !== true) throw new Error('canonical runtime contract missing');
+          const html = fs.readFileSync('dist/index.html','utf8');
+          if (!html.includes('name="fz-shell"') || !html.includes('4.3-context-recovery')) throw new Error('shell meta missing');
+          if (html.includes('/assets/app.js')) throw new Error('legacy app.js wired');
+          NODE
+
+      - name: Export tracked deployment source only
+        run: |
+          mkdir deployment-source
+          git -C candidate archive HEAD | tar -x -C deployment-source
+          test ! -e deployment-source/bootstrap.mjs
+          test -f deployment-source/package.json
+          test -f deployment-source/src/ui-context-recovery.js
+          test -f deployment-source/scripts/ui-context-recovery-smoke.mjs
+
+      - name: Record immutable release identity
+        run: |
+          cat > release-source-identity.json <<'JSON'
+          {
+            "sourceSha": "214e4d96be052e71a40e0c80b64485cf4402e2d4",
+            "shell": "4.3-context-recovery",
+            "buildCommand": "npm run build",
+            "bootstrapAllowed": false,
+            "legacyAppJsAllowed": false
+          }
+          JSON
+
+      - name: Upload deployable source
         uses: actions/upload-artifact@v4
         with:
-          name: fz-tranche-4-3-source-ac84fae
-          path: candidate/
+          name: fz-4-3-ui-recovery-deploy-source-214e4d96
+          path: |
+            deployment-source/
+            release-source-identity.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Upload validated built dist for byte-level comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-4-3-ui-recovery-validated-dist-214e4d96
+          path: candidate/dist/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 2
