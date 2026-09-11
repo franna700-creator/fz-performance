@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "hosting": {
+    "provider": "Vercel",
+    "plan": "Hobby",
+    "maxServerlessFunctions": 12,
+    "nodeMajor": 24
+  },
+  "requiredRuntimeEnvironment": [
+    {
+      "name": "database",
+      "alternatives": ["DATABASE_URL", "POSTGRES_URL"],
+      "targets": ["preview", "production"],
+      "runtimeProbe": "releaseEnvironment.databaseConfigured"
+    },
+    {
+      "name": "runtimeWriteProtection",
+      "alternatives": ["FZ_STATE_WRITE_TOKEN"],
+      "targets": ["preview", "production"],
+      "runtimeProbe": "releaseEnvironment.writeTokenConfigured"
+    }
+  ],
+  "promotionPolicy": {
+    "previewRequired": true,
+    "previewMustBeReady": true,
+    "previewEnvironmentMustPass": true,
+    "previewRuntimeAcceptanceRequired": true,
+    "productionPromotionFromExactPreviewCandidateOnly": true,
+    "rollbackCandidateRequiredBeforePromotion": true,
+    "directProductionTroubleshootingForbidden": true
+  },
+  "acceptanceRoutes": [
+    "/api/system/status",
+    "/api/intelligence/current",
+    "/api/runtime-state",
+    "/api/wellness/today?refresh=0",
+    "/api/training/memory?backDays=45&forwardDays=0",
+    "/api/trends/current?days=45"
+  ],
+  "notes": [
+    "Environment presence is validated by boolean runtime probes only; secret values must never be returned.",
+    "A preview that does not satisfy this contract is never promotable.",
+    "Routine athlete-state evolution remains a runtime data operation and does not open this release process."
+  ]
+}
