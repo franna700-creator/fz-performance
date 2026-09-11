@@ -19,7 +19,7 @@ assert.equal(voice.eventId, 1623);
 assert.equal(voice.sessionId, 'exec:tredict:msjYGFLpxZrevGBX5fny8a');
 assert.equal(voice.canonicalSummary, 'Controlled upper-body pump; no failure; felt great and mentally beneficial.');
 assert.equal(voice.verbatim, false, 'Athlete-facing summary must not be represented as verbatim transcript');
-assert.match(voice.text, /^10 Sep · Controlled upper-body pump/);
+assert.match(voice.text, /^10 Sep(?:t)? · Controlled upper-body pump/);
 assert.doesNotMatch(voice.text, /No new .* subjective feedback is captured/i, 'Canonical Athlete Memory must override stale no-feedback wording');
 
 const api = fs.readFileSync('api/trends/current.js', 'utf8');
