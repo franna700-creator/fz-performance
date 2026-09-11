@@ -32,7 +32,9 @@ assert.match(canonicalPropagation,/recomputeRecommendationShadowSafely/,'canonic
 assert.match(canonicalPropagation,/persistActiveRecommendationFromShadow/,'canonical propagation must own controlled 4.3 projection when recommendation.current is actually pending');
 
 assert.doesNotMatch(shadowStore,/active-recommendation-store|recordType:\s*['"]recommendation['"]/,'4.2 shadow persistence itself must remain isolated from active recommendation writes');
-assert.match(intelligenceRefresh,/persistActiveRecommendationFromShadow/,'systemic refresh must retain an explicit 4.3 convergence path');
+assert.match(intelligenceRefresh,/current\.pending\.activeRecommendation/,'systemic refresh must detect a pending active recommendation projection');
+assert.match(intelligenceRefresh,/changedNodes:\['recommendation\.shadow'\]/,'systemic refresh must converge pending 4.3 projection through canonical propagation rather than bypassing it');
+assert.match(intelligenceRefresh,/forceRecommendationRecompute:true/,'systemic refresh must retain an explicit forced convergence path for stale decision inputs');
 
 for(const source of ['source.tredict.activity','source.garmin.activity','source.athlete.feedback','source.athlete.objective']){
   const closure=affectedNodes(source);
