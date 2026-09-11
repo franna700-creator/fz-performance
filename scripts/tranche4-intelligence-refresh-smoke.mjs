@@ -3,7 +3,8 @@ import fs from 'node:fs';
 
 const orchestrator = fs.readFileSync('lib/intelligence-refresh.js', 'utf8');
 const current = fs.readFileSync('lib/intelligence-current.js', 'utf8');
-const api = fs.readFileSync('api/intelligence/refresh.js', 'utf8');
+const api = fs.readFileSync('api/system/status.js', 'utf8');
+const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
 const training = fs.readFileSync('lib/training-sync-runtime.js', 'utf8');
 const materiality = fs.readFileSync('lib/source-materiality.js', 'utf8');
 const wellness = fs.readFileSync('lib/wellness-sync.js', 'utf8');
@@ -24,11 +25,19 @@ assert.match(current, /const trainingEvidenceAt = firstValue\(rows\.trainingEvid
 assert.match(current, /const wellnessEvidenceAt = firstValue\(rows\.wellnessEvidence, \['source_as_of', 'ingested_at'\]\)/, 'wellness freshness must prefer source time');
 assert.match(wellness, /assessWellnessCurrentMateriality/, 'Garmin wellness must pass through 4.1 materiality after canonical persistence');
 
+assert.match(api, /operation === 'intelligence-current'/, 'consolidated SYSTEM function must dispatch read-only intelligence current');
+assert.match(api, /operation === 'intelligence-refresh'/, 'consolidated SYSTEM function must dispatch intelligence convergence');
 assert.match(api, /req\.method !== 'POST'/, 'state-changing intelligence convergence must be POST-only');
 assert.match(api, /input\.sources === true/, 'external source refresh must be explicit in the POST contract rather than automatic on intelligence polling');
 assert.match(api, /forceWellness:\s*false/, 'public refresh may not bypass the Garmin wellness throttle');
 assert.match(api, /cross_site_refresh_forbidden/, 'cross-site browser refresh requests must be rejected');
 assert.match(api, /X-Content-Type-Options/, 'refresh response must retain basic browser hardening');
-assert.doesNotMatch(api, /FZ_STATE_WRITE_TOKEN/, '4.3 convergence may not reuse or expose the runtime state-write bearer token');
+assert.doesNotMatch(api, /process\.env\.FZ_STATE_WRITE_TOKEN\s*[!=]=?\s*req|authorization.*FZ_STATE_WRITE_TOKEN/i, '4.3 convergence may not reuse or expose the runtime state-write bearer token');
 
-console.log('PASS Tranche 4.3 intelligence refresh orchestration');
+const rewriteMap = new Map((vercel.rewrites || []).map(rule => [rule.source, rule.destination]));
+assert.equal(rewriteMap.get('/api/intelligence/current'), '/api/system/status?operation=intelligence-current', 'public intelligence-current contract must be rewritten to the consolidated SYSTEM function');
+assert.equal(rewriteMap.get('/api/intelligence/refresh'), '/api/system/status?operation=intelligence-refresh', 'public intelligence-refresh contract must be rewritten to the consolidated SYSTEM function');
+assert.equal(fs.existsSync('api/intelligence/current.js'), false, 'standalone current function must stay removed to preserve Hobby function budget');
+assert.equal(fs.existsSync('api/intelligence/refresh.js'), false, 'standalone refresh function must stay removed to preserve Hobby function budget');
+
+console.log('PASS Tranche 4.3 intelligence refresh orchestration + consolidated Vercel routing');
