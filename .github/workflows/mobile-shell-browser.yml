@@ -1,0 +1,36 @@
+name: mobile-shell-browser
+
+on:
+  pull_request:
+    paths:
+      - 'src/app-clean.js'
+      - 'src/intelligence-refresh.js'
+      - 'src/adaptive-choice.js'
+      - 'src/training-memory-rich.js'
+      - 'src/ui-context-recovery.js'
+      - 'scripts/mobile-shell-browser-smoke.mjs'
+      - 'scripts/clean-shell.mjs'
+      - 'package.json'
+      - '.github/workflows/mobile-shell-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise the complete mobile shell in a real browser
+        run: node scripts/mobile-shell-browser-smoke.mjs
