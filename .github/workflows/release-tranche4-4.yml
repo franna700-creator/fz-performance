@@ -1,0 +1,261 @@
+name: release-tranche4-4
+
+on:
+  push:
+    branches:
+      - release-tranche4-4-20260913
+    paths:
+      - '.github/workflows/release-tranche4-4.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RELEASE_SHA: 23ef0a054d00845a7377956c8b98af1cae955fb1
+      EXPECTED_TREE: aab248722792cb293c71357b9dff90c62979ad5c
+      VERCEL_TEAM_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      PUBLIC_ALIAS: fz-performance-mvp.vercel.app
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Verify release authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "VERCEL_TOKEN is not available; failing closed."
+            exit 1
+          fi
+
+      - name: Checkout exact approved source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          fetch-depth: 1
+
+      - name: Verify immutable clean source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$EXPECTED_TREE"
+          git diff --quiet
+          git diff --cached --quiet
+          test -z "$(git status --porcelain)"
+          echo "release_sha=$RELEASE_SHA"
+          echo "release_tree=$EXPECTED_TREE"
+
+      - name: Capture rollback deployment
+        id: rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          previous_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+          previous_state=$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')
+          previous_sha=$(printf '%s' "$detail" | jq -r '.meta.githubCommitSha // empty')
+          if [ -z "$previous_id" ] || [ "$previous_state" != "READY" ]; then
+            echo "A READY rollback deployment could not be resolved from $PUBLIC_ALIAS."
+            printf '%s\n' "$detail"
+            exit 1
+          fi
+          echo "previous_id=$previous_id" >> "$GITHUB_OUTPUT"
+          echo "previous_sha=$previous_sha" >> "$GITHUB_OUTPUT"
+          echo "rollback_candidate=$previous_id sha=${previous_sha:-unknown}"
+
+      - name: Install Vercel CLI and link project
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global vercel
+          vercel --version
+          mkdir -p .vercel
+          jq -n --arg projectId "$VERCEL_PROJECT_ID" --arg orgId "$VERCEL_ORG_ID" \
+            '{projectId:$projectId,orgId:$orgId}' > .vercel/project.json
+
+      - name: Create staged Production deployment without domain assignment
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_url=$(vercel deploy --prod --skip-domain --yes --token="$VERCEL_TOKEN")
+          deployment_host=${deployment_url#https://}
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$deployment_host?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          deployment_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+          if [ -z "$deployment_id" ]; then
+            echo "Unable to resolve staged deployment ID from $deployment_url"
+            printf '%s\n' "$detail"
+            exit 1
+          fi
+          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "deployment_host=$deployment_host" >> "$GITHUB_OUTPUT"
+          echo "staged_deployment=$deployment_id url=$deployment_url"
+
+      - name: Verify staged deployment provenance and no traffic promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$deployment_id?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          ready=$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')
+          target=$(printf '%s' "$detail" | jq -r '.target // empty')
+          deployed_sha=$(printf '%s' "$detail" | jq -r '.meta.githubCommitSha // empty')
+          dirty=$(printf '%s' "$detail" | jq -r '.meta.gitDirty // empty')
+          functions=$(printf '%s' "$detail" | jq -r '.meta.lambdaRuntimeStats // empty')
+          if [ "$ready" != "READY" ]; then
+            echo "Staged deployment is not READY: $ready"
+            exit 1
+          fi
+          if [ "$target" != "production" ]; then
+            echo "Expected Production environment build; got target=$target"
+            exit 1
+          fi
+          if [ -n "$deployed_sha" ] && [ "$deployed_sha" != "$RELEASE_SHA" ]; then
+            echo "Deployment reports unexpected Git SHA: $deployed_sha"
+            exit 1
+          fi
+          if [ -n "$dirty" ] && [ "$dirty" != "0" ]; then
+            echo "Deployment provenance is dirty: gitDirty=$dirty"
+            exit 1
+          fi
+          if [ -n "$functions" ]; then
+            node_count=$(printf '%s' "$functions" | jq -r 'fromjson.nodejs // 0' 2>/dev/null || echo 0)
+            if [ "$node_count" -gt 12 ]; then
+              echo "Vercel Hobby function budget exceeded: $node_count"
+              exit 1
+            fi
+          fi
+          public_detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          public_id=$(printf '%s' "$public_detail" | jq -r '.id // empty')
+          if [ "$public_id" = "$deployment_id" ]; then
+            echo "Staged deployment received production traffic before acceptance."
+            exit 1
+          fi
+          test "$public_id" = '${{ steps.rollback.outputs.previous_id }}'
+          echo "staged_provenance_ok deployment=$deployment_id sha=${deployed_sha:-not-reported} gitDirty=${dirty:-absent} public_still=${public_id}"
+
+      - name: Candidate runtime acceptance on immutable URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='${{ steps.deploy.outputs.deployment_url }}'
+          tmp=$(mktemp -d)
+          curl --fail-with-body -sS "$base/" -o "$tmp/root.html"
+          grep -q '2026-09-11-v0.8.0-rc3-tranche44' "$tmp/root.html"
+          grep -q '/assets/adaptive-choice.js' "$tmp/root.html"
+          curl --fail-with-body -sS "$base/assets/adaptive-choice.js" -o "$tmp/adaptive-choice.js"
+          grep -q 'Current Training Choice' "$tmp/adaptive-choice.js"
+
+          curl --fail-with-body -sS "$base/api/system/status" -o "$tmp/system.json"
+          jq -e '.ok == true and .releaseEnvironment.databaseConfigured == true and .releaseEnvironment.writeTokenConfigured == true and .releaseEnvironment.secretsExposed == false' "$tmp/system.json" >/dev/null
+
+          curl --fail-with-body -sS "$base/api/intelligence/current" -o "$tmp/intelligence.json"
+          jq -e '.ok == true and .markers.sessionOptionComposerVersion == "4.4.0-composer.1"' "$tmp/intelligence.json" >/dev/null
+          jq -e 'if (.activeRecommendation.sessionOptionComposerVersion // null) == null then .pending.activeRecommendation == true else .activeRecommendation.sessionOptionComposerVersion == "4.4.0-composer.1" end' "$tmp/intelligence.json" >/dev/null
+
+          curl --fail-with-body -sS "$base/api/runtime-state" -o "$tmp/runtime.json"
+          jq -e '.ok == true or .stateId != null or .state != null' "$tmp/runtime.json" >/dev/null
+          curl --fail-with-body -sS "$base/api/wellness/today?refresh=0" -o "$tmp/wellness.json"
+          jq -e '.ok == true' "$tmp/wellness.json" >/dev/null
+          curl --fail-with-body -sS "$base/api/training/memory?backDays=45&forwardDays=0" -o "$tmp/training.json"
+          jq -e '.ok == true and (.sessions | type == "array")' "$tmp/training.json" >/dev/null
+          jq -e '[.sessions[] | select((.metrics != null) or (.workoutDetail != null))] | length > 0' "$tmp/training.json" >/dev/null
+          curl --fail-with-body -sS "$base/api/trends/current?days=45" -o "$tmp/trends.json"
+          jq -e '.ok == true' "$tmp/trends.json" >/dev/null
+          echo "candidate_runtime_acceptance=PASS"
+
+      - name: Promote exact staged deployment without rebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          status=$(curl -sS -o /tmp/promote.out -w '%{http_code}' \
+            -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$deployment_id?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{}')
+          if [ "$status" != "201" ] && [ "$status" != "202" ] && [ "$status" != "200" ]; then
+            echo "Promotion failed with HTTP $status"
+            cat /tmp/promote.out
+            exit 1
+          fi
+          for attempt in $(seq 1 60); do
+            detail=$(curl --fail-with-body -sS \
+              "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN")
+            public_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+            echo "promotion_attempt=$attempt public_id=$public_id"
+            if [ "$public_id" = "$deployment_id" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Public alias did not resolve to the accepted deployment."
+          exit 1
+
+      - name: Converge Tranche 4.4 active projection
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://$PUBLIC_ALIAS"
+          curl --fail-with-body -sS \
+            -X POST "$base/api/intelligence/refresh" \
+            -H 'Content-Type: application/json' \
+            --data '{"sources":false}' > /tmp/refresh.json
+          jq -e '.ok == true and .pendingPropagation == false' /tmp/refresh.json >/dev/null
+          curl --fail-with-body -sS "$base/api/intelligence/current" > /tmp/current.json
+          jq -e '.ok == true and .pendingPropagation == false' /tmp/current.json >/dev/null
+          jq -e '.activeRecommendation.status == "READY" and .activeRecommendation.sessionOptionComposerVersion == "4.4.0-composer.1"' /tmp/current.json >/dev/null
+          jq -e '.activeRecommendation.rules.sessionOptionsDeferredToTranche44 == false' /tmp/current.json >/dev/null
+          jq -e '(.activeRecommendation.lanes[.activeRecommendation.fzRecommendedLane] | length) > 0' /tmp/current.json >/dev/null
+          jq -e '.activeRecommendation.shadowRecommendationId == .markers.shadowRecommendation.id or (.activeRecommendation.shadowRecommendationId | type == "string")' /tmp/current.json >/dev/null
+          echo "tranche44_projection=PASS"
+
+      - name: Public production acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          base="https://$PUBLIC_ALIAS"
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          test "$(printf '%s' "$detail" | jq -r '.id // empty')" = "$deployment_id"
+          test "$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')" = "READY"
+
+          curl --fail-with-body -sS "$base/" -o /tmp/public-root.html
+          grep -q '2026-09-11-v0.8.0-rc3-tranche44' /tmp/public-root.html
+          grep -q '/assets/adaptive-choice.js' /tmp/public-root.html
+          curl --fail-with-body -sS "$base/assets/adaptive-choice.js" >/dev/null
+          curl --fail-with-body -sS "$base/api/system/status" > /tmp/public-system.json
+          jq -e '.ok == true and .releaseEnvironment.databaseConfigured == true and .releaseEnvironment.writeTokenConfigured == true' /tmp/public-system.json >/dev/null
+          jq -e '.intelligence.current.pendingPropagation == false' /tmp/public-system.json >/dev/null
+          jq -e '.intelligence.current.activeRecommendation.sessionOptionComposerVersion == "4.4.0-composer.1"' /tmp/public-system.json >/dev/null
+          curl --fail-with-body -sS "$base/api/training/memory?backDays=45&forwardDays=0" > /tmp/public-training.json
+          jq -e '.ok == true and [.sessions[] | select((.metrics != null) or (.workoutDetail != null))] | length > 0' /tmp/public-training.json >/dev/null
+          curl --fail-with-body -sS "$base/api/trends/current?days=45" > /tmp/public-trends.json
+          jq -e '.ok == true' /tmp/public-trends.json >/dev/null
+          echo "public_production_acceptance=PASS deployment=$deployment_id"
+
+      - name: Release summary
+        shell: bash
+        run: |
+          echo "release_sha=$RELEASE_SHA"
+          echo "deployment_id=${{ steps.deploy.outputs.deployment_id }}"
+          echo "immutable_url=${{ steps.deploy.outputs.deployment_url }}"
+          echo "public_url=https://$PUBLIC_ALIAS"
+          echo "rollback_id=${{ steps.rollback.outputs.previous_id }}"
