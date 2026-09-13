@@ -1,0 +1,301 @@
+name: release-mobile-hotfix
+
+on:
+  push:
+    branches:
+      - release-mobile-hotfix-20260913
+    paths:
+      - '.github/workflows/release-mobile-hotfix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_SHA: a9e827525bf80e739dbfd2096dd30587c66126ca
+      EXPECTED_TREE: 2ac5cf34e922fab9b5a464e4c98974e7c25ad819
+      VERCEL_TEAM_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      PUBLIC_ALIAS: fz-performance-mvp.vercel.app
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Verify release authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${VERCEL_TOKEN:-}"
+
+      - name: Checkout exact approved hotfix source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          fetch-depth: 1
+
+      - name: Verify immutable clean source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$EXPECTED_TREE"
+          git diff --quiet
+          git diff --cached --quiet
+          test -z "$(git status --porcelain)"
+          grep -q 'observer.disconnect()' src/adaptive-choice.js
+          grep -q 'fz44Fingerprint' src/adaptive-choice.js
+          grep -q 'mobile shell real-browser liveness and navigation acceptance' scripts/mobile-shell-browser-smoke.mjs
+          echo "immutable_source=PASS sha=$RELEASE_SHA tree=$EXPECTED_TREE"
+
+      - name: Capture rollback deployment
+        id: rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          previous_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+          previous_state=$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')
+          previous_sha=$(printf '%s' "$detail" | jq -r '.meta.githubCommitSha // empty')
+          test -n "$previous_id"
+          test "$previous_state" = "READY"
+          echo "previous_id=$previous_id" >> "$GITHUB_OUTPUT"
+          echo "previous_sha=$previous_sha" >> "$GITHUB_OUTPUT"
+          echo "rollback_candidate=$previous_id sha=${previous_sha:-unknown}"
+
+      - name: Install Vercel CLI and link project
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global vercel
+          mkdir -p .vercel
+          jq -n --arg projectId "$VERCEL_PROJECT_ID" --arg orgId "$VERCEL_ORG_ID" '{projectId:$projectId,orgId:$orgId}' > .vercel/project.json
+
+      - name: Create staged Production deployment without public promotion
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_url=$(vercel deploy --prod --skip-domain --yes --token="$VERCEL_TOKEN")
+          deployment_host=${deployment_url#https://}
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$deployment_host?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          deployment_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+          test -n "$deployment_id"
+          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "staged_deployment=$deployment_id url=$deployment_url"
+
+      - name: Verify staged provenance and isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$deployment_id?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          test "$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')" = "READY"
+          test "$(printf '%s' "$detail" | jq -r '.target // empty')" = "production"
+          deployed_sha=$(printf '%s' "$detail" | jq -r '.meta.githubCommitSha // empty')
+          dirty=$(printf '%s' "$detail" | jq -r '.meta.gitDirty // empty')
+          if [ -n "$deployed_sha" ]; then test "$deployed_sha" = "$RELEASE_SHA"; fi
+          if [ -n "$dirty" ]; then test "$dirty" = "0"; fi
+          functions=$(printf '%s' "$detail" | jq -r '.meta.lambdaRuntimeStats // empty')
+          if [ -n "$functions" ]; then
+            node_count=$(printf '%s' "$functions" | jq -r 'fromjson.nodejs // 0' 2>/dev/null || echo 0)
+            test "$node_count" -le 12
+          fi
+          public_detail=$(curl --fail-with-body -sS \
+            "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          public_id=$(printf '%s' "$public_detail" | jq -r '.id // empty')
+          test "$public_id" = '${{ steps.rollback.outputs.previous_id }}'
+          test "$public_id" != "$deployment_id"
+          echo "staged_provenance=PASS public_still=$public_id"
+
+      - name: Candidate API and asset acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='${{ steps.deploy.outputs.deployment_url }}'
+          tmp=$(mktemp -d)
+          curl --fail-with-body -sS "$base/" -o "$tmp/root.html"
+          grep -q '2026-09-11-v0.8.0-rc3-tranche44' "$tmp/root.html"
+          grep -q '/assets/adaptive-choice.js' "$tmp/root.html"
+          curl --fail-with-body -sS "$base/assets/adaptive-choice.js" -o "$tmp/adaptive-choice.js"
+          grep -q 'observer.disconnect()' "$tmp/adaptive-choice.js"
+          grep -q 'fz44Fingerprint' "$tmp/adaptive-choice.js"
+          if grep -A4 'function scheduleRender' "$tmp/adaptive-choice.js" | grep -q 'queueMicrotask'; then
+            echo 'Unsafe adaptive-choice microtask render loop survived build.'
+            exit 1
+          fi
+          curl --fail-with-body -sS "$base/api/system/status" -o "$tmp/system.json"
+          jq -e '.ok == true and .releaseEnvironment.databaseConfigured == true and .releaseEnvironment.writeTokenConfigured == true and .releaseEnvironment.secretsExposed == false' "$tmp/system.json" >/dev/null
+          curl --fail-with-body -sS "$base/api/intelligence/current" -o "$tmp/intelligence.json"
+          jq -e '.ok == true and .pendingPropagation == false and .markers.sessionOptionComposerVersion == "4.4.0-composer.1"' "$tmp/intelligence.json" >/dev/null
+          curl --fail-with-body -sS "$base/api/training/memory?backDays=45&forwardDays=0" -o "$tmp/training.json"
+          jq -e '.ok == true and (.sessions | type == "array") and (([.sessions[] | select((.metrics != null) or (.workoutDetail != null))] | length) > 0)' "$tmp/training.json" >/dev/null
+          curl --fail-with-body -sS "$base/api/trends/current?days=45" -o "$tmp/trends.json"
+          jq -e '.ok == true' "$tmp/trends.json" >/dev/null
+          echo "candidate_api_acceptance=PASS"
+
+      - name: Install real-browser release probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+          cat > release-browser-accept.mjs <<'NODE'
+          import { chromium } from 'playwright';
+          const base = process.argv[2];
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+          const pageErrors = [];
+          page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
+          await page.addInitScript(() => {
+            window.__releasePulse = 0;
+            setInterval(() => { window.__releasePulse += 1; }, 50);
+          });
+          const assert = (condition, message) => { if (!condition) throw new Error(message); console.log('PASS', message); };
+          const clickPage = async (name, expected) => {
+            await page.locator(`.bottom [data-page="${name}"]`).click({ timeout: 2500 });
+            await page.waitForFunction(target => document.getElementById(target)?.classList.contains('active'), name, { timeout: 2500 });
+            assert((await page.locator(`#${name}`).innerText()).includes(expected), `${name} navigation rendered`);
+          };
+          try {
+            await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 15000 });
+            await page.waitForSelector('#today .fz-clean-readiness', { timeout: 12000 });
+            assert(await page.locator('#today .fz-clean-loading').count() === 0, 'TODAY left loading state');
+            await page.waitForFunction(() => document.querySelector('#stateStamp')?.textContent?.includes('CANONICAL RUNTIME'), null, { timeout: 12000 });
+            await page.waitForTimeout(500);
+            const pulse = await page.evaluate(() => window.__releasePulse);
+            assert(pulse >= 4, 'browser event loop remains live after canonical render');
+            await clickPage('trends', 'Longitudinal Signals');
+            await clickPage('train', 'Training Memory');
+            assert((await page.locator('#train').innerText()).includes('Current Training Choice'), '4.4 training choice rendered');
+            await clickPage('system', 'System Health');
+            await clickPage('today', 'Live Physiology');
+            await page.waitForTimeout(300);
+            assert((await page.evaluate(() => window.__releasePulse)) > pulse, 'event loop remains live after navigation');
+            assert(pageErrors.length === 0, `no browser page errors: ${pageErrors.join(' | ') || 'none'}`);
+            assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'mobile viewport has no horizontal overflow');
+          } finally {
+            await browser.close();
+          }
+          NODE
+
+      - name: Candidate real-browser acceptance on immutable URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          node release-browser-accept.mjs '${{ steps.deploy.outputs.deployment_url }}'
+          echo "candidate_browser_acceptance=PASS"
+
+      - name: Promote exact accepted deployment without rebuild
+        id: promote
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          status=$(curl -sS -o /tmp/promote.out -w '%{http_code}' \
+            -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$deployment_id?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{}')
+          if [ "$status" != "201" ] && [ "$status" != "202" ] && [ "$status" != "200" ]; then
+            cat /tmp/promote.out
+            exit 1
+          fi
+          for attempt in $(seq 1 60); do
+            detail=$(curl --fail-with-body -sS \
+              "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" \
+              -H "Authorization: Bearer $VERCEL_TOKEN")
+            public_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+            if [ "$public_id" = "$deployment_id" ]; then
+              echo "promotion=PASS attempt=$attempt deployment=$deployment_id"
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Reconcile active intelligence after promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://$PUBLIC_ALIAS"
+          curl --fail-with-body -sS -X POST "$base/api/intelligence/refresh" -H 'Content-Type: application/json' --data '{"sources":false}' > /tmp/refresh.json
+          jq -e '.ok == true and .pendingPropagation == false' /tmp/refresh.json >/dev/null
+          curl --fail-with-body -sS "$base/api/intelligence/current" > /tmp/current.json
+          jq -e '.ok == true and .pendingPropagation == false and .activeRecommendation.status == "READY" and .activeRecommendation.sessionOptionComposerVersion == "4.4.0-composer.1"' /tmp/current.json >/dev/null
+          echo "intelligence_convergence=PASS"
+
+      - name: Public production API acceptance
+        id: public
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id='${{ steps.deploy.outputs.deployment_id }}'
+          base="https://$PUBLIC_ALIAS"
+          detail=$(curl --fail-with-body -sS "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" -H "Authorization: Bearer $VERCEL_TOKEN")
+          test "$(printf '%s' "$detail" | jq -r '.id // empty')" = "$deployment_id"
+          test "$(printf '%s' "$detail" | jq -r '.readyState // .state // empty')" = "READY"
+          curl --fail-with-body -sS "$base/assets/adaptive-choice.js" -o /tmp/public-adaptive-choice.js
+          grep -q 'observer.disconnect()' /tmp/public-adaptive-choice.js
+          grep -q 'fz44Fingerprint' /tmp/public-adaptive-choice.js
+          curl --fail-with-body -sS "$base/api/system/status" > /tmp/public-system.json
+          jq -e '.ok == true and .intelligence.current.pendingPropagation == false' /tmp/public-system.json >/dev/null
+          curl --fail-with-body -sS "$base/api/training/memory?backDays=45&forwardDays=0" > /tmp/public-training.json
+          jq -e '.ok == true and (([.sessions[] | select((.metrics != null) or (.workoutDetail != null))] | length) > 0)' /tmp/public-training.json >/dev/null
+          curl --fail-with-body -sS "$base/api/trends/current?days=45" > /tmp/public-trends.json
+          jq -e '.ok == true' /tmp/public-trends.json >/dev/null
+          echo "public_api_acceptance=PASS deployment=$deployment_id"
+
+      - name: Public production real-browser acceptance
+        id: public_browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          node release-browser-accept.mjs "https://$PUBLIC_ALIAS"
+          echo "public_browser_acceptance=PASS"
+
+      - name: Roll back public traffic if post-promotion acceptance fails
+        if: ${{ failure() && steps.promote.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rollback_id='${{ steps.rollback.outputs.previous_id }}'
+          status=$(curl -sS -o /tmp/rollback.out -w '%{http_code}' \
+            -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$rollback_id?teamId=$VERCEL_TEAM_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{}')
+          if [ "$status" != "201" ] && [ "$status" != "202" ] && [ "$status" != "200" ]; then
+            cat /tmp/rollback.out
+            exit 1
+          fi
+          for attempt in $(seq 1 60); do
+            detail=$(curl --fail-with-body -sS "https://api.vercel.com/v13/deployments/$PUBLIC_ALIAS?teamId=$VERCEL_TEAM_ID" -H "Authorization: Bearer $VERCEL_TOKEN")
+            public_id=$(printf '%s' "$detail" | jq -r '.id // empty')
+            if [ "$public_id" = "$rollback_id" ]; then
+              echo "automatic_rollback=PASS deployment=$rollback_id"
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Release summary
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          echo "release_sha=$RELEASE_SHA"
+          echo "deployment_id=${{ steps.deploy.outputs.deployment_id }}"
+          echo "immutable_url=${{ steps.deploy.outputs.deployment_url }}"
+          echo "public_url=https://$PUBLIC_ALIAS"
+          echo "rollback_id=${{ steps.rollback.outputs.previous_id }}"
+          echo "mobile_browser_gate=PASS"
