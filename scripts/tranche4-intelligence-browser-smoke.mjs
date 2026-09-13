@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const controller = fs.readFileSync('src/intelligence-refresh.js','utf8');
+const adaptiveChoice = fs.readFileSync('src/adaptive-choice.js','utf8');
 const cleanShell = fs.readFileSync('scripts/clean-shell.mjs','utf8');
 
 assert.match(controller, /\/api\/intelligence\/current/, 'visible PWA must poll the cheap read-only intelligence revision contract');
@@ -16,10 +17,17 @@ assert.match(controller, /no stale lane substituted/, 'WITHHELD state must not f
 assert.match(controller, /data-refresh-fz/, 'manual Refresh FZ affordance must exist');
 assert.doesNotMatch(controller, /data-athlete-choice|FZ_STATE_WRITE_TOKEN|recordAthleteMemory/, 'PWA controller must not expose insecure athlete-choice mutation or write credentials');
 
+assert.match(adaptiveChoice, /fz44Fingerprint/, '4.4 DOM projection must fingerprint its own writes and become idempotent');
+assert.match(adaptiveChoice, /observer\.disconnect\(\)/, '4.4 renderer must disconnect its observer while mutating observed DOM');
+assert.match(adaptiveChoice, /observer\.observe\(observerRoot,\{childList:true,subtree:true\}\)/, '4.4 observer must be reattached only after rendering completes');
+assert.match(adaptiveChoice, /document\.querySelector\('\.main'\)/, '4.4 observer must be scoped to the application surface rather than the whole document');
+assert.match(adaptiveChoice, /setTimeout\(\(\)=>\{FZ_CHOICE\.renderScheduled=false;render\(\);\},0\)/, '4.4 observer writes must yield to the browser event loop');
+assert.doesNotMatch(adaptiveChoice, /function scheduleRender\(\)[\s\S]*?queueMicrotask/, '4.4 observer must not recursively schedule DOM rewrites in the microtask queue');
+
 const intelligenceScript = '/assets/intelligence-refresh.js';
 const appScript = '/assets/app-clean.js';
 assert(cleanShell.includes(intelligenceScript), 'clean shell must package the 4.3 intelligence controller');
 assert(cleanShell.indexOf(intelligenceScript) < cleanShell.indexOf(appScript), '4.3 intelligence controller must load before app-clean reads canonical APIs');
 assert.match(cleanShell, /\[intelligenceRefreshJs,'intelligence-refresh\.js'\]/, '4.3 controller must be copied into the build artifact through the canonical asset-copy list');
 
-console.log('PASS Tranche 4.3 PWA revision, fail-stale and recommendation-surface wiring');
+console.log('PASS Tranche 4.3/4.4 browser safety: revision, fail-stale, recommendation wiring and observer idempotence');
