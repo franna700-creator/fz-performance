@@ -16,6 +16,13 @@ function requestUrl(input) {
 function methodOf(input, init = {}) { return String(init.method || input?.method || 'GET').toUpperCase(); }
 function cloneJson(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
 function setText(element, value) { if (element && element.textContent !== value) element.textContent = value; }
+function dateOnly(value) { const match = /^\d{4}-\d{2}-\d{2}/.exec(String(value || '')); return match ? match[0] : null; }
+function humanDate(value) {
+  if (!value) return 'current date';
+  const d = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return value;
+  return new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',day:'2-digit',month:'short',year:'numeric'}).format(d);
+}
 function jsonResponse(payload, original, extraHeaders = {}) {
   const headers = new Headers(original?.headers || {});
   headers.set('Content-Type','application/json; charset=utf-8');
@@ -32,10 +39,24 @@ function overlayRuntime(payload) {
   if (!active || !payload?.renderContract?.readiness) return payload;
   const next = cloneJson(payload);
   const readiness = next.renderContract.readiness;
+  const runtimeDate = dateOnly(next.stateId || next.candidateStateId || next.masterAsOf || readiness.asOfDate);
+  const activeDate = dateOnly(active.localDate);
+  const staleRuntimeReadiness = Boolean(runtimeDate && activeDate && runtimeDate !== activeDate);
   readiness.primaryDecision = activeText(active) || readiness.primaryDecision;
   readiness.recommendationLane = active.fzRecommendedLane || null;
   readiness.recommendationVersion = active.recommendationVersion || null;
   readiness.recommendationStatus = active.status || null;
+  readiness.asOfDate = activeDate || runtimeDate || null;
+  readiness.runtimeReadinessDate = runtimeDate;
+  readiness.runtimeReadinessFresh = !staleRuntimeReadiness;
+  if (staleRuntimeReadiness) {
+    const headline = active.explanation?.athleteFacing?.headline || activeText(active) || 'Current recommendation context is available.';
+    readiness.score = null;
+    readiness.status = active.status === 'WITHHELD' ? 'CURRENT RECOMMENDATION WITHHELD' : `CURRENT · ${active.fzRecommendedLane || 'RECOMMENDATION'}`;
+    readiness.systemicRecovery = `Current decision state · ${humanDate(activeDate)}. ${headline}`;
+    readiness.localTissueState = `Freshness guard: the ${humanDate(runtimeDate)} readiness snapshot is historical and is not being presented as today's readiness.`;
+    readiness.successCriteria = active.explanation?.recommendation?.successConditions?.[0] || readiness.successCriteria;
+  }
   return next;
 }
 function cachedPayload(path) {
