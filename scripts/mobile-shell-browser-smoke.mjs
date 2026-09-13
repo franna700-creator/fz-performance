@@ -28,14 +28,16 @@ function staticFile(res, pathname) {
 
 const runtime = {
   ok: true,
+  stateId: '2026-09-10T20:00:00+02:00',
+  masterAsOf: '2026-09-10T20:00:00+02:00',
   renderContract: {
     readiness: {
-      score: 82,
-      status: 'READY',
-      systemicRecovery: 'Systemic recovery is good.',
-      localTissueState: 'No material local limiter.',
-      primaryDecision: 'Proceed with the current recommendation.',
-      successCriteria: 'Reassess when new evidence arrives.'
+      score: 68,
+      status: 'MODIFY / RECOVER · POST-SESSION ABSORPTION',
+      systemicRecovery: 'MORNING RECOVERY SIGNAL REMAINED SOFTENED. Sleep5.21 h / score64 and RHR59 were the limiting systemic anchors.',
+      localTissueState: 'CURRENT LOCAL / GI / STRENGTH RESPONSE NOT CAPTURED.',
+      primaryDecision: 'No further quality tonight.',
+      successCriteria: 'Reassess tomorrow.'
     }
   }
 };
@@ -44,7 +46,7 @@ const wellness = {
   source: { status: 'CONNECTED' },
   wellness: {
     date: '2026-09-13', freshness: 'LIVE', sourceAsOf: '2026-09-13T18:00:00.000Z', ingestedAt: '2026-09-13T18:01:00.000Z',
-    current: { steps: 12000, distanceKm: 8.4, bodyBattery: 42, bodyBatteryHigh: 86, bodyBatteryLow: 28, stress: 25, stressAvg: 24, heartRate: 78, restingHeartRate: 55, hrv: 68, sleepScore: 84, sleepHours: 7.4, activeCalories: 640, activeMinutes: 72, respiration: 14.1 },
+    current: { steps: 12000, distanceKm: 8.4, bodyBattery: 5, bodyBatteryHigh: 24, bodyBatteryLow: 5, stress: 28, stressAvg: 46, heartRate: 78, restingHeartRate: 60, hrv: 41, sleepScore: 39, sleepHours: 5.81, activeCalories: 640, activeMinutes: 72, respiration: 14.1 },
     series: { body_battery: [], stress: [], heart_rate: [], respiration: [] }
   }
 };
@@ -70,18 +72,22 @@ const trends = {
 };
 const system = {
   ok: true,
-  runtime: { masterValidated: true, stateId: 'test', masterAsOf: '2026-09-13T18:00:00.000Z' },
+  runtime: { masterValidated: true, stateId: '2026-09-10T20:00:00+02:00', masterAsOf: '2026-09-10T20:00:00+02:00' },
   garmin: { connection: { status: 'CONNECTED' }, latestWellness: { source_as_of: '2026-09-13T18:00:00.000Z' } },
   tredict: { configured: true, latestEvidence: [] }, trainingEvidence: [], athleteMemory: { events: 1, latest_event: '2026-09-13T06:35:00.000Z' },
   intelligence: { current: { pendingPropagation: false, activeRecommendation: { sessionOptionComposerVersion: '4.4.0-composer.1' } } }
 };
 const intelligence = {
   ok: true, revision: 'browser-smoke-r1', pendingPropagation: false, pending: { materiality: false, shadowRecommendation: false, activeRecommendation: false },
-  markers: { sessionOptionComposerVersion: '4.4.0-composer.1' },
+  markers: { sessionOptionComposerVersion: '4.4.0-composer.1', currentRecoveryFreshnessPolicy: 'current-recovery-v1' },
   activeRecommendation: {
-    status: 'READY', fzRecommendedLane: 'ABSORB', confidence: 'HIGH', recommendationVersion: 'test-rec-r1', shadowRecommendationId: 'shadow-test-r1', sessionOptionComposerVersion: '4.4.0-composer.1',
-    explanation: { athleteFacing: { headline: 'Protect the next useful training opportunity.', whyNow: 'Current recovery context favours useful movement.', objectiveConnection: 'Stay anchored to the primary objective.' }, recommendation: { whyThisLane: 'Current recovery context favours useful movement.' } },
-    lanes: { ABSORB: [{ optionId: 'option:test:absorb', title: 'Low-impact aerobic recovery', objective: 'Preserve aerobic continuity.', dose: '25–40 min easy', whyNow: 'Useful movement at low cost.', modality: 'ELLIPTICAL', expectedCost: 'LOW', targetedGaps: [] }], MAINTAIN: [], ADAPT: [] }
+    status: 'READY', localDate: '2026-09-13', fzRecommendedLane: 'ABSORB', confidence: 'MODERATE', recommendationVersion: 'test-rec-r1', shadowRecommendationId: 'shadow-test-r1', sessionOptionComposerVersion: '4.4.0-composer.1',
+    explanation: { athleteFacing: { headline: 'Protect the next useful training opportunity.', whyNow: 'Current wellness and recovery context favour useful movement at low cost.', objectiveConnection: 'Stay anchored to the primary objective.' }, recommendation: { whyThisLane: 'Current wellness and recovery context favour useful movement at low cost.', successConditions: ['Complete the intended dose without materially worsening the next valuable training opportunity.'] } },
+    lanes: {
+      ABSORB: [{ optionId: 'option:test:absorb', title: 'Low-impact aerobic recovery', objective: 'Preserve aerobic continuity.', dose: '25–40 min easy', whyNow: 'Useful movement at low cost.', modality: 'ELLIPTICAL', expectedCost: 'LOW', targetedGaps: [] }],
+      MAINTAIN: [{ optionId: 'option:test:maintain', title: 'Controlled steady aerobic', objective: 'Preserve aerobic capability.', dose: '40–60 min controlled steady work', whyNow: 'Useful continuity at controlled cost.', modality: 'RUNNING', expectedCost: 'LOW_TO_MODERATE', targetedGaps: [] }],
+      ADAPT: []
+    }
   }, athleteDecision: null
 };
 
@@ -124,6 +130,12 @@ try {
   await page.waitForSelector('#today .fz-clean-readiness', { timeout: 3000 });
   assert(await page.locator('#today .fz-clean-loading').count() === 0, 'TODAY leaves the loading shell');
   assert((await page.locator('#stateStamp').innerText()).includes('CANONICAL RUNTIME'), 'canonical sync completes and updates shell state');
+  await page.waitForFunction(() => document.querySelector('#today .fz-clean-readiness .score strong')?.textContent?.trim() === '—', { timeout: 3000 });
+  const todayText = await page.locator('#today').innerText();
+  assert(!todayText.includes('MORNING RECOVERY SIGNAL REMAINED SOFTENED'), 'stale 10 Sep readiness narrative is suppressed from current TODAY');
+  assert(!todayText.includes('Sleep5.21 h / score64'), 'stale 10 Sep readiness metrics are not presented as current');
+  assert(todayText.includes('13 Sep 2026'), 'current recommendation date is visible when stale runtime readiness is suppressed');
+  assert(todayText.includes('Freshness guard'), 'TODAY explains why the historical readiness score is not shown');
   await page.waitForTimeout(350);
   const pulse = await page.evaluate(() => window.__fzPulse);
   assert(pulse >= 3, 'browser event loop remains live after 4.4 recommendation projection');
@@ -132,6 +144,11 @@ try {
   await clickPage('trends', 'Longitudinal Signals');
   await clickPage('train', 'Training Memory');
   assert((await page.locator('#train').innerText()).includes('Current Training Choice'), '4.4 training choice renders without locking TRAIN');
+  await page.locator('.fz-alternate-lanes summary').click();
+  await page.waitForSelector('.fz-alternate-lanes[open]');
+  assert((await page.locator('.fz-alternate-lanes').innerText()).includes('Controlled steady aerobic'), 'alternate lane exposes the actual MAINTAIN option, not only its count');
+  assert((await page.locator('.fz-alternate-lanes').innerText()).includes('40–60 min controlled steady work'), 'alternate option exposes its prescribed dose');
+  assert((await page.locator('.fz-alternate-lanes').innerText()).includes('No session option is currently released for this lane.'), 'empty alternate lane is explicit rather than pretending options exist');
   await clickPage('system', 'System Health');
   await clickPage('today', 'Live Physiology');
 
@@ -140,7 +157,7 @@ try {
   assert(finalPulse > pulse, 'browser event loop remains responsive after repeated navigation');
   assert((requestCounts.get('/api/intelligence/current') || 0) < 10, 'intelligence polling does not run away during initial render');
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'mobile shell has no horizontal overflow');
-  console.log('PASS mobile shell real-browser liveness and navigation acceptance');
+  console.log('PASS mobile shell real-browser freshness, alternate options, liveness and navigation acceptance');
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));

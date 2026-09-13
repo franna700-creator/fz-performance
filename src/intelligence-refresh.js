@@ -16,6 +16,15 @@ function requestUrl(input) {
 function methodOf(input, init = {}) { return String(init.method || input?.method || 'GET').toUpperCase(); }
 function cloneJson(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
 function setText(element, value) { if (element && element.textContent !== value) element.textContent = value; }
+function dateOnly(value) { const match = /^\d{4}-\d{2}-\d{2}/.exec(String(value || '')); return match ? match[0] : null; }
+function humanDate(value) {
+  const date = dateOnly(value);
+  if (!date) return 'current date';
+  const [year,month,day] = date.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthLabel = months[Number(month)-1];
+  return monthLabel ? `${Number(day)} ${monthLabel} ${year}` : date;
+}
 function jsonResponse(payload, original, extraHeaders = {}) {
   const headers = new Headers(original?.headers || {});
   headers.set('Content-Type','application/json; charset=utf-8');
@@ -32,10 +41,24 @@ function overlayRuntime(payload) {
   if (!active || !payload?.renderContract?.readiness) return payload;
   const next = cloneJson(payload);
   const readiness = next.renderContract.readiness;
+  const runtimeDate = dateOnly(next.stateId || next.candidateStateId || next.masterAsOf || readiness.asOfDate);
+  const activeDate = dateOnly(active.localDate);
+  const staleRuntimeReadiness = Boolean(runtimeDate && activeDate && runtimeDate !== activeDate);
   readiness.primaryDecision = activeText(active) || readiness.primaryDecision;
   readiness.recommendationLane = active.fzRecommendedLane || null;
   readiness.recommendationVersion = active.recommendationVersion || null;
   readiness.recommendationStatus = active.status || null;
+  readiness.asOfDate = activeDate || runtimeDate || null;
+  readiness.runtimeReadinessDate = runtimeDate;
+  readiness.runtimeReadinessFresh = !staleRuntimeReadiness;
+  if (staleRuntimeReadiness) {
+    const headline = active.explanation?.athleteFacing?.headline || activeText(active) || 'Current recommendation context is available.';
+    readiness.score = null;
+    readiness.status = active.status === 'WITHHELD' ? 'CURRENT RECOMMENDATION WITHHELD' : `CURRENT · ${active.fzRecommendedLane || 'RECOMMENDATION'}`;
+    readiness.systemicRecovery = `Current decision state · ${humanDate(activeDate)}. ${headline}`;
+    readiness.localTissueState = `Freshness guard: the ${humanDate(runtimeDate)} readiness snapshot is historical and is not being presented as today's readiness.`;
+    readiness.successCriteria = active.explanation?.recommendation?.successConditions?.[0] || readiness.successCriteria;
+  }
   return next;
 }
 function cachedPayload(path) {
@@ -78,134 +101,81 @@ window.fetch = async function fzFailStaleFetch(input, init = {}) {
 };
 
 async function nativeJson(url, { timeoutMs = 20000, method = 'GET', payload = null } = {}) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),timeoutMs);
   try {
-    const options = { cache: 'no-store', signal: ctrl.signal, method, headers: { 'Accept': 'application/json' } };
-    if (payload !== null) {
-      options.headers['Content-Type'] = 'application/json';
-      options.body = JSON.stringify(payload);
-    }
-    const response = await nativeFetch(url, options);
-    if (!response.ok && response.status !== 202) throw new Error(`${response.status} ${response.statusText}`);
+    const options={cache:'no-store',signal:ctrl.signal,method,headers:{'Accept':'application/json'}};
+    if(payload!==null){options.headers['Content-Type']='application/json';options.body=JSON.stringify(payload);}
+    const response=await nativeFetch(url,options);
+    if(!response.ok&&response.status!==202)throw new Error(`${response.status} ${response.statusText}`);
     return await response.json();
-  } finally {
-    clearTimeout(timer);
-  }
+  } finally { clearTimeout(timer); }
 }
 
-function dispatchCanonicalReread() {
-  window.dispatchEvent(new Event('focus'));
-}
+function dispatchCanonicalReread(){window.dispatchEvent(new Event('focus'));}
 
-async function converge({ sources = false } = {}) {
-  if (converging) return null;
-  converging = true;
-  decorateRecommendation();
-  try {
-    const result = await nativeJson('/api/intelligence/refresh', {
-      timeoutMs: sources ? 45000 : 20000,
-      method: 'POST',
-      payload: { sources }
-    });
-    intelligenceError = false;
-    if (result?.afterRevision) revision = result.afterRevision;
-    if (result?.activeRecommendation) {
-      intelligence = { ...(intelligence || {}), activeRecommendation: result.activeRecommendation, pendingPropagation: result.pendingPropagation, pending: result.pending, revision: result.afterRevision, affectedSurfaces: result.affectedSurfaces };
-    }
+async function converge({sources=false}={}){
+  if(converging)return null;
+  converging=true;decorateRecommendation();
+  try{
+    const result=await nativeJson('/api/intelligence/refresh',{timeoutMs:sources?45000:20000,method:'POST',payload:{sources}});
+    intelligenceError=false;
+    if(result?.afterRevision)revision=result.afterRevision;
+    if(result?.activeRecommendation){intelligence={...(intelligence||{}),activeRecommendation:result.activeRecommendation,pendingPropagation:result.pendingPropagation,pending:result.pending,revision:result.afterRevision,affectedSurfaces:result.affectedSurfaces};}
     dispatchCanonicalReread();
     return result;
-  } finally {
-    converging = false;
-    decorateRecommendation();
-  }
+  } finally {converging=false;decorateRecommendation();}
 }
 
-async function pollIntelligence() {
-  try {
-    const next = await nativeJson('/api/intelligence/current', { timeoutMs: 12000 });
-    intelligenceError = false;
-    const previousRevision = revision;
-    intelligence = next;
-    revision = next.revision || revision;
-    if (next.pendingPropagation) {
-      await converge({ sources: false });
-      return;
-    }
-    const changed = Boolean(previousRevision && next.revision && previousRevision !== next.revision);
-    if (changed || (!initialIntelligenceApplied && next.activeRecommendation)) dispatchCanonicalReread();
-    initialIntelligenceApplied = true;
-    decorateRecommendation();
-  } catch {
-    intelligenceError = true;
-    decorateRecommendation();
-  }
+async function pollIntelligence(){
+  try{
+    const next=await nativeJson('/api/intelligence/current',{timeoutMs:12000});
+    intelligenceError=false;
+    const previousRevision=revision;
+    intelligence=next;revision=next.revision||revision;
+    if(next.pendingPropagation){await converge({sources:false});return;}
+    const changed=Boolean(previousRevision&&next.revision&&previousRevision!==next.revision);
+    if(changed||(!initialIntelligenceApplied&&next.activeRecommendation))dispatchCanonicalReread();
+    initialIntelligenceApplied=true;decorateRecommendation();
+  }catch{intelligenceError=true;decorateRecommendation();}
 }
 
-function statusText() {
-  if (refreshButtonBusy) return 'Refreshing canonical sources and intelligence…';
-  if (converging) return 'Reconciling new evidence through FZ intelligence…';
-  if (stalePaths.size) return `Showing last known canonical state · ${stalePaths.size} live read${stalePaths.size === 1 ? '' : 's'} unavailable.`;
-  if (intelligenceError) return 'Intelligence refresh is temporarily unavailable · current canonical display retained.';
-  if (intelligence?.pendingPropagation) return 'New evidence detected · recommendation propagation pending.';
-  if (intelligence?.activeRecommendation?.status === 'WITHHELD') return 'Recommendation withheld by the intelligence contract · no stale lane substituted.';
-  if (intelligence?.activeRecommendation) return 'Active recommendation reconciled to canonical truth.';
-  return 'Active recommendation is not yet available.';
+function statusText(){
+  if(refreshButtonBusy)return'Refreshing canonical sources and intelligence…';
+  if(converging)return'Reconciling new evidence through FZ intelligence…';
+  if(stalePaths.size)return`Showing last known canonical state · ${stalePaths.size} live read${stalePaths.size===1?'':'s'} unavailable.`;
+  if(intelligenceError)return'Intelligence refresh is temporarily unavailable · current canonical display retained.';
+  if(intelligence?.pendingPropagation)return'New evidence detected · recommendation propagation pending.';
+  if(intelligence?.activeRecommendation?.status==='WITHHELD')return'Recommendation withheld by the intelligence contract · no stale lane substituted.';
+  if(intelligence?.activeRecommendation)return'Active recommendation reconciled to canonical truth.';
+  return'Active recommendation is not yet available.';
 }
 
-function decorateRecommendation() {
-  const card = document.querySelector('.fz-clean-recommendation');
-  if (!card) return;
-  const active = intelligence?.activeRecommendation || null;
-  const heading = card.querySelector('h3');
-  const paragraph = card.querySelector('p');
-  if (active && heading) setText(heading, active.status === 'WITHHELD' ? 'RECOMMENDATION WITHHELD' : (active.fzRecommendedLane || 'FZ RECOMMENDATION'));
-  if (active && paragraph) setText(paragraph, activeText(active));
-  let controls = card.querySelector('[data-fz-intelligence-controls]');
-  if (!controls) {
-    controls = document.createElement('div');
-    controls.dataset.fzIntelligenceControls = '1';
-    controls.className = 'fz-intelligence-controls';
-    controls.innerHTML = '<div class="fz-intelligence-status muted" aria-live="polite"></div><button class="fz-link-button" type="button" data-refresh-fz>Refresh FZ</button>';
-    card.appendChild(controls);
-  }
-  const status = controls.querySelector('.fz-intelligence-status');
-  const button = controls.querySelector('[data-refresh-fz]');
-  setText(status, statusText());
-  if (button) {
-    const disabled = refreshButtonBusy || converging;
-    if (button.disabled !== disabled) button.disabled = disabled;
-    setText(button, refreshButtonBusy ? 'Refreshing…' : 'Refresh FZ');
-  }
+function decorateRecommendation(){
+  const card=document.querySelector('.fz-clean-recommendation');if(!card)return;
+  const active=intelligence?.activeRecommendation||null;
+  const heading=card.querySelector('h3'),paragraph=card.querySelector('p');
+  if(active&&heading)setText(heading,active.status==='WITHHELD'?'RECOMMENDATION WITHHELD':(active.fzRecommendedLane||'FZ RECOMMENDATION'));
+  if(active&&paragraph)setText(paragraph,activeText(active));
+  let controls=card.querySelector('[data-fz-intelligence-controls]');
+  if(!controls){controls=document.createElement('div');controls.dataset.fzIntelligenceControls='1';controls.className='fz-intelligence-controls';controls.innerHTML='<div class="fz-intelligence-status muted" aria-live="polite"></div><button class="fz-link-button" type="button" data-refresh-fz>Refresh FZ</button>';card.appendChild(controls);}
+  const status=controls.querySelector('.fz-intelligence-status'),button=controls.querySelector('[data-refresh-fz]');
+  setText(status,statusText());
+  if(button){const disabled=refreshButtonBusy||converging;if(button.disabled!==disabled)button.disabled=disabled;setText(button,refreshButtonBusy?'Refreshing…':'Refresh FZ');}
 }
 
-async function manualRefresh() {
-  if (refreshButtonBusy || converging) return;
-  refreshButtonBusy = true;
-  decorateRecommendation();
-  try {
-    await converge({ sources: true });
-    await pollIntelligence();
-  } catch {
-    intelligenceError = true;
-    decorateRecommendation();
-  } finally {
-    refreshButtonBusy = false;
-    decorateRecommendation();
-  }
+async function manualRefresh(){
+  if(refreshButtonBusy||converging)return;
+  refreshButtonBusy=true;decorateRecommendation();
+  try{await converge({sources:true});await pollIntelligence();}
+  catch{intelligenceError=true;decorateRecommendation();}
+  finally{refreshButtonBusy=false;decorateRecommendation();}
 }
 
-document.addEventListener('click', event => {
-  if (event.target.closest('[data-refresh-fz]')) {
-    event.preventDefault();
-    manualRefresh();
-  }
-});
-
-const observer = new MutationObserver(() => queueMicrotask(decorateRecommendation));
-observer.observe(document.documentElement, { childList: true, subtree: true });
-
-setTimeout(pollIntelligence, 0);
-setInterval(() => { if (document.visibilityState === 'visible') pollIntelligence(); }, 60000);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') pollIntelligence(); });
-window.addEventListener('online', pollIntelligence);
+document.addEventListener('click',event=>{if(event.target.closest('[data-refresh-fz]')){event.preventDefault();manualRefresh();}});
+const observer=new MutationObserver(()=>queueMicrotask(decorateRecommendation));
+observer.observe(document.documentElement,{childList:true,subtree:true});
+setTimeout(pollIntelligence,0);
+setInterval(()=>{if(document.visibilityState==='visible')pollIntelligence();},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollIntelligence();});
+window.addEventListener('online',pollIntelligence);
