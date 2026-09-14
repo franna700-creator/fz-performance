@@ -44,4 +44,20 @@ apply('src/adaptive-choice.js',[
   ]
 ],'adaptive-choice');
 
+const emptyRxFields="preSessionGate: [], equipment: [], warmup: [], mainSet: [], decisionRules: [], successCriteria: [], coolDown: [], postSessionReport: []";
+apply('scripts/mobile-shell-browser-smoke.mjs',[
+  [
+    "shadowRecommendationId: 'shadow-test-r1', sessionOptionComposerVersion: '4.4.0-composer.1',",
+    "shadowRecommendationId: 'shadow-test-r1', sessionOptionComposerVersion: '4.4.0-composer.1', sessionPrescriptionComposerVersion: '4.6.0-prescription.2',"
+  ],
+  [
+    "evidenceBasis: ['Current canonical readiness','Low-cost work preserves future training value'] }],",
+    `evidenceBasis: ['Current canonical readiness','Low-cost work preserves future training value'], prescription: { composerVersion: '4.6.0-prescription.2', protocolFamilyId: null, protocolVersion: null, prescriptionFingerprint: 'fixture-absorb-prescription', selectionReady: true, releaseStatus: 'READY', comparisonClass: 'TRAINING_ONLY', measurementPriority: 'LOW', ${emptyRxFields} } }],`
+  ],
+  [
+    "evidenceBasis: ['Current active recommendation context','Maintenance lane preserves capability'] }],",
+    `evidenceBasis: ['Current active recommendation context','Maintenance lane preserves capability'], prescription: { composerVersion: '4.6.0-prescription.2', protocolFamilyId: 'STEADY_AEROBIC_EFFICIENCY', protocolVersion: '1.0', prescriptionFingerprint: 'fixture-maintain-prescription', selectionReady: true, releaseStatus: 'READY', comparisonClass: 'FAMILY_COMPARABLE', measurementPriority: 'MEDIUM', ${emptyRxFields} } }],`
+  ]
+],'mobile-shell-browser-fixture');
+
 console.log('PASS prescription selection consistency hotfix applied idempotently');
