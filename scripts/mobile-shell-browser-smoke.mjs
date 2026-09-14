@@ -91,8 +91,8 @@ const intelligence = {
     status: 'READY', localDate: '2026-09-13', fzRecommendedLane: 'ABSORB', confidence: 'MODERATE', recommendationVersion: 'test-rec-r1', shadowRecommendationId: 'shadow-test-r1', sessionOptionComposerVersion: '4.4.0-composer.1',
     explanation: { athleteFacing: { headline: 'Protect the next useful training opportunity.', whyNow: 'Current wellness and recovery context favour useful movement at low cost.', objectiveConnection: 'Stay anchored to the primary objective.' }, recommendation: { whyThisLane: 'Current wellness and recovery context favour useful movement at low cost.', successConditions: ['Complete the intended dose without materially worsening the next valuable training opportunity.'] } },
     lanes: {
-      ABSORB: [{ optionId: 'option:test:absorb', title: 'Low-impact aerobic recovery', objective: 'Preserve aerobic continuity.', dose: '25–40 min easy', whyNow: 'Useful movement at low cost.', modality: 'ELLIPTICAL', expectedCost: 'LOW', targetedGaps: [] }],
-      MAINTAIN: [{ optionId: 'option:test:maintain', title: 'Controlled steady aerobic', objective: 'Preserve aerobic capability.', dose: '40–60 min controlled steady work', whyNow: 'Useful continuity at controlled cost.', modality: 'RUNNING', expectedCost: 'LOW_TO_MODERATE', targetedGaps: [] }],
+      ABSORB: [{ optionId: 'option:test:absorb', title: 'Low-impact aerobic recovery', objective: 'Preserve aerobic continuity.', dose: '25–40 min easy', whyNow: 'Useful movement at low cost.', modality: 'ELLIPTICAL', expectedCost: 'LOW', targetedGaps: [], confidence: 'MODERATE', successCondition: 'Finish feeling at least as good as you started and preserve tomorrow’s useful training opportunity.', stopCondition: 'Modify or stop if GI symptoms, pain or systemic fatigue materially worsen.', evidenceBasis: ['Current canonical readiness','Low-cost work preserves future training value'] }],
+      MAINTAIN: [{ optionId: 'option:test:maintain', title: 'Controlled steady aerobic', objective: 'Preserve aerobic capability.', dose: '40–60 min controlled steady work', whyNow: 'Useful continuity at controlled cost.', modality: 'RUNNING', expectedCost: 'LOW_TO_MODERATE', targetedGaps: [], confidence: 'MODERATE', successCondition: 'Hold controlled effort without turning the session into threshold work.', stopCondition: 'Modify or stop if pace requires escalating effort or a current constraint appears.', evidenceBasis: ['Current active recommendation context','Maintenance lane preserves capability'] }],
       ADAPT: []
     }
   }, athleteDecision: null
@@ -152,7 +152,18 @@ try {
 
   await clickPage('trends', 'Longitudinal Signals');
   await clickPage('train', 'Training Memory');
-  assert((await page.locator('#train').innerText()).includes('Current Training Choice'), '4.4 training choice renders without locking TRAIN');
+  const trainText = await page.locator('#train').innerText();
+  assert(trainText.includes('Current Training Choice'), '4.4 training choice renders without locking TRAIN');
+  assert(trainText.includes('To select it, tell FZ'), 'recommended option uses natural athlete-facing selection guidance');
+  const guidance = page.locator('#train .fz-options-grid .fz-option-guidance').first();
+  await guidance.locator('summary').click();
+  await page.waitForFunction(() => document.querySelector('#train .fz-options-grid .fz-option-guidance')?.open === true, null, { timeout: 1500 });
+  const guidanceText = await guidance.innerText();
+  assert(guidanceText.includes('Finish feeling at least as good as you started'), 'recommended option exposes concrete success criteria');
+  assert(guidanceText.includes('GI symptoms, pain or systemic fatigue'), 'recommended option exposes modify/stop criteria');
+  assert(guidanceText.includes('Moderate'), 'recommended option exposes composition confidence');
+  assert(guidanceText.includes('Current canonical readiness'), 'recommended option exposes concise evidence basis');
+  assert(!trainText.includes('option:test:absorb'), 'internal option identity is not the primary athlete-facing interaction');
   await page.locator('.fz-alternate-lanes summary').click();
   await page.waitForSelector('.fz-alternate-lanes[open]');
   assert((await page.locator('.fz-alternate-lanes').innerText()).includes('Controlled steady aerobic'), 'alternate lane exposes the actual MAINTAIN option, not only its count');
@@ -166,7 +177,7 @@ try {
   assert(finalPulse > pulse, 'browser event loop remains responsive after repeated navigation');
   assert((requestCounts.get('/api/intelligence/current') || 0) < 10, 'intelligence polling does not run away during initial render');
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'mobile shell has no horizontal overflow');
-  console.log('PASS mobile shell real-browser canonical readiness, alternate options, liveness and navigation acceptance');
+  console.log('PASS mobile shell real-browser canonical readiness, complete 4.4 guidance, alternate options, liveness and navigation acceptance');
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
