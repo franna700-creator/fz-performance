@@ -60,8 +60,8 @@ function staticFile(res, pathname) {
     res.writeHead(404); res.end('not found'); return;
   }
   const ext = path.extname(file);
-  const type = ext === '.js' ? 'text/javascript' : ext === '.css' ? 'text/css' : 'text/html';
-  res.writeHead(200, { 'content-type': `${type}; charset=utf-8`, 'cache-control': 'no-store' });
+  const type = ext === '.js' ? 'text/javascript' : ext === '.css' ? 'text/css' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'text/html';
+  res.writeHead(200, { 'content-type': `${type}${type.startsWith('text/') ? '; charset=utf-8' : ''}`, 'cache-control': 'no-store' });
   fs.createReadStream(file).pipe(res);
 }
 
@@ -106,10 +106,14 @@ async function waitForNode(predicate, timeoutMs = 2000) {
 
 try {
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.fz-live-physiology-v3[data-freshness="STALE"]', { timeout: 500 });
+  await page.waitForSelector('.fz2-phys-summary', { timeout: 1500 });
+  assert((await page.locator('.fz2-phys-summary').innerText()).includes('HRV'), 'compact athlete-facing physiology summary renders first');
+  await page.waitForSelector('.fz-live-physiology-v3[data-freshness="STALE"]', { state:'attached', timeout: 800 });
   assert(await page.locator('.fz-live-grid').evaluate(el => el.hidden), 'persisted static grid is hidden after immediate DB render');
-  assert(await page.locator('.fz-live-chart-v3').count() === 4, 'four Live Physiology scrub graphs render immediately');
+  assert(await page.locator('.fz-live-chart-v3').count() === 4, 'four Live Physiology scrub graphs render in the detail layer');
   assert((await page.locator('[data-live-key="respiration"] [data-live-value]').textContent()).startsWith('13.8'), 'respiration zero placeholders are excluded');
+  await page.locator('[data-fz2-live-details]').click();
+  assert(await page.locator('[data-fz2-live-details]').getAttribute('aria-expanded') === 'true', 'physiology detail opens explicitly');
   assert(await waitForNode(() => backgroundRefreshes === 1, 1500), 'DB-only render triggers one background Garmin refresh');
 
   await page.waitForSelector('.fz-live-physiology-v3[data-freshness="LIVE"]', { timeout: 2500 });
@@ -122,7 +126,7 @@ try {
   await chart.dispatchEvent('pointerdown', { pointerType:'mouse', clientX: box.x + box.width * 0.25, clientY: box.y + 30, buttons:1, pressure:0.5 });
   assert((await page.locator('[data-live-key="heart_rate"] [data-live-value]').textContent()).includes('·'), 'pointer scrubbing exposes timestamped value');
 
-  await page.locator('[data-live-refresh]').click();
+  await page.locator('[data-live-refresh]:visible').click();
   await page.waitForFunction(() => document.querySelector('.fz-live-toolbar')?.textContent?.includes('20:45'));
   assert(forcedRefreshes === 1, 'Refresh Garmin performs explicit forced source refresh');
 
