@@ -15,7 +15,7 @@ assert.ok(js.includes('function v2LiveKind(')&&js.includes('v2DecorateLive(root)
 assert.ok(css.includes('.fz2-stage')&&css.includes('.fz2-photo')&&css.includes('.fz2-legacy-live'),'new editorial composition preserves the real live physiology engine');
 assert.ok(topside.includes('.fz2-top-shell')&&topside.includes('body.fz2-topside-active .side{display:none!important}'),'legacy left rail is replaced by topside shell');
 assert.ok(topside.includes('--fz2-green')&&topside.includes('--fz2-cyan')&&topside.includes('--fz2-violet'),'semantic accent palette is present');
-assert.ok(topside.includes('.fz2-lower{display:contents!important}')&&topside.includes('.fz2-thought{order:2!important}'),'mobile feed promotes Daily FZ Thought ahead of physiology');
+assert.ok(topside.includes('.fz2-lower{display:contents!important}')&&topside.includes('.fz2-thought{order:2!important;'),'mobile feed promotes Daily FZ Thought ahead of physiology');
 assert.equal(photo[0],0xff,'athlete photo begins with JPEG SOI byte 1');
 assert.equal(photo[1],0xd8,'athlete photo begins with JPEG SOI byte 2');
 assert.ok(photo.length>10000,'athlete training image is packaged as a real binary asset');
