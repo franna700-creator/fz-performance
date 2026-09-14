@@ -38,6 +38,7 @@ function v2Icon(name){
   };
   return icons[name]||icons.pulse;
 }
+function v2Glyph(name){return({pulse:'∿',heart:'♥',moon:'☾',battery:'▣',bolt:'ϟ',steps:'••'}[name]||'•')}
 function v2PageMeta(page){
   const map={today:['Today','Your data. Your decision.'],trends:['Trends','Change over time, interpreted.'],train:['Training','Execution, memory and response.'],system:['System','Source truth and provenance.']};
   return map[page]||map.today;
@@ -87,7 +88,12 @@ async function v2Load(){
     v2Mount();
   }finally{FZ_TODAY_V2.busy=false}
 }
-function v2Readiness(r){const score=Number.isFinite(Number(r?.score))?Number(r.score):null;const deg=score===null?0:Math.max(0,Math.min(100,score))*3.6;return `<aside class="fz2-readiness"><div class="fz2-readiness-score" style="--fz2-score:${deg}deg"><strong>${score??'—'}</strong><span>READINESS</span></div><div class="fz2-readiness-copy"><small>${v2Esc(r?.status||'CURRENT STATE')}</small><p>${v2Esc(r?.systemicRecovery||'Current recovery interpretation is unavailable.')}</p></div></aside>`}
+function v2Readiness(r){
+  const score=Number.isFinite(Number(r?.score))?Number(r.score):null;
+  const deg=score===null?0:Math.max(0,Math.min(100,score))*3.6;
+  const local=r?.localTissueState?`<p class="fz2-local-state">${v2Esc(r.localTissueState)}</p>`:'';
+  return `<aside class="fz2-readiness"><div class="fz2-readiness-score" style="--fz2-score:${deg}deg"><strong>${score??'—'}</strong><span>READINESS</span></div><div class="fz2-readiness-copy"><small>${v2Esc(r?.status||'CURRENT STATE')}</small><p>${v2Esc(r?.systemicRecovery||'Current recovery interpretation is unavailable.')}</p>${local}</div></aside>`;
+}
 function v2Recommendation(r){
   const lane=r?.recommendationLane||String(r?.status||'').replace(/^CURRENT\s*·\s*/i,'')||'CURRENT';
   const decision=r?.primaryDecision||'Current recommendation is unavailable until the next validated intelligence state.';
@@ -113,7 +119,7 @@ function v2DecorateLive(root){
   for(const item of root.querySelectorAll('.fz2-legacy-live .fz-live-anchor-row>div,.fz2-legacy-live .fz-live-chart-v3')){
     if(item.querySelector(':scope > .fz2-live-icon'))continue;
     const [icon,tone]=v2LiveKind(item.textContent||'');
-    const badge=document.createElement('span');badge.className=`fz2-live-icon tone-${tone}`;badge.innerHTML=v2Icon(icon);item.prepend(badge);
+    const badge=document.createElement('span');badge.className=`fz2-live-icon tone-${tone}`;badge.setAttribute('aria-hidden','true');badge.textContent=v2Glyph(icon);item.prepend(badge);
   }
 }
 function v2ClassifyLegacy(root){
