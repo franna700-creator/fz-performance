@@ -27,7 +27,7 @@ jobs:
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - name: Install pinned Playwright
-        run: npm install --no-save playwright@1.55.0
+        run: npm install --no-save playwright@1.56.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Exercise Live Physiology in a real browser with mocked same-origin APIs
