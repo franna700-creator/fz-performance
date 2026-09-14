@@ -4,65 +4,78 @@ Status: PREPARATION ONLY. No production deployment is authorized by this documen
 
 ## Product objective
 
-Allow Francois to select a recommended or alternate FZ workout directly inside the PWA while preserving public/shared read access for trusted viewers and preventing any viewer from accidentally or deliberately changing athlete state.
+Allow Francois to select a recommended or alternate FZ workout directly inside the PWA while preserving frictionless shared read access for trusted viewers and preventing any viewer from accidentally or deliberately changing athlete state.
 
 The same tranche must also upgrade session presentation from "good training option" to **execution-grade prescription**: the athlete should be able to execute the selected session correctly without needing to infer missing structure.
 
 ## Core access invariant
 
-**Anyone with the shared link may remain a viewer. Only the paired athlete session may mutate athlete state.**
+**Anyone with the shared link may remain a viewer. Only an authenticated athlete session may mutate athlete state.**
 
 Viewing and mutation are separate capabilities. Possession of the URL never grants mutation rights.
 
-### Recommended access model
+## Preferred landing-page model
 
-Use a two-tier model on the existing public app:
+Every new/unrecognised browser first reaches a simple FZ landing page with two explicit paths:
 
-1. **Viewer mode — default**
-   - no login required for trusted people already holding the link;
-   - can view TODAY / TRENDS / TRAIN / SYSTEM according to current product visibility;
-   - can expand session details and alternate lanes;
-   - cannot select, modify, cancel or reschedule workouts;
-   - cannot submit Athlete Voice or other state-changing inputs;
-   - UI must never imply that tapping a card changes canonical state.
+### Continue as Viewer
+- no login required;
+- opens the existing FZ PWA in read-only mode;
+- can navigate TODAY / TRENDS / TRAIN / SYSTEM according to product visibility;
+- can expand recommended and alternate workout details;
+- can inspect execution-grade prescriptions;
+- cannot select, modify, cancel or reschedule workouts;
+- cannot submit Athlete Voice or any other state-changing input;
+- no enabled-looking mutation controls are rendered.
 
-2. **Athlete mode — explicit paired session**
-   - only Francois can activate it;
-   - mutation capability is held in an HttpOnly secure browser session, never in JavaScript;
-   - SameSite cookie policy plus CSRF protection;
-   - session has expiry and revocation;
-   - athlete mode is visually obvious (e.g. `ATHLETE MODE · EDITING ENABLED`);
-   - viewer mode remains the safe fallback whenever identity cannot be proven.
+### Athlete Login
+- clearly labelled as the Francois/athlete path;
+- requires a simple athlete PIN;
+- successful server-side verification establishes an HttpOnly/Secure/SameSite athlete session;
+- the PIN is never embedded in HTML/JavaScript, stored in localStorage, or forwarded as the runtime write credential;
+- after login the app visibly enters `ATHLETE MODE · EDITING ENABLED`;
+- logout/lock/expiry immediately returns the browser to viewer mode.
 
-### Preferred bootstrap
+The landing page is therefore the user-facing role selector; the server-side session remains the actual authorization boundary.
 
-Use a one-time pairing flow rather than a permanent password embedded in the app:
+## PIN security contract
 
-- From a trusted authenticated channel, generate a short-lived one-time pairing token or magic link.
-- Opening it on Francois's device exchanges the token server-side for an HttpOnly/Secure/SameSite athlete session cookie.
-- The one-time token is invalidated immediately after successful use.
-- The browser never receives or stores `FZ_STATE_WRITE_TOKEN`.
-- Future writes are authorized by the paired athlete session, not by the shared URL.
+A PIN is acceptable for this product because it protects a single athlete's mutation capability rather than broad account administration, **provided it is implemented as a real server-side credential rather than a client-side gate**.
 
-The pairing session should be revocable and optionally scoped to a device/browser.
+Requirements:
+- use at least a 6-digit PIN (4 digits is too small for an internet-facing credential unless aggressively rate-limited);
+- store only a modern password hash (e.g. Argon2id/scrypt-equivalent), never plaintext;
+- verify server-side over HTTPS;
+- rate-limit by device/session/IP and globally for the athlete identity;
+- progressive backoff and temporary lock after repeated failed attempts;
+- constant/generic failure response so the endpoint does not leak credential state;
+- successful login rotates/creates an opaque session ID in an HttpOnly/Secure/SameSite cookie;
+- CSRF protection on mutation requests;
+- session expiry and explicit logout/revocation;
+- optional manual `Lock Athlete Mode` control in the app;
+- `FZ_STATE_WRITE_TOKEN` remains server-side only and is never exposed to the browser.
 
-### Why this model
+Preferred UX: Francois enters the PIN once on a trusted browser, receives a durable but revocable athlete session, and is not asked for the PIN on every workout selection. A shared/untrusted browser stays in viewer mode by default.
 
-It preserves line of sight for people Francois has shared FZ with while making the default state read-only. A trusted viewer can explore everything but cannot accidentally choose a workout. Mutation requires a second factor: possession of Francois's paired athlete session.
+## Viewer line-of-sight without viewer login
 
-### Alternative models considered
+Bypassing viewer login is compatible with mutation security, but anonymous viewer mode alone cannot prove which trusted person opened the app.
 
-- **Whole-app login:** strongest privacy boundary but removes frictionless viewer access and is unnecessary if the goal is public/trusted viewing with private mutation.
-- **PIN before every write:** simple but weaker against observation/replay and poor UX; acceptable only as an additional re-authentication step, not the primary security boundary.
-- **Secret query parameter / hidden URL:** rejected. URL possession must never be equivalent to write authorization.
-- **Browser-held API token:** rejected. No privileged runtime secret may be exposed to client JavaScript or localStorage.
+To preserve line of sight without making viewers authenticate, support **optional per-person read-only share links**:
+- each trusted person can receive a unique opaque viewer token/link;
+- the token carries no mutation privilege and cannot be upgraded to athlete mode;
+- opening the link still bypasses login and enters viewer mode immediately;
+- FZ can record last-used timestamp and basic access activity against the share-link label;
+- each share link can be revoked independently;
+- a generic shared URL remains possible but is recorded only as anonymous viewer access.
+
+Important limitation: a named viewer link identifies the **link used**, not cryptographically the human. If a person forwards their link, subsequent use remains attributed to that link. This is acceptable for lightweight "who has been using the shared view" line of sight, but not equivalent to identity verification.
 
 ## Athlete-mode write boundary
 
 Reuse the existing `/api/training/athlete-event` consolidated function and canonical `ADAPTIVE_CHOICE` path where possible. Do not create another serverless function unless the existing route cannot safely represent the session bootstrap/authorization contract.
 
 Browser mutation requirements:
-
 - HttpOnly/Secure/SameSite athlete session;
 - explicit athlete identity binding;
 - CSRF protection for state-changing requests;
@@ -73,23 +86,22 @@ Browser mutation requirements:
 - write result must return canonical decision ID / planned session ID;
 - immediate reread of `/api/intelligence/current` after success;
 - failure leaves canonical state unchanged;
-- audit provenance identifies `captureChannel='paired-browser'`.
+- audit provenance identifies `captureChannel='athlete-browser'`.
 
 ## Viewer-mode UI requirements
 
-Viewer mode may show all workout options and details but every mutation affordance is replaced by a non-interactive state such as:
+Viewer mode may show all workout options and details but every mutation affordance is replaced by a clear non-interactive state such as:
 
 `VIEW ONLY · Athlete selection requires Athlete Mode`
 
 The app must not show an enabled-looking button that later fails authorization.
 
 Athlete mode enables:
-
-- `Select this workout`
-- choose date (`Today` default when valid)
-- optional start time
-- override reason when selecting outside the recommended lane
-- confirmation step before canonical write
+- `Select this workout`;
+- choose date (`Today` default when valid);
+- optional start time;
+- override reason when selecting outside the recommended lane;
+- confirmation step before canonical write.
 
 A successful selection visibly changes the card to `SELECTED`, shows the planned date/time, and preserves the immutable FZ recommendation separately.
 
@@ -188,23 +200,27 @@ A prescription should carry a version/fingerprint so the planned intent records 
 
 ## Acceptance requirements
 
-Real mobile browser tests must prove both modes:
+Real mobile browser tests must prove all access paths.
 
-### Viewer
-- shared URL loads without mutation credentials;
+### Landing / Viewer
+- new browser lands on explicit Viewer vs Athlete choice;
+- Viewer bypasses login and enters the app read-only;
 - all pages and workout details remain viewable;
 - no selection/input control can mutate state;
 - direct POST without athlete session is rejected;
-- browser source contains no privileged write token.
+- browser source contains no privileged write token;
+- optional named viewer share token cannot be upgraded into mutation authority.
 
-### Athlete
-- one-time pairing establishes secure session;
+### Athlete PIN / Session
+- correct PIN creates secure athlete session;
+- wrong PIN does not reveal whether any other security state is valid;
+- brute-force/rate-limit controls are enforced;
 - athlete mode is visually explicit;
 - selecting recommended option creates canonical decision + planned intent;
 - selecting alternate lane requires explicit confirmation/override reason as defined by policy;
 - duplicate submission is idempotent;
 - stale recommendation cannot be selected;
-- logout/revoke returns browser to viewer mode;
+- logout/revoke/lock returns browser to viewer mode;
 - selected workout remains visible after page refresh and on a second canonical reread.
 
 ### Execution detail
