@@ -7,7 +7,7 @@ const dist=path.resolve('dist');
 const out=path.resolve('artifacts/ui-tranche1-v2');
 fs.mkdirSync(out,{recursive:true});
 const send=(res,value,status=200)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value));};
-function staticFile(res,pathname){const rel=pathname==='/'?'index.html':pathname.replace(/^\//,'');const file=path.join(dist,rel);if(!file.startsWith(dist)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);res.end('not found');return;}const ext=path.extname(file);const type=ext==='.js'?'text/javascript':ext==='.css'?'text/css':ext==='.svg'?'image/svg+xml':'text/html';res.writeHead(200,{'content-type':`${type}; charset=utf-8`,'cache-control':'no-store'});fs.createReadStream(file).pipe(res);}
+function staticFile(res,pathname){const rel=pathname==='/'?'index.html':pathname.replace(/^\//,'');const file=path.join(dist,rel);if(!file.startsWith(dist)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);res.end('not found');return;}const ext=path.extname(file);const type=ext==='.js'?'text/javascript':ext==='.css'?'text/css':ext==='.jpg'||ext==='.jpeg'?'image/jpeg':ext==='.png'?'image/png':ext==='.svg'?'image/svg+xml':'text/html';res.writeHead(200,{'content-type':`${type}${type.startsWith('text/')?'; charset=utf-8':''}`,'cache-control':'no-store'});fs.createReadStream(file).pipe(res);}
 const readiness={score:84,status:'CURRENT · MAINTAIN',recommendationLane:'MAINTAIN',systemicRecovery:'Recovery is supportive. Sleep, HRV and resting heart rate are aligned for controlled useful work.',localTissueState:'No material local limitation is currently captured.',primaryDecision:'Use the available readiness for controlled aerobic quality.',successCriteria:'Finish with stable mechanics, controlled effort and enough reserve for the next valuable training opportunity.',canonicalReadinessCurrent:true,readinessEngineVersion:'5.0.0-readiness.1'};
 const runtime={ok:true,stateId:'2026-09-14T20:00:00+02:00',masterAsOf:'2026-09-14T20:00:00+02:00',renderContract:{readiness}};
 const wellness={ok:true,wellness:{date:'2026-09-14',freshness:'LIVE',sourceAsOf:'2026-09-14T17:55:00.000Z',ingestedAt:'2026-09-14T17:56:00.000Z',current:{steps:8274,distanceKm:6.43,heartRate:67,restingHeartRate:54,stressAvg:24,stress:18,bodyBattery:56,bodyBatteryHigh:91,bodyBatteryLow:42,hrv:75,sleepScore:84,sleepHours:7.33,activeCalories:574,activeMinutes:71.4,respiration:13.1},series:{body_battery:[],stress:[],heart_rate:[],respiration:[]}}};
@@ -26,18 +26,24 @@ async function capture(name,viewport,isMobile=false){
   const page=await browser.newPage({viewport,isMobile,hasTouch:isMobile,deviceScaleFactor:1});
   const errors=[];page.on('pageerror',error=>errors.push(String(error)));
   await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded',timeout:15000});
+  await page.waitForSelector('.fz2-top-shell',{timeout:6000});
   await page.waitForSelector('#today.fz-today-v2 .fz2-stage',{timeout:6000});
   await page.waitForSelector('#today .fz2-thought',{timeout:6000});
   const viewerButton=page.getByRole('button',{name:/Continue in Viewer Mode/i});
   if(await viewerButton.count()){try{await viewerButton.click({timeout:2000});await page.waitForTimeout(250);}catch{}}
   await page.waitForTimeout(900);
-  const metrics=await page.evaluate(()=>{const legacy=document.querySelector('#today .fz-clean-hero');const overlay=document.querySelector('.fz-mode-overlay');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:document.querySelector('.fz2-thought blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false,overlayVisible:overlay?getComputedStyle(overlay).display!=='none'&&!overlay.hidden:false}});
+  const metrics=await page.evaluate(({isMobile})=>{const legacy=document.querySelector('#today .fz-clean-hero');const overlay=document.querySelector('.fz-mode-overlay');const side=document.querySelector('.side');const thought=document.querySelector('.fz2-thought');const live=document.querySelector('#today>.fz2-legacy-live');const bottom=document.querySelector('.bottom');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:thought?.querySelector('blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),topShell:!!document.querySelector('.fz2-top-shell'),topNavButtons:document.querySelectorAll('.fz2-topnav [data-page]').length,liveIcons:document.querySelectorAll('.fz2-legacy-live .fz2-live-icon').length,legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false,sideVisible:side?getComputedStyle(side).display!=='none':false,overlayVisible:overlay?getComputedStyle(overlay).display!=='none'&&!overlay.hidden:false,bottomVisible:bottom?getComputedStyle(bottom).display!=='none':false,thoughtBeforeLive:thought&&live?thought.getBoundingClientRect().top<live.getBoundingClientRect().top:false,isMobile};},{isMobile});
   if(metrics.width>metrics.client+1)throw new Error(`${name} horizontal overflow ${metrics.width}>${metrics.client}`);
-  if(!metrics.decision||!metrics.thought||!metrics.photo)throw new Error(`${name} missing v2 content`);
+  if(!metrics.decision||!metrics.thought||!metrics.photo||!metrics.topShell)throw new Error(`${name} missing v2 content`);
+  if(metrics.topNavButtons!==4)throw new Error(`${name} missing topside navigation contract`);
+  if(metrics.liveIcons<4)throw new Error(`${name} semantic physiology icons did not mount`);
   if(metrics.legacyVisible)throw new Error(`${name} legacy TODAY hero is still visibly competing with v2`);
+  if(metrics.sideVisible)throw new Error(`${name} legacy left rail remains visible`);
   if(metrics.overlayVisible)throw new Error(`${name} access overlay obscures visual QA`);
+  if(isMobile&&!metrics.bottomVisible)throw new Error(`${name} mobile bottom navigation is not visible`);
+  if(isMobile&&!metrics.thoughtBeforeLive)throw new Error(`${name} mobile Daily FZ Thought is not promoted ahead of physiology`);
   if(errors.length)throw new Error(`${name} page errors: ${errors.join(' | ')}`);
   await page.screenshot({path:path.join(out,`${name}.png`),fullPage:true});
   await page.close();console.log('CAPTURED',name,metrics);
 }
-try{await capture('today-desktop-v2',{width:1440,height:1100},false);await capture('today-mobile-v2',{width:390,height:844},true);console.log('PASS TODAY v2 desktop/mobile visual capture');}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+try{await capture('today-desktop-v2',{width:1440,height:1100},false);await capture('today-mobile-v2',{width:390,height:844},true);console.log('PASS TODAY v2 desktop/mobile topside visual capture');}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
