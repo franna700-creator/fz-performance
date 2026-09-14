@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const root=process.cwd();
+const htmlPath=path.join(root,'dist','index.html');
+const outDir=path.join(root,'dist','assets');
+const jsSrc=path.join(root,'src','today-redesign-v2.js');
+const cssSrc=path.join(root,'src','today-redesign-v2.css');
+if(!fs.existsSync(htmlPath)||!fs.existsSync(jsSrc)||!fs.existsSync(cssSrc))throw new Error('TODAY v2 build input missing');
+let html=fs.readFileSync(htmlPath,'utf8');
+if(!html.includes('/assets/today-redesign-v2.css'))html=html.replace('</head>','<link href="/assets/today-redesign-v2.css" rel="stylesheet"/></head>');
+if(!html.includes('/assets/today-redesign-v2.js'))html=html.replace('</body>','<script src="/assets/today-redesign-v2.js" type="module"></script></body>');
+fs.writeFileSync(htmlPath,html);
+fs.copyFileSync(jsSrc,path.join(outDir,'today-redesign-v2.js'));
+fs.copyFileSync(cssSrc,path.join(outDir,'today-redesign-v2.css'));
+console.log('PASS TODAY redesign v2 assets wired');
