@@ -161,7 +161,7 @@ try {
   const guidanceText = await guidance.innerText();
   assert(guidanceText.includes('Finish feeling at least as good as you started'), 'recommended option exposes concrete success criteria');
   assert(guidanceText.includes('GI symptoms, pain or systemic fatigue'), 'recommended option exposes modify/stop criteria');
-  assert(guidanceText.includes('Moderate'), 'recommended option exposes composition confidence');
+  assert(guidanceText.toUpperCase().includes('MODERATE'), 'recommended option exposes composition confidence');
   assert(guidanceText.includes('Current canonical readiness'), 'recommended option exposes concise evidence basis');
   assert(!trainText.includes('option:test:absorb'), 'internal option identity is not the primary athlete-facing interaction');
   await page.locator('.fz-alternate-lanes summary').click();
