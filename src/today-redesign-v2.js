@@ -17,9 +17,12 @@ const FZ_TODAY_V2_QUOTES=[
   ['PROCESS','Build the athlete you want to be by repeating the behaviours that athlete requires.']
 ];
 const v2Esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const v2Fmt=(value,decimals=0)=>Number.isFinite(Number(value))?Number(value).toLocaleString('en-ZA',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}):'—';
 function v2Date(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Johannesburg',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 function v2DayOrdinal(){const [year,month,day]=v2Date().split('-').map(Number);return Math.floor(Date.UTC(year,month-1,day)/86400000)}
 function v2Quote(){return FZ_TODAY_V2_QUOTES[Math.abs(v2DayOrdinal())%FZ_TODAY_V2_QUOTES.length]}
+function v2Time(value){if(!value)return'—';const d=new Date(value);if(Number.isNaN(d.getTime()))return'—';return new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',hour:'2-digit',minute:'2-digit',hour12:false}).format(d)}
+function v2SleepHours(value){const n=Number(value);if(!Number.isFinite(n))return'—';const total=Math.round(n*60);return`${Math.floor(total/60)}h ${String(total%60).padStart(2,'0')}m`}
 function v2Icon(name){
   const common='viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
   const icons={
@@ -34,7 +37,8 @@ function v2Icon(name){
     bolt:`<svg ${common}><path d="m13 2-7 12h5l-1 8 8-13h-5z"/></svg>`,
     steps:`<svg ${common}><ellipse cx="9" cy="8" rx="2.5" ry="4"/><ellipse cx="15.5" cy="16" rx="2.5" ry="4"/></svg>`,
     quote:`<svg ${common}><path d="M5 13h5l-2 6H4l1-6Zm9 0h5l-2 6h-4l1-6ZM5 11c0-4 2-6 5-7M14 11c0-4 2-6 5-7"/></svg>`,
-    target:`<svg ${common}><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m14 10 6-6"/></svg>`
+    target:`<svg ${common}><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m14 10 6-6"/></svg>`,
+    refresh:`<svg ${common}><path d="M20 7v5h-5M4 17v-5h5M18.5 10A7 7 0 0 0 6 7M5.5 14A7 7 0 0 0 18 17"/></svg>`
   };
   return icons[name]||icons.pulse;
 }
@@ -100,10 +104,21 @@ function v2Recommendation(r){
   const success=r?.successCriteria||'Reassess when new athlete or source evidence arrives.';
   return `<section class="fz2-decision"><div class="fz2-decision-kicker"><span class="fz2-kicker-icon">${v2Icon('pulse')}</span><span>FZ DECISION</span><b>${v2Esc(lane)}</b></div><h2>${v2Esc(decision)}</h2><div class="fz2-decision-foot"><div><small>SUCCESS CONDITION</small><p>${v2Esc(success)}</p></div><button type="button" class="fz2-refresh" data-refresh-fz>REFRESH FZ</button></div></section>`;
 }
-function v2Training(focus){if(!focus)return `<section class="fz2-training"><div><span class="fz2-card-kicker"><i>${v2Icon('train')}</i> TRAINING</span><h3>No current canonical training session.</h3></div></section>`;const event=(focus.events||[]).filter(e=>e.actor==='ATHLETE').sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at))[0];return `<section class="fz2-training"><div><span class="fz2-card-kicker"><i>${v2Icon('train')}</i> LAST KEY EXECUTION</span><h3>${v2Esc(focus.title||focus.sport_type||'Training')}</h3>${event?`<p>${v2Esc(event.summary)}</p>`:''}</div><button class="fz2-open-train" data-open-page="train">OPEN TRAIN →</button></section>`}
+function v2SummaryMetric(label,value,unit,detail,icon,tone){return `<article class="fz2-summary-metric tone-${tone}"><span class="fz2-summary-icon">${v2Icon(icon)}</span><small>${v2Esc(label)}</small><strong>${v2Esc(value)}${unit?`<em>${v2Esc(unit)}</em>`:''}</strong><p>${v2Esc(detail||'')}</p></article>`}
+function v2PhysiologySummary(well){
+  const w=well?.current||{};
+  const freshness=String(well?.freshness||'UNKNOWN').toUpperCase();
+  const source=v2Time(well?.sourceAsOf);
+  return `<section class="fz2-phys-summary"><header><div><span class="fz2-phys-title"><i></i>Live Physiology</span><small>${v2Esc(freshness)} · ${v2Esc(source)}</small></div><button type="button" class="fz2-view-details" data-fz2-live-details aria-expanded="false">View details →</button></header><div class="fz2-summary-grid">${v2SummaryMetric('HRV',v2Fmt(w.hrv),'ms','overnight','pulse','green')}${v2SummaryMetric('Resting HR',v2Fmt(w.restingHeartRate),'bpm','morning anchor','heart','cyan')}${v2SummaryMetric('Sleep',v2SleepHours(w.sleepHours),'',Number.isFinite(Number(w.sleepScore))?`score ${v2Fmt(w.sleepScore)}`:'duration','moon','violet')}${v2SummaryMetric('Body Battery',v2Fmt(w.bodyBattery),'',Number.isFinite(Number(w.bodyBatteryHigh))?`high ${v2Fmt(w.bodyBatteryHigh)}`:'current','battery','green')}${v2SummaryMetric('Stress',v2Fmt(w.stress),'',Number.isFinite(Number(w.stressAvg))?`avg ${v2Fmt(w.stressAvg)}`:'current','bolt','yellow')}${v2SummaryMetric('Steps',v2Fmt(w.steps),'',Number.isFinite(Number(w.distanceKm))?`${v2Fmt(w.distanceKm,1)} km`:'today','steps','cyan')}</div></section>`;
+}
+function v2Training(focus){
+  if(!focus)return `<section class="fz2-training"><div><span class="fz2-card-kicker"><i>${v2Icon('train')}</i> TRAINING</span><h3>No current canonical training session.</h3></div><button type="button" class="fz2-sync-workouts" data-training-sync-now aria-label="Sync workouts">${v2Icon('refresh')}</button></section>`;
+  const event=(focus.events||[]).filter(e=>e.actor==='ATHLETE').sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at))[0];
+  return `<section class="fz2-training"><div><span class="fz2-card-kicker"><i>${v2Icon('train')}</i> LAST KEY EXECUTION</span><h3>${v2Esc(focus.title||focus.sport_type||'Training')}</h3>${event?`<p>${v2Esc(event.summary)}</p>`:''}</div><div class="fz2-training-actions"><button class="fz2-open-train" data-open-page="train">OPEN TRAIN →</button><button type="button" class="fz2-sync-workouts" data-training-sync-now aria-label="Sync workouts">${v2Icon('refresh')}</button></div></section>`;
+}
 function v2Thought(){const[type,text]=v2Quote();return `<section class="fz2-thought"><div><span class="fz2-card-kicker"><i>${v2Icon('quote')}</i> FZ THOUGHT · ${v2Esc(type)}</span><blockquote>${v2Esc(text)}</blockquote></div><small>${v2Esc(v2Date())}</small></section>`}
 function v2Photo(){return `<section class="fz2-photo" aria-label="Hybrid training image"><div class="fz2-photo-overlay"><span>HYBRID PERFORMANCE</span><strong>Built for the work between strength and endurance.</strong></div></section>`}
-function v2ShellHtml(r,focus){return `<div class="fz2-stage"><div class="fz2-hero-copy"><div class="fz2-date">${v2Esc(new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',weekday:'long',day:'2-digit',month:'long'}).format(new Date()).toUpperCase())}</div>${v2Recommendation(r)}${v2Readiness(r)}</div>${v2Photo()}</div><div class="fz2-lower">${v2Training(focus)}${v2Thought()}</div>`}
+function v2ShellHtml(r,well,focus){return `<div class="fz2-stage"><div class="fz2-hero-copy"><div class="fz2-date">${v2Esc(new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',weekday:'long',day:'2-digit',month:'long'}).format(new Date()).toUpperCase())}</div>${v2Recommendation(r)}${v2Readiness(r)}</div>${v2Photo()}</div>${v2PhysiologySummary(well)}<div class="fz2-lower">${v2Training(focus)}${v2Thought()}</div>`}
 function v2LiveKind(text=''){
   const value=String(text).toLowerCase();
   if(value.includes('hrv'))return['pulse','green'];
@@ -132,27 +147,30 @@ function v2ClassifyLegacy(root){
   const hero=root.querySelector(':scope > .fz-clean-hero');if(hero)hero.classList.add('fz2-legacy-hidden');
   v2DecorateLive(root);
 }
+function v2SyncDetailButton(root){const button=root?.querySelector('[data-fz2-live-details]');if(!button)return;const open=root.classList.contains('fz2-live-detail-open');button.setAttribute('aria-expanded',String(open));button.textContent=open?'Hide details ↑':'View details →'}
+function v2ToggleLiveDetails(){const root=document.getElementById('today');if(!root)return;root.classList.toggle('fz2-live-detail-open');v2SyncDetailButton(root);if(root.classList.contains('fz2-live-detail-open'))setTimeout(()=>root.querySelector(':scope > .fz2-legacy-live')?.scrollIntoView({behavior:'smooth',block:'start'}),20)}
 function v2Mount(){
   v2MountTopShell();
   const root=document.getElementById('today');if(!root)return;
   const r=FZ_TODAY_V2.runtime?.renderContract?.readiness||null;
+  const well=FZ_TODAY_V2.wellness?.wellness||null;
   const sessions=(FZ_TODAY_V2.training?.sessions||[]).filter(s=>s.status!=='SUPERSEDED');
   const focus=sessions.map(s=>({s,ts:new Date(s.actual_start_at||s.planned_start_at||s.local_date||0).getTime()})).sort((a,b)=>b.ts-a.ts)[0]?.s||null;
   root.classList.add('fz-today-v2');
   let shell=root.querySelector(':scope > .fz2-shell');
   if(!shell){shell=document.createElement('div');shell.className='fz2-shell';root.prepend(shell)}
-  shell.innerHTML=v2ShellHtml(r,focus);
-  v2ClassifyLegacy(root);
+  shell.innerHTML=v2ShellHtml(r,well,focus);
+  v2ClassifyLegacy(root);v2SyncDetailButton(root);
   FZ_TODAY_V2.mounted=true;
 }
 function scheduleV2Load(delay=80){clearTimeout(scheduleV2Load.timer);scheduleV2Load.timer=setTimeout(v2Load,delay)}
 let v2ClassifyQueued=false;
 const v2Observer=new MutationObserver(()=>{
   if(v2ClassifyQueued)return;v2ClassifyQueued=true;
-  queueMicrotask(()=>{v2ClassifyQueued=false;v2MountTopShell();v2SyncTopShell();const root=document.getElementById('today');if(!root)return;v2ClassifyLegacy(root);if(!root.querySelector(':scope > .fz2-shell')&&!FZ_TODAY_V2.busy)scheduleV2Load(30)});
+  queueMicrotask(()=>{v2ClassifyQueued=false;v2MountTopShell();v2SyncTopShell();const root=document.getElementById('today');if(!root)return;v2ClassifyLegacy(root);v2SyncDetailButton(root);if(!root.querySelector(':scope > .fz2-shell')&&!FZ_TODAY_V2.busy)scheduleV2Load(30)});
 });
 v2Observer.observe(document.documentElement,{childList:true,subtree:true});
-document.addEventListener('click',event=>{if(event.target.closest('[data-page],[data-open-page]'))queueMicrotask(v2SyncTopShell)});
+document.addEventListener('click',event=>{if(event.target.closest('[data-fz2-live-details]')){v2ToggleLiveDetails();return}if(event.target.closest('[data-page],[data-open-page]'))queueMicrotask(v2SyncTopShell)});
 document.addEventListener('fz:source-persisted',()=>scheduleV2Load(80));
 window.addEventListener('online',()=>scheduleV2Load(80));
 window.addEventListener('focus',()=>scheduleV2Load(140));
