@@ -280,39 +280,55 @@
 }
 
 @media(max-width:760px){
+  .today-date{display:flex;align-items:baseline;gap:8px;margin:0 0 10px}
+  .today-date .date-label{font-size:9px;letter-spacing:.14em;color:var(--fz-accent,#f5cf19)}
+  .today-date strong{font-size:13px;line-height:1.2}
   #today.fz-today-v1{display:flex;flex-direction:column;gap:18px}
+  #today.fz-today-v1>.fz-clean-hero{order:1}
+  #today.fz-today-v1>.fz-today-live{order:2}
+  #today.fz-today-v1>.fz-thought-section{order:3}
+  #today.fz-today-v1>.fz-today-training{order:4}
   .fz-today-v1 .fz-clean-hero{display:flex;flex-direction:column;gap:10px}
-  .fz-today-v1 .fz-clean-recommendation{order:1;min-height:auto;padding:24px 20px 22px}
-  .fz-today-v1 .fz-clean-recommendation h3{max-width:none;font-size:32px;line-height:1.02}
-  .fz-today-v1 .fz-clean-recommendation>p{font-size:13px;line-height:1.58}
-  .fz-today-v1 .fz-intelligence-controls{align-items:stretch;flex-direction:column}
+  .fz-today-v1 .fz-clean-recommendation{order:1;min-height:auto;padding:20px 18px 18px}
+  .fz-today-v1 .fz-clean-recommendation h3{max-width:none;margin:12px 0 10px;font-size:30px;line-height:1.02}
+  .fz-today-v1 .fz-clean-recommendation>p{font-size:12px;line-height:1.52}
+  .fz-today-v1 .fz-clean-recommendation .microline{margin-top:12px;padding-top:11px;font-size:10px}
+  .fz-today-v1 .fz-rec-line{gap:8px}
+  .fz-today-v1 .fz-rec-line span{font-size:10px}
+  .fz-today-v1 .fz-today-option{margin-top:9px;padding-top:9px}
+  .fz-today-v1 .fz-today-option b{font-size:9px}
+  .fz-today-v1 .fz-today-option span{font-size:12px}
+  .fz-today-v1 .fz-intelligence-controls{align-items:stretch;flex-direction:column;gap:8px;padding-top:12px}
   .fz-today-v1 .fz-intelligence-status{font-size:9px}
-  .fz-today-v1 .fz-clean-readiness{order:2;min-height:auto;display:grid;grid-template-columns:auto 1fr;align-items:center;padding:18px;gap:16px}
+  .fz-today-v1 .fz-clean-readiness{order:2;min-height:auto;display:grid;grid-template-columns:auto 1fr;align-items:center;padding:17px;gap:14px}
   .fz-today-v1 .fz-clean-readiness .hero-copy h2{-webkit-line-clamp:3;font-size:13px}
   .fz-today-v1 .fz-clean-readiness .hero-copy p{-webkit-line-clamp:2;font-size:10px}
-  .fz-today-live{padding:16px}
+  .fz-today-live{padding:15px}
   .fz-today-live .section-head{align-items:flex-start;flex-direction:column;gap:5px}
   .fz-today-live .section-head p{text-align:left;font-size:10px}
   .fz-today-live .fz-live-anchor-row{grid-template-columns:1fr 1fr}
-  .fz-today-live .fz-live-anchor-row>div{min-height:92px;padding:13px}
+  .fz-today-live .fz-live-anchor-row>div{min-height:88px;padding:12px}
   .fz-today-live .fz-live-anchor-row b{font-size:21px}
   .fz-today-live .fz-live-chart-grid-v3{grid-template-columns:1fr}
   .fz-today-training .fz-training-focus{min-height:auto;padding:18px}
-  .fz-thought-card{min-height:230px;padding:20px}
-  .fz-thought-card blockquote{max-width:21ch;margin:28px 0 24px;font-size:25px}
-  .topbar{gap:12px;margin-bottom:24px}
-  .topbar .mast h1{font-size:34px}
+  .fz-thought-card{min-height:210px;padding:19px}
+  .fz-thought-card blockquote{max-width:23ch;margin:24px 0 20px;font-size:24px}
+  .topbar{gap:10px;margin-bottom:22px}
+  .topbar .mast h1{font-size:32px}
   .topbar .subtitle{display:none}
   .fresh .label,.fresh .stamp{display:none}
   .fresh{min-width:0}
+  .topbar .fz-athlete-mode-control{display:flex!important;width:max-content;max-width:100%;grid-template-columns:none;justify-content:flex-start;margin-left:0;gap:6px}
+  .topbar .fz-mode-pill{width:auto;padding:5px 8px;font-size:8px;white-space:nowrap}
+  .topbar .fz-athlete-mode-control button{padding:6px 8px;font-size:9px}
 }
 
 @media(max-width:470px){
-  .fz-today-v1 .fz-clean-recommendation h3{font-size:29px}
+  .fz-today-v1 .fz-clean-recommendation h3{font-size:28px}
   .fz-today-v1 .fz-clean-readiness{grid-template-columns:1fr;align-items:flex-start}
-  .fz-today-v1 .fz-clean-readiness .ring{transform:scale(.92);transform-origin:left center}
+  .fz-today-v1 .fz-clean-readiness .ring{transform:scale(.9);transform-origin:left center}
   .fz-thought-top{align-items:flex-start;flex-direction:column;gap:6px}
-  .fz-thought-card blockquote{font-size:23px}
+  .fz-thought-card blockquote{font-size:22px}
 }
 
 @media(prefers-reduced-motion:reduce){
