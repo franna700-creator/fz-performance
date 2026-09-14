@@ -6,11 +6,17 @@ on:
       - 'src/app-clean.js'
       - 'src/intelligence-refresh.js'
       - 'src/adaptive-choice.js'
+      - 'src/adaptive-choice.css'
       - 'src/training-memory-rich.js'
       - 'src/ui-context-recovery.js'
       - 'src/layout-stability.js'
+      - 'api/training/athlete-event.js'
+      - 'lib/athlete-auth.js'
+      - 'lib/session-prescription-resolver.js'
+      - 'db/migrations/006_athlete_auth.sql'
       - 'scripts/mobile-shell-browser-smoke.mjs'
       - 'scripts/layout-stability-browser-smoke.mjs'
+      - 'scripts/tranche4-6-athlete-mode-browser-smoke.mjs'
       - 'scripts/clean-shell.mjs'
       - 'package.json'
       - '.github/workflows/mobile-shell-browser.yml'
@@ -36,5 +42,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Exercise the complete mobile shell in a real browser
         run: node scripts/mobile-shell-browser-smoke.mjs
+      - name: Exercise secure Athlete Mode end to end
+        run: node scripts/tranche4-6-athlete-mode-browser-smoke.mjs
       - name: Exercise TODAY/TRENDS viewport stability
         run: node scripts/layout-stability-browser-smoke.mjs

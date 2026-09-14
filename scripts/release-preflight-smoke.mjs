@@ -51,12 +51,13 @@ assert.equal(rewriteMap.get('/api/intelligence/refresh'), '/api/system/status?op
 assert.equal(fs.existsSync('api/intelligence/current.js'), false, 'standalone intelligence current function would exceed Hobby function budget');
 assert.equal(fs.existsSync('api/intelligence/refresh.js'), false, 'standalone intelligence refresh function would exceed Hobby function budget');
 
-assert.match(systemApi, /releaseEnvironment:\{databaseConfigured:databaseConfigured\(\),writeTokenConfigured:Boolean\(process\.env\.FZ_STATE_WRITE_TOKEN\)/, 'SYSTEM must expose secret-safe release environment probes');
+assert.match(systemApi, /releaseEnvironment:\{databaseConfigured:databaseConfigured\(\),writeTokenConfigured:Boolean\(process\.env\.FZ_STATE_WRITE_TOKEN\),athleteBootstrapConfigured:Boolean\(process\.env\.FZ_ATHLETE_BOOTSTRAP_TOKEN\)/, 'SYSTEM must expose secret-safe release environment probes including Athlete Mode bootstrap readiness');
 assert.match(systemApi, /secretsExposed:false/, 'SYSTEM release probes must explicitly remain secret-safe');
 
 const environmentNames = new Set((envContract.requiredRuntimeEnvironment || []).flatMap(item => item.alternatives || []));
 assert.ok(environmentNames.has('DATABASE_URL') && environmentNames.has('POSTGRES_URL'), 'database env alternatives must be declared for preview and production');
 assert.ok(environmentNames.has('FZ_STATE_WRITE_TOKEN'), 'runtime write protection env must be declared');
+assert.ok(environmentNames.has('FZ_ATHLETE_BOOTSTRAP_TOKEN'), 'Athlete Mode bootstrap proof source must be declared');
 for (const requirement of envContract.requiredRuntimeEnvironment || []) {
   assert.deepEqual(requirement.targets, ['preview', 'production'], `${requirement.name} must be required in Preview and Production`);
 }

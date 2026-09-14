@@ -91,7 +91,7 @@ async function systemStatus(req, res) {
     return res.status(200).json({
       ok:true,generatedAt:new Date().toISOString(),
       architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin / Fitness AI','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
-      releaseEnvironment:{databaseConfigured:databaseConfigured(),writeTokenConfigured:Boolean(process.env.FZ_STATE_WRITE_TOKEN),previewMustPassBeforePromotion:true,secretsExposed:false},
+      releaseEnvironment:{databaseConfigured:databaseConfigured(),writeTokenConfigured:Boolean(process.env.FZ_STATE_WRITE_TOKEN),athleteBootstrapConfigured:Boolean(process.env.FZ_ATHLETE_BOOTSTRAP_TOKEN),previewMustPassBeforePromotion:true,secretsExposed:false},
       runtime:runtime?{source:runtime.source,stateId:runtime.stateId,pointerVersion:runtime.pointerVersion,masterAsOf:runtime.state?.masterAsOf||null,generatedAt:runtime.state?.generatedAt||null,masterValidated:runtime.state?.masterValidated===true}:null,
       sources,tredict:{configured:tredictConfigured(),latestEvidence:evidence.filter(row=>row.source_key==='tredict')},
       garmin:{connection:sources.find(row=>row.source_key==='fitness-ai')||sources.find(row=>row.source_key==='fitness_ai')||sources.find(row=>row.source_key==='garmin')||null,latestWellness:wellness[0]||null,latestEvidence:evidence.filter(row=>row.source_key==='garmin')},

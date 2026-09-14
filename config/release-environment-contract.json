@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "hosting": {
     "provider": "Vercel",
     "plan": "Hobby",
@@ -18,6 +18,12 @@
       "alternatives": ["FZ_STATE_WRITE_TOKEN"],
       "targets": ["preview", "production"],
       "runtimeProbe": "releaseEnvironment.writeTokenConfigured"
+    },
+    {
+      "name": "athleteBootstrapProof",
+      "alternatives": ["FZ_ATHLETE_BOOTSTRAP_TOKEN"],
+      "targets": ["preview", "production"],
+      "runtimeProbe": "releaseEnvironment.athleteBootstrapConfigured"
     }
   ],
   "promotionPolicy": {
@@ -38,13 +44,15 @@
     "/api/runtime-state",
     "/api/wellness/today?refresh=0",
     "/api/training/memory?backDays=45&forwardDays=0",
-    "/api/trends/current?days=45"
+    "/api/trends/current?days=45",
+    "/api/training/athlete-event?operation=athlete-auth-status"
   ],
   "notes": [
     "The release candidate is created once as a Production-target deployment with domain assignment skipped, so it is built with Production environment variables but does not receive production traffic.",
     "The staged deployment is fully exercised at its immutable deployment URL before promotion; promotion must point production traffic to that exact deployment and must not rebuild it.",
     "Preview environment-variable scope is audited separately for future preview workflows and must not be used as evidence that the staged Production candidate has Production configuration.",
     "Environment presence is validated by boolean runtime probes only; secret values must never be returned.",
+    "FZ_ATHLETE_BOOTSTRAP_TOKEN is a one-time setup/recovery proof source. The proof itself is never returned by a runtime probe, browser source, canonical athlete record or ChatGPT response.",
     "Routine athlete-state evolution remains a runtime data operation and does not open this release process."
   ]
 }

@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { ATHLETE_PIN_PATTERN, athleteSessionCookie, clearAthleteSessionCookie, hashPinForStorage, verifyPinAgainstRecord, publicAuthFailure } from '../lib/athlete-auth.js';
+
+assert(ATHLETE_PIN_PATTERN.test('123456'));
+assert(!ATHLETE_PIN_PATTERN.test('12345'));
+assert(!ATHLETE_PIN_PATTERN.test('1234567890123'));
+assert(!ATHLETE_PIN_PATTERN.test('12ab56'));
+const hashed=await hashPinForStorage('123456');
+assert.equal(hashed.params.algorithm,'scrypt');
+assert.notEqual(hashed.hash,'123456');
+assert.equal(await verifyPinAgainstRecord('123456',{pin_salt:hashed.salt,pin_hash:hashed.hash,pin_params:hashed.params}),true);
+assert.equal(await verifyPinAgainstRecord('654321',{pin_salt:hashed.salt,pin_hash:hashed.hash,pin_params:hashed.params}),false);
+assert.match(athleteSessionCookie('opaque-token'),/HttpOnly/);
+assert.match(athleteSessionCookie('opaque-token'),/Secure/);
+assert.match(athleteSessionCookie('opaque-token'),/SameSite=Strict/);
+assert.match(clearAthleteSessionCookie(),/Max-Age=0/);
+assert.equal(publicAuthFailure(new Error('athlete_csrf_invalid')).status,403);
+
+const migration=fs.readFileSync('db/migrations/006_athlete_auth.sql','utf8');
+for(const table of ['fz_athlete_auth_credentials','fz_athlete_auth_sessions','fz_athlete_auth_nonces'])assert(migration.includes(table),`${table} must be part of the dedicated auth schema`);
+assert.match(migration,/pin_hash TEXT NOT NULL/);
+assert.match(migration,/csrf_hash TEXT NOT NULL/);
+assert.doesNotMatch(migration,/raw_pin|pin_plaintext/i);
+const endpoint=fs.readFileSync('api/training/athlete-event.js','utf8');
+assert.match(endpoint,/AUTHENTICATED_ADAPTIVE_CHOICE_ONLY/);
+assert.match(endpoint,/validRuntimeBearer/,'existing trusted runtime bearer path must remain available');
+assert.match(endpoint,/requireAthleteSession\(req,\{csrf:true,consumeNonce:true\}\)/,'browser choice writes must require session, CSRF and replay nonce');
+assert.match(endpoint,/kind!=='ATHLETE_RESPONSE'/,'Athlete Memory writes must remain a separate trusted-runtime path');
+const client=fs.readFileSync('src/adaptive-choice.js','utf8');
+assert.match(client,/ATHLETE MODE · EDITING ENABLED/);
+assert.match(client,/X-FZ-CSRF/);
+assert.match(client,/X-FZ-Idempotency-Key/);
+assert.match(client,/type="password"/);
+assert.doesNotMatch(client,/localStorage/,'PIN/session credentials must not be persisted in localStorage');
+assert.doesNotMatch(client,/FZ_STATE_WRITE_TOKEN/,'browser source must never expose the runtime write token');
+console.log('PASS Tranche 4.6 Athlete Mode security: hashed PIN, opaque session, CSRF/replay guards and runtime/browser separation');
