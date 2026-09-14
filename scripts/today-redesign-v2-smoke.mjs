@@ -11,7 +11,7 @@ assert.ok(html.includes('/assets/today-redesign-v2.js'),'TODAY v2 JS is wired');
 assert.ok(js.includes("v2Json('/api/runtime-state')")&&js.includes("v2Json('/api/wellness/today?refresh=0')")&&js.includes("v2Json('/api/training/memory?backDays=45&forwardDays=0')"),'TODAY v2 uses existing canonical read contracts');
 assert.ok(js.includes('FZ_TODAY_V2_QUOTES')&&js.includes('v2Quote()')&&js.includes('v2DayOrdinal()'),'daily quote system is deterministic by SAST day');
 assert.ok(js.includes('v2MountTopShell()')&&js.includes("v2TopNavButton('today'")&&js.includes("v2TopNavButton('trends'")&&js.includes("v2TopNavButton('train'")&&js.includes("v2TopNavButton('system'"),'topside desktop navigation is implemented through existing page contracts');
-assert.ok(js.includes('v2DecorateLive(root)')&&js.includes('tone-cyan')&&js.includes('tone-violet'),'semantic colour/icon decoration is presentation-only and runtime driven');
+assert.ok(js.includes('function v2LiveKind(')&&js.includes('v2DecorateLive(root)')&&js.includes("['heart','cyan']")&&js.includes("['moon','violet']"),'semantic colour/icon decoration is presentation-only and runtime driven');
 assert.ok(css.includes('.fz2-stage')&&css.includes('.fz2-photo')&&css.includes('.fz2-legacy-live'),'new editorial composition preserves the real live physiology engine');
 assert.ok(topside.includes('.fz2-top-shell')&&topside.includes('body.fz2-topside-active .side{display:none!important}'),'legacy left rail is replaced by topside shell');
 assert.ok(topside.includes('--fz2-green')&&topside.includes('--fz2-cyan')&&topside.includes('--fz2-violet'),'semantic accent palette is present');
