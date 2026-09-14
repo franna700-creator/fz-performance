@@ -28,11 +28,14 @@ async function capture(name,viewport,isMobile=false){
   await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded',timeout:15000});
   await page.waitForSelector('#today.fz-today-v2 .fz2-stage',{timeout:6000});
   await page.waitForSelector('#today .fz2-thought',{timeout:6000});
+  const viewerButton=page.getByRole('button',{name:/Continue in Viewer Mode/i});
+  if(await viewerButton.count()){try{await viewerButton.click({timeout:2000});await page.waitForTimeout(250);}catch{}}
   await page.waitForTimeout(900);
-  const metrics=await page.evaluate(()=>{const legacy=document.querySelector('#today .fz-clean-hero');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:document.querySelector('.fz2-thought blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false}});
+  const metrics=await page.evaluate(()=>{const legacy=document.querySelector('#today .fz-clean-hero');const overlay=document.querySelector('.fz-mode-overlay');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:document.querySelector('.fz2-thought blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false,overlayVisible:overlay?getComputedStyle(overlay).display!=='none'&&!overlay.hidden:false}});
   if(metrics.width>metrics.client+1)throw new Error(`${name} horizontal overflow ${metrics.width}>${metrics.client}`);
   if(!metrics.decision||!metrics.thought||!metrics.photo)throw new Error(`${name} missing v2 content`);
   if(metrics.legacyVisible)throw new Error(`${name} legacy TODAY hero is still visibly competing with v2`);
+  if(metrics.overlayVisible)throw new Error(`${name} access overlay obscures visual QA`);
   if(errors.length)throw new Error(`${name} page errors: ${errors.join(' | ')}`);
   await page.screenshot({path:path.join(out,`${name}.png`),fullPage:true});
   await page.close();console.log('CAPTURED',name,metrics);
