@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync('dist/index.html','utf8');
+const js=fs.readFileSync('dist/assets/today-redesign-v2.js','utf8');
+const css=fs.readFileSync('dist/assets/today-redesign-v2.css','utf8');
+const photo=fs.readFileSync('dist/assets/fz-training-hero-data.css','utf8');
+assert.ok(html.includes('/assets/today-redesign-v2.css'),'TODAY v2 CSS is wired');
+assert.ok(html.includes('/assets/fz-training-hero-data.css'),'athlete photo treatment is wired');
+assert.ok(html.includes('/assets/today-redesign-v2.js'),'TODAY v2 JS is wired');
+assert.ok(js.includes("v2Json('/api/runtime-state')")&&js.includes("v2Json('/api/wellness/today?refresh=0')")&&js.includes("v2Json('/api/training/memory?backDays=45&forwardDays=0')"),'TODAY v2 uses existing canonical read contracts');
+assert.ok(js.includes('FZ_TODAY_V2_QUOTES')&&js.includes('v2Quote()'),'daily quote system is present');
+assert.ok(css.includes('.fz2-stage')&&css.includes('.fz2-photo')&&css.includes('.fz2-metric-strip'),'new editorial composition exists');
+assert.ok(photo.includes('data:image/jpeg;base64'),'athlete-supplied training image is embedded into presentation asset');
+assert.ok(!js.includes('How are you feeling'),'undeveloped subjective check-in is not exposed');
+console.log('PASS FZ TODAY redesign v2 contract');
