@@ -41,7 +41,7 @@ const strengthSession={
   evidence:{sourceKeys:['tredict','garmin','conversation'],newestAt:'2026-09-09T17:45:00.000Z',hasMetrics:true,hasWorkoutDetail:true},
   events:[],sources:[{source_key:'conversation',source_record_id:'strength-detail-evidence',match_method:'ATHLETE_SUPPLIED_GARMIN_CONNECT_SCREENSHOT',match_confidence:1}]
 };
-function trainingPayload(refresh){return {ok:true,date:'2026-09-09',range:{startDate:'2026-07-26',endDate:'2026-09-09'},syncWindow:{startDate:'2026-09-07',endDate:'2026-09-16'},sync:refresh?{tredict:{activities:2},garmin:{activities:2,matched:2}}:null,warning:null,sessions:trainingSynced?[session,strengthSession]:[],supersededSessions:[],contextEvents:[]};}
+function trainingPayload(refresh){return {ok:true,date:'2026-09-09',range:{startDate:'2026-07-26',endDate:'2026-09-09'},syncWindow:{startDate:'2026-09-07',endDate:'2026-09-16'},sync:refresh?{tredict:{activities:2},garmin:{activities:2,matched:2},sourceVersion:{before:10,after:12,changed:true,markerUnavailable:false},meaningfulChange:true,propagation:{pendingPropagation:false}}:null,warning:null,sessions:trainingSynced?[session,strengthSession]:[],supersededSessions:[],contextEvents:[]};}
 function wellness(){return {ok:true,date:'2026-09-09',syncStatus:'SYNCED',warning:null,source:{status:'CONNECTED'},wellness:{date:'2026-09-09',sourceAsOf:'2026-09-09T19:05:00.000Z',ingestedAt:'2026-09-09T19:06:00.000Z',freshness:'LIVE',ageMinutes:1,current:{steps:10000,distanceKm:8,activeCalories:650,activeMinutes:75,heartRate:80,restingHeartRate:54,stress:18,stressAvg:22,bodyBattery:42,bodyBatteryHigh:90,bodyBatteryLow:38,hrv:70,sleepScore:82,sleepHours:7.2,respiration:14},series:{body_battery:[['2026-09-09T18:45:00.000Z',43]],stress:[['2026-09-09T18:45:00.000Z',18]],heart_rate:[['2026-09-09T18:45:00.000Z',80]],respiration:[['2026-09-09T18:45:00.000Z',14]]}}};}
 
 const server=http.createServer(async(req,res)=>{
@@ -75,7 +75,7 @@ try{
   assert(trainingSequence[0]==='db','persisted canonical training renders before source sync');
   assert(sourceSyncRequests===1,'initial background workout source sync runs once');
   assert((await page.locator('[data-training-sync-status]').textContent()).includes('synced'),'training sync status becomes visible after source persistence');
-  assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after background source reconciliation');
+  assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after meaningful background source reconciliation');
 
   await page.locator('[data-page="train"]:visible').first().click();
   await page.waitForSelector('[data-rich-training-lens="ALL"]',{timeout:5000});
