@@ -1,0 +1,320 @@
+/* FZ Performance — TODAY experience v1
+   Presentation only. No athlete truth lives here. */
+
+#today.fz-today-v1{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.72fr);
+  gap:24px;
+  align-items:start;
+}
+#today.fz-today-v1>.fz-clean-hero,
+#today.fz-today-v1>.fz-today-live{grid-column:1/-1}
+#today.fz-today-v1>.fz-today-training{grid-column:1}
+#today.fz-today-v1>.fz-thought-section{grid-column:2}
+#today.fz-today-v1>.section{margin-top:0}
+
+/* Recommendation first: one dominant decision surface. */
+.fz-today-v1 .fz-clean-hero{
+  grid-template-columns:minmax(0,1.65fr) minmax(300px,.65fr);
+  gap:14px;
+  margin-bottom:0;
+}
+.fz-today-v1 .fz-clean-recommendation{
+  order:1;
+  position:relative;
+  overflow:hidden;
+  min-height:292px;
+  justify-content:flex-start;
+  padding:30px 32px 28px;
+  border:1px solid #3a3520;
+  background:
+    radial-gradient(circle at 88% 12%,rgba(245,207,25,.10),transparent 28%),
+    linear-gradient(145deg,#12120f 0%,#0a0a09 52%,#080808 100%);
+  box-shadow:0 26px 65px rgba(0,0,0,.34);
+}
+.fz-today-v1 .fz-clean-recommendation::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:var(--fz-accent,#f5cf19);
+}
+.fz-today-v1 .fz-clean-recommendation::after{
+  content:"FZ";
+  position:absolute;
+  right:24px;
+  bottom:-12px;
+  font-size:104px;
+  font-weight:900;
+  letter-spacing:-.08em;
+  color:rgba(255,255,255,.025);
+  pointer-events:none;
+}
+.fz-today-v1 .fz-clean-recommendation .eyebrow{
+  color:var(--fz-accent,#f5cf19);
+  font-size:11px;
+  letter-spacing:.16em;
+}
+.fz-today-v1 .fz-clean-recommendation h3{
+  max-width:18ch;
+  margin:18px 0 14px;
+  color:var(--fz-text,#f3f3ee);
+  font-size:clamp(30px,3.2vw,48px);
+  line-height:.98;
+  letter-spacing:-.045em;
+  text-transform:none;
+}
+.fz-today-v1 .fz-clean-recommendation>p{
+  max-width:74ch;
+  margin:0;
+  color:#e3e1d9;
+  font-size:14px;
+  line-height:1.65;
+}
+.fz-today-v1 .fz-clean-recommendation .microline{
+  max-width:74ch;
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid rgba(255,255,255,.08);
+  color:#9f9d95;
+  font-size:11px;
+  line-height:1.55;
+}
+.fz-today-v1 .fz-clean-recommendation .microline strong{color:#d9d6ca}
+.fz-today-v1 .fz-intelligence-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:auto;
+  padding-top:20px;
+}
+.fz-today-v1 .fz-intelligence-status{
+  flex:1;
+  color:#87857d;
+  font-size:10px;
+  line-height:1.45;
+}
+
+/* Readiness supports the decision instead of competing with it. */
+.fz-today-v1 .fz-clean-readiness{
+  order:2;
+  min-height:292px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:18px;
+  padding:26px;
+  background:linear-gradient(160deg,#111 0%,#0a0a0a 70%);
+  border:1px solid var(--fz-border,#2b2b2b);
+  box-shadow:none;
+}
+.fz-today-v1 .fz-clean-readiness .ring{flex:0 0 auto}
+.fz-today-v1 .fz-clean-readiness .score strong{font-size:38px;letter-spacing:-.05em}
+.fz-today-v1 .fz-clean-readiness .score span{font-size:9px;letter-spacing:.08em}
+.fz-today-v1 .fz-clean-readiness .hero-copy{min-width:0}
+.fz-today-v1 .fz-clean-readiness .tag{margin-bottom:10px}
+.fz-today-v1 .fz-clean-readiness .hero-copy h2{
+  display:-webkit-box;
+  overflow:hidden;
+  -webkit-line-clamp:4;
+  -webkit-box-orient:vertical;
+  margin:0;
+  font-size:14px;
+  line-height:1.5;
+  letter-spacing:-.01em;
+}
+.fz-today-v1 .fz-clean-readiness .hero-copy p{
+  display:-webkit-box;
+  overflow:hidden;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  margin:10px 0 0;
+  color:#8f8e87;
+  font-size:11px;
+  line-height:1.5;
+}
+
+/* Live physiology: dense, scannable and clearly time-qualified. */
+.fz-today-live{
+  padding:20px;
+  border:1px solid #242424;
+  border-radius:18px;
+  background:linear-gradient(180deg,#090909 0%,#070707 100%);
+}
+.fz-today-live .section-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:20px;
+  margin-bottom:14px;
+}
+.fz-today-live .section-head h2{margin:0;font-size:20px}
+.fz-today-live .section-head p{max-width:70ch;margin:0;text-align:right}
+.fz-today-live .fz-live-physiology-v3{margin-top:0}
+.fz-today-live .fz-live-toolbar{
+  padding:10px 0 14px;
+  border-top:1px solid #1d1d1d;
+}
+.fz-today-live .fz-live-anchor-row{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.fz-today-live .fz-live-anchor-row>div{
+  min-height:104px;
+  padding:16px;
+  background:#0d0d0d;
+  border:1px solid #242424;
+  border-radius:13px;
+}
+.fz-today-live .fz-live-anchor-row small{font-size:9px;letter-spacing:.07em}
+.fz-today-live .fz-live-anchor-row b{font-size:24px;letter-spacing:-.035em}
+.fz-today-live .fz-live-chart-grid-v3{gap:8px;margin-top:8px}
+.fz-today-live .fz-live-chart-v3{background:#0b0b0b}
+
+/* Training and thought form the second decision layer on desktop. */
+.fz-today-training,
+.fz-thought-section{min-width:0}
+.fz-today-training .section-head h2{font-size:19px}
+.fz-today-training .fz-training-focus{
+  min-height:220px;
+  padding:22px;
+  background:linear-gradient(150deg,#0c0c0c,#090909);
+}
+.fz-today-training .fz-training-focus h3{font-size:22px;letter-spacing:-.025em}
+
+.fz-thought-section{height:100%}
+.fz-thought-card{
+  position:relative;
+  min-height:292px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+  padding:24px;
+  border:1px solid #3a3520;
+  border-radius:18px;
+  background:
+    linear-gradient(135deg,rgba(245,207,25,.07),transparent 42%),
+    repeating-linear-gradient(118deg,transparent 0,transparent 26px,rgba(255,255,255,.014) 27px,rgba(255,255,255,.014) 28px),
+    #0b0b0a;
+  box-shadow:0 18px 42px rgba(0,0,0,.22);
+}
+.fz-thought-card::after{
+  content:"\201C";
+  position:absolute;
+  right:18px;
+  top:12px;
+  color:rgba(245,207,25,.13);
+  font-size:92px;
+  line-height:1;
+  font-family:Georgia,serif;
+}
+.fz-thought-top{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  color:#a09e95;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+.fz-thought-top span{color:var(--fz-accent,#f5cf19)}
+.fz-thought-top b{color:#76746d;font-size:8px}
+.fz-thought-card blockquote{
+  position:relative;
+  z-index:1;
+  max-width:18ch;
+  margin:34px 0 30px;
+  padding:0;
+  color:#f2efe5;
+  font-size:clamp(22px,2.25vw,31px);
+  font-weight:650;
+  line-height:1.12;
+  letter-spacing:-.035em;
+}
+.fz-thought-card blockquote::before{
+  content:"";
+  display:block;
+  width:38px;
+  height:3px;
+  margin-bottom:18px;
+  background:var(--fz-accent,#f5cf19);
+}
+.fz-thought-foot{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.07);
+  color:#6e6c65;
+  font-size:8px;
+  letter-spacing:.08em;
+}
+.fz-thought-foot strong{color:#9b998f;font-size:8px}
+
+/* Shell polish: quieter chrome, stronger product content. */
+.topbar{align-items:flex-start}
+.topbar .mast{max-width:860px}
+.mast .kicker{color:#88867f}
+.mast h1{font-size:clamp(34px,4.2vw,58px);line-height:.95}
+.subtitle{max-width:76ch}
+.fresh{min-width:210px}
+.side-note{line-height:1.6;color:#696861}
+
+@media(max-width:1100px){
+  #today.fz-today-v1{grid-template-columns:1fr}
+  #today.fz-today-v1>.fz-clean-hero,
+  #today.fz-today-v1>.fz-today-live,
+  #today.fz-today-v1>.fz-today-training,
+  #today.fz-today-v1>.fz-thought-section{grid-column:1}
+  .fz-today-v1 .fz-clean-hero{grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr)}
+  .fz-thought-card{min-height:240px}
+  .fz-thought-card blockquote{max-width:28ch}
+}
+
+@media(max-width:760px){
+  #today.fz-today-v1{display:flex;flex-direction:column;gap:18px}
+  .fz-today-v1 .fz-clean-hero{display:flex;flex-direction:column;gap:10px}
+  .fz-today-v1 .fz-clean-recommendation{order:1;min-height:auto;padding:24px 20px 22px}
+  .fz-today-v1 .fz-clean-recommendation h3{max-width:none;font-size:32px;line-height:1.02}
+  .fz-today-v1 .fz-clean-recommendation>p{font-size:13px;line-height:1.58}
+  .fz-today-v1 .fz-intelligence-controls{align-items:stretch;flex-direction:column}
+  .fz-today-v1 .fz-intelligence-status{font-size:9px}
+  .fz-today-v1 .fz-clean-readiness{order:2;min-height:auto;display:grid;grid-template-columns:auto 1fr;align-items:center;padding:18px;gap:16px}
+  .fz-today-v1 .fz-clean-readiness .hero-copy h2{-webkit-line-clamp:3;font-size:13px}
+  .fz-today-v1 .fz-clean-readiness .hero-copy p{-webkit-line-clamp:2;font-size:10px}
+  .fz-today-live{padding:16px}
+  .fz-today-live .section-head{align-items:flex-start;flex-direction:column;gap:5px}
+  .fz-today-live .section-head p{text-align:left;font-size:10px}
+  .fz-today-live .fz-live-anchor-row{grid-template-columns:1fr 1fr}
+  .fz-today-live .fz-live-anchor-row>div{min-height:92px;padding:13px}
+  .fz-today-live .fz-live-anchor-row b{font-size:21px}
+  .fz-today-live .fz-live-chart-grid-v3{grid-template-columns:1fr}
+  .fz-today-training .fz-training-focus{min-height:auto;padding:18px}
+  .fz-thought-card{min-height:230px;padding:20px}
+  .fz-thought-card blockquote{max-width:21ch;margin:28px 0 24px;font-size:25px}
+  .topbar{gap:12px;margin-bottom:24px}
+  .topbar .mast h1{font-size:34px}
+  .topbar .subtitle{display:none}
+  .fresh .label,.fresh .stamp{display:none}
+  .fresh{min-width:0}
+}
+
+@media(max-width:470px){
+  .fz-today-v1 .fz-clean-recommendation h3{font-size:29px}
+  .fz-today-v1 .fz-clean-readiness{grid-template-columns:1fr;align-items:flex-start}
+  .fz-today-v1 .fz-clean-readiness .ring{transform:scale(.92);transform-origin:left center}
+  .fz-thought-top{align-items:flex-start;flex-direction:column;gap:6px}
+  .fz-thought-card blockquote{font-size:23px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .fz-today-v1 *{scroll-behavior:auto}
+}
