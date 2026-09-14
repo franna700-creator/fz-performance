@@ -38,9 +38,12 @@ assert.equal(classifyChoiceResponse(mixed),'MIXED');
 
 assert.match(store,/recordType:RECORD_TYPE/,'choice outcome observations must use the existing append-only intelligence ledger rather than new schema');
 assert.match(store,/record_type='planned_workout'/,'response linkage must recover the canonical FZ plan attached to the execution');
+assert.match(store,/readLatestLinkedAthleteResponse/,'execution reconciliation must be able to recover Athlete Voice that was linked before the FZ plan arrived');
+assert.match(store,/e\.occurred_at>=\$\{actualStartAt\}/,'late response recovery must not borrow pre-execution athlete state');
+assert.match(store,/CHOICE_EVENT_TYPES/,'athlete choice events must not be misclassified as post-execution response');
 assert.doesNotMatch(store,/recommendation-shadow|active-recommendation|recomputeRecommendation/i,'observation persistence must not directly influence recommendation logic');
-assert.match(reconcile,/persistChoiceOutcome\(/,'planned-intent execution reconciliation must create the first outcome observation');
+assert.match(reconcile,/persistChoiceOutcome\(/,'planned-intent execution reconciliation must create or enrich the outcome observation');
 assert.match(athleteResponse,/persistChoiceOutcomeResponse\(/,'direct Athlete Voice linked to an execution must enrich the existing outcome observation');
 assert.match(athleteResponse,/choiceOutcome\?\.observation\?\['choice\.outcome'\]/,'outcome evidence may propagate as evidence but remains separate from the materiality-driven recommendation trigger');
 
-console.log('PASS Tranche 4.5 outcome layer: choice → execution → response persists as observation-only learning evidence without recommendation influence');
+console.log('PASS Tranche 4.5 outcome layer: choice → execution → response persists and late-binds as observation-only learning evidence without recommendation influence');
