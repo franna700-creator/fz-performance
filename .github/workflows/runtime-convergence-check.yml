@@ -1,0 +1,46 @@
+name: runtime-convergence-check
+
+on:
+  push:
+    branches:
+      - runtime-convergence-check-d1309c54
+
+permissions:
+  contents: read
+
+jobs:
+  converge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger canonical intelligence refresh on production
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST \
+            -H 'content-type: application/json' \
+            --data '{"sources":false}' \
+            https://fz-performance-mvp.vercel.app/api/intelligence/refresh \
+            | tee /tmp/refresh.json
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/refresh.json','utf8'));if(x.ok!==true)throw new Error('refresh_not_ok');"
+      - name: Verify production convergence
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            curl -fsS https://fz-performance-mvp.vercel.app/api/intelligence/current -o /tmp/current.json
+            if node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/current.json','utf8'));
+          const r=x.currentReadiness;
+          const ok=x.ok===true && r && r.engineVersion==='5.0.0-readiness.1' && r.localDate==='2026-09-14' && r.status==='READY' && x.pending?.readiness===false && x.pendingPropagation===false && x.dependencyState?.canonicalReadinessCurrent===true;
+          if(!ok) process.exit(1);
+          if(!(Number(r.score)>=79 && Number(r.score)<=85)) throw new Error('readiness_score_out_of_expected_calibration');
+          if(r.band!=='PROCEED WITH CONTROL') throw new Error('unexpected_readiness_band');
+          console.log(JSON.stringify({revision:x.revision,readiness:{score:r.score,band:r.band,confidence:r.confidence,engineVersion:r.engineVersion,localDate:r.localDate},pending:x.pending,pendingPropagation:x.pendingPropagation,recommendationVersion:x.activeRecommendation?.recommendationVersion||null,recommendationLane:x.activeRecommendation?.fzRecommendedLane||null},null,2));
+          NODE
+            then
+              exit 0
+            fi
+            sleep 3
+          done
+          cat /tmp/current.json
+          exit 1
