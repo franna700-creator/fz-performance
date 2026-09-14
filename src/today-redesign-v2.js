@@ -43,6 +43,7 @@ function v2PageMeta(page){
   return map[page]||map.today;
 }
 function v2TopNavButton(page,label,icon,tone){return `<button type="button" data-page="${page}" class="fz2-topnav-button tone-${tone}"><span class="fz2-topnav-icon">${v2Icon(icon)}</span><span>${label}</span></button>`}
+function v2SetText(el,value){if(el&&el.textContent!==value)el.textContent=value}
 function v2MountTopShell(){
   const main=document.querySelector('.main');if(!main)return;
   document.body.classList.add('fz2-topside-active');
@@ -68,10 +69,9 @@ function v2SyncTopShell(){
   const page=document.querySelector('.page.active')?.id||'today';
   const [title,subtitle]=v2PageMeta(page);
   const date=new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',weekday:'short',day:'2-digit',month:'long',year:'numeric'}).format(new Date());
-  const dateEl=shell.querySelector('[data-fz2-date]'),titleEl=shell.querySelector('[data-fz2-page-title]'),subtitleEl=shell.querySelector('[data-fz2-page-subtitle]');
-  if(dateEl)dateEl.textContent=date;
-  if(titleEl)titleEl.textContent=title;
-  if(subtitleEl)subtitleEl.textContent=subtitle;
+  v2SetText(shell.querySelector('[data-fz2-date]'),date);
+  v2SetText(shell.querySelector('[data-fz2-page-title]'),title);
+  v2SetText(shell.querySelector('[data-fz2-page-subtitle]'),subtitle);
 }
 async function v2Json(url){const response=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`${response.status}`);return response.json()}
 async function v2Load(){
