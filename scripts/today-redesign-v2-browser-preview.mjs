@@ -22,5 +22,19 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://127
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const{port}=server.address();
 const browser=await chromium.launch({headless:true});
-async function capture(name,viewport,isMobile=false){const page=await browser.newPage({viewport,isMobile,hasTouch:isMobile,deviceScaleFactor:1});const errors=[];page.on('pageerror',error=>errors.push(String(error)));await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded',timeout:15000});await page.waitForSelector('#today.fz-today-v2 .fz2-stage',{timeout:6000});await page.waitForSelector('#today .fz2-thought',{timeout:6000});await page.waitForTimeout(900);const metrics=await page.evaluate(()=>({width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:document.querySelector('.fz2-thought blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),legacyHero:!!document.querySelector('#today .fz-clean-hero')}));if(metrics.width>metrics.client+1)throw new Error(`${name} horizontal overflow ${metrics.width}>${metrics.client}`);if(!metrics.decision||!metrics.thought||!metrics.photo)throw new Error(`${name} missing v2 content`);if(metrics.legacyHero)throw new Error(`${name} legacy TODAY hero still present`);if(errors.length)throw new Error(`${name} page errors: ${errors.join(' | ')}`);await page.screenshot({path:path.join(out,`${name}.png`),fullPage:true});await page.close();console.log('CAPTURED',name,metrics);}
+async function capture(name,viewport,isMobile=false){
+  const page=await browser.newPage({viewport,isMobile,hasTouch:isMobile,deviceScaleFactor:1});
+  const errors=[];page.on('pageerror',error=>errors.push(String(error)));
+  await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded',timeout:15000});
+  await page.waitForSelector('#today.fz-today-v2 .fz2-stage',{timeout:6000});
+  await page.waitForSelector('#today .fz2-thought',{timeout:6000});
+  await page.waitForTimeout(900);
+  const metrics=await page.evaluate(()=>{const legacy=document.querySelector('#today .fz-clean-hero');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:document.querySelector('.fz2-thought blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false}});
+  if(metrics.width>metrics.client+1)throw new Error(`${name} horizontal overflow ${metrics.width}>${metrics.client}`);
+  if(!metrics.decision||!metrics.thought||!metrics.photo)throw new Error(`${name} missing v2 content`);
+  if(metrics.legacyVisible)throw new Error(`${name} legacy TODAY hero is still visibly competing with v2`);
+  if(errors.length)throw new Error(`${name} page errors: ${errors.join(' | ')}`);
+  await page.screenshot({path:path.join(out,`${name}.png`),fullPage:true});
+  await page.close();console.log('CAPTURED',name,metrics);
+}
 try{await capture('today-desktop-v2',{width:1440,height:1100},false);await capture('today-mobile-v2',{width:390,height:844},true);console.log('PASS TODAY v2 desktop/mobile visual capture');}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
