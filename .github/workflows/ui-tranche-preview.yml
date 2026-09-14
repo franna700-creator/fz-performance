@@ -5,8 +5,13 @@ on:
     paths:
       - 'src/today-experience.js'
       - 'src/today-experience.css'
+      - 'src/today-redesign-v2.js'
+      - 'src/today-redesign-v2.css'
+      - 'src/fz-training-hero-data.css'
       - 'src/fz-design-system.css'
       - 'scripts/today-experience-browser-preview.mjs'
+      - 'scripts/today-redesign-v2-browser-preview.mjs'
+      - 'scripts/today-redesign-v2-build.mjs'
       - 'scripts/clean-shell.mjs'
       - '.github/workflows/ui-tranche-preview.yml'
   workflow_dispatch:
@@ -29,12 +34,12 @@ jobs:
         run: npm install --no-save playwright@1.56.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Capture desktop and mobile TODAY
-        run: node scripts/today-experience-browser-preview.mjs
-      - name: Upload UI preview
+      - name: Capture rebuilt desktop and mobile TODAY
+        run: node scripts/today-redesign-v2-browser-preview.mjs
+      - name: Upload rebuilt UI preview
         uses: actions/upload-artifact@v4
         with:
-          name: fz-ui-tranche1-preview-${{ github.sha }}
-          path: artifacts/ui-tranche1/
+          name: fz-ui-tranche1-v2-preview-${{ github.sha }}
+          path: artifacts/ui-tranche1-v2/
           if-no-files-found: error
           retention-days: 14
