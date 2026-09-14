@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import { buildChoiceOutcomeObservation, classifyChoiceResponse, CHOICE_OUTCOME_ENGINE_VERSION } from '../lib/choice-outcome.js';
 
 const schema=JSON.parse(fs.readFileSync('schemas/choice-outcome.schema.json','utf8'));
+const store=fs.readFileSync('lib/choice-outcome-store.js','utf8');
+const reconcile=fs.readFileSync('lib/planned-intent-reconcile.js','utf8');
+const athleteResponse=fs.readFileSync('lib/athlete-response-capture.js','utf8');
 assert.equal(schema.properties.contextType.const,'CHOICE_OUTCOME');
 assert.equal(schema.properties.rules.properties.observationOnly.const,true);
 assert.equal(schema.properties.rules.properties.doesNotModifyRecommendation.const,true);
@@ -21,10 +24,11 @@ assert.equal(matched.response,null);
 
 const materiality={level:'RECOMPUTE_RECOMMENDATION',reasonCodes:['ATHLETE_RESPONSE_MATERIAL_NEGATIVE']};
 assert.equal(classifyChoiceResponse(materiality),'NEGATIVE');
-const responded=buildChoiceOutcomeObservation({plan,execution,previous:matched,athleteEvent:{event_key:'athlete:response:1',event_id:101,summary:'This felt much harder than expected.',certainty:'REPORTED',occurred_at:'2026-09-14T18:00:00+02:00'},materiality});
+const responded=buildChoiceOutcomeObservation({plan,execution:{...execution,metrics:{}},previous:matched,athleteEvent:{event_key:'athlete:response:1',event_id:101,summary:'This felt much harder than expected.',certainty:'REPORTED',occurred_at:'2026-09-14T18:00:00+02:00'},materiality});
 assert.equal(responded.observationState,'RESPONSE_OBSERVED');
 assert.equal(responded.response.direction,'NEGATIVE');
 assert.equal(responded.calibration.signal,'POSSIBLE_COST_UNDERPREDICTION');
+assert.equal(responded.execution.durationSeconds,2700,'later sparse response linkage must preserve richer execution evidence');
 assert.equal(responded.rules.noCausalClaimFromSingleOutcome,true,'one response may be learning evidence but must not become a coaching rule');
 
 const positive={level:'UPDATE_STATE',reasonCodes:['ATHLETE_RESPONSE_MATERIAL_POSITIVE']};
@@ -32,4 +36,11 @@ assert.equal(classifyChoiceResponse(positive),'POSITIVE');
 const mixed={level:'UPDATE_STATE',reasonCodes:['ATHLETE_RESPONSE_MATERIAL_POSITIVE','DOMS_MODERATE']};
 assert.equal(classifyChoiceResponse(mixed),'MIXED');
 
-console.log('PASS Tranche 4.5 outcome preparation: choice → execution → response is observable without recommendation influence');
+assert.match(store,/recordType:RECORD_TYPE/,'choice outcome observations must use the existing append-only intelligence ledger rather than new schema');
+assert.match(store,/recordType='planned_workout'/,'response linkage must recover the canonical FZ plan attached to the execution');
+assert.doesNotMatch(store,/recommendation-shadow|active-recommendation|recomputeRecommendation/i,'observation persistence must not directly influence recommendation logic');
+assert.match(reconcile,/persistChoiceOutcome\(/,'planned-intent execution reconciliation must create the first outcome observation');
+assert.match(athleteResponse,/persistChoiceOutcomeResponse\(/,'direct Athlete Voice linked to an execution must enrich the existing outcome observation');
+assert.match(athleteResponse,/choiceOutcome\?\.observation\?\['choice\.outcome'\]/,'outcome evidence may propagate as evidence but remains separate from the materiality-driven recommendation trigger');
+
+console.log('PASS Tranche 4.5 outcome layer: choice → execution → response persists as observation-only learning evidence without recommendation influence');
