@@ -164,7 +164,7 @@ try {
   assert(guidanceText.toUpperCase().includes('MODERATE'), 'recommended option exposes composition confidence');
   assert(guidanceText.includes('Current canonical readiness'), 'recommended option exposes concise evidence basis');
   assert(!trainText.includes('option:test:absorb'), 'internal option identity is not the primary athlete-facing interaction');
-  await page.locator('.fz-alternate-lanes summary').click();
+  await page.locator('.fz-alternate-lanes > summary').click();
   await page.waitForSelector('.fz-alternate-lanes[open]');
   assert((await page.locator('.fz-alternate-lanes').innerText()).includes('Controlled steady aerobic'), 'alternate lane exposes the actual MAINTAIN option, not only its count');
   assert((await page.locator('.fz-alternate-lanes').innerText()).includes('40–60 min controlled steady work'), 'alternate option exposes its prescribed dose');
