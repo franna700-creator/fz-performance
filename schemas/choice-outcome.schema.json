@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fz-performance.local/schemas/choice-outcome.schema.json",
+  "title": "FZ Choice Outcome Observation",
+  "type": "object",
+  "required": ["schemaVersion", "contextType", "engineVersion", "decisionId", "selectedLane", "optionId", "plannedSessionId", "executionSessionId", "observationState", "rules"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "contextType": { "const": "CHOICE_OUTCOME" },
+    "engineVersion": { "type": "string", "minLength": 1 },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "recommendationVersion": { "type": ["string", "null"] },
+    "recommendedLane": { "type": ["string", "null"], "enum": ["ABSORB", "MAINTAIN", "ADAPT", null] },
+    "selectedLane": { "type": "string", "enum": ["ABSORB", "MAINTAIN", "ADAPT"] },
+    "optionId": { "type": "string", "minLength": 1 },
+    "plannedSessionId": { "type": "string", "minLength": 1 },
+    "executionSessionId": { "type": "string", "minLength": 1 },
+    "localDate": { "type": ["string", "null"] },
+    "observationState": { "type": "string", "enum": ["EXECUTION_MATCHED", "RESPONSE_OBSERVED"] },
+    "expectedCost": { "type": ["string", "null"] },
+    "execution": { "type": "object" },
+    "response": { "type": ["object", "null"] },
+    "calibration": { "type": "object" },
+    "provenance": { "type": "object" },
+    "rules": {
+      "type": "object",
+      "required": ["observationOnly", "doesNotModifyRecommendation", "noCausalClaimFromSingleOutcome"],
+      "properties": {
+        "observationOnly": { "const": true },
+        "doesNotModifyRecommendation": { "const": true },
+        "noCausalClaimFromSingleOutcome": { "const": true }
+      }
+    }
+  },
+  "additionalProperties": true
+}
