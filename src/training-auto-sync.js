@@ -57,16 +57,17 @@ function mountTrainingSyncToolbar() {
   }
   const status = toolbar.querySelector('[data-training-sync-status]');
   const button = toolbar.querySelector('[data-training-sync-now]');
-  if (status) status.textContent = trainingSyncSummary();
+  const nextStatus = trainingSyncSummary();
+  if (status && status.textContent !== nextStatus) status.textContent = nextStatus;
   if (button) {
+    const nextText = FZ_TRAINING_AUTO_SYNC.busy ? 'Syncing…' : 'Sync workouts';
     button.disabled = FZ_TRAINING_AUTO_SYNC.busy;
-    button.textContent = FZ_TRAINING_AUTO_SYNC.busy ? 'Syncing…' : 'Sync workouts';
+    if (button.textContent !== nextText) button.textContent = nextText;
   }
 }
 
 function canonicalReread(reason) {
   document.dispatchEvent(new CustomEvent('fz:source-persisted', { detail: { source: 'training', reason } }));
-  // Compatibility bridge for the clean shell: focus triggers immediate canonical reread.
   queueMicrotask(() => window.dispatchEvent(new Event('focus')));
 }
 
@@ -94,7 +95,7 @@ async function sourceSyncTraining({ force = false, reason = 'background' } = {})
     FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt = Date.now();
     FZ_TRAINING_AUTO_SYNC.lastResult = payload;
     FZ_TRAINING_AUTO_SYNC.lastError = null;
-    canonicalReread(reason);
+    if (payload?.sync?.meaningfulChange === true || payload?.sync?.propagation?.pendingPropagation === true) canonicalReread(reason);
     return true;
   } catch (error) {
     FZ_TRAINING_AUTO_SYNC.lastError = error instanceof Error ? error.message : String(error);

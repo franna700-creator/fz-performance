@@ -38,26 +38,51 @@ function activeText(active) {
 }
 function overlayRuntime(payload) {
   const active = intelligence?.activeRecommendation;
-  if (!active || !payload?.renderContract?.readiness) return payload;
+  const canonicalReadiness = intelligence?.currentReadiness;
+  if ((!active && !canonicalReadiness) || !payload?.renderContract?.readiness) return payload;
   const next = cloneJson(payload);
   const readiness = next.renderContract.readiness;
   const runtimeDate = dateOnly(next.stateId || next.candidateStateId || next.masterAsOf || readiness.asOfDate);
-  const activeDate = dateOnly(active.localDate);
-  const staleRuntimeReadiness = Boolean(runtimeDate && activeDate && runtimeDate !== activeDate);
-  readiness.primaryDecision = activeText(active) || readiness.primaryDecision;
-  readiness.recommendationLane = active.fzRecommendedLane || null;
-  readiness.recommendationVersion = active.recommendationVersion || null;
-  readiness.recommendationStatus = active.status || null;
-  readiness.asOfDate = activeDate || runtimeDate || null;
+  const activeDate = dateOnly(active?.localDate);
+  const readinessDate = dateOnly(canonicalReadiness?.localDate);
+  const currentDate = readinessDate || activeDate || runtimeDate;
+  const canonicalReadinessCurrent = Boolean(canonicalReadiness && readinessDate && readinessDate === currentDate && canonicalReadiness.engineVersion);
+  const staleRuntimeReadiness = Boolean(runtimeDate && currentDate && runtimeDate !== currentDate);
+
+  if (active) {
+    readiness.primaryDecision = activeText(active) || readiness.primaryDecision;
+    readiness.recommendationLane = active.fzRecommendedLane || null;
+    readiness.recommendationVersion = active.recommendationVersion || null;
+    readiness.recommendationStatus = active.status || null;
+    readiness.successCriteria = active.explanation?.recommendation?.successConditions?.[0] || readiness.successCriteria;
+  }
+  readiness.asOfDate = currentDate || null;
   readiness.runtimeReadinessDate = runtimeDate;
   readiness.runtimeReadinessFresh = !staleRuntimeReadiness;
+
+  if (canonicalReadinessCurrent) {
+    readiness.score = canonicalReadiness.status === 'READY' ? canonicalReadiness.score : null;
+    readiness.readinessBand = canonicalReadiness.band || null;
+    readiness.readinessEngineVersion = canonicalReadiness.engineVersion || null;
+    readiness.readinessConfidence = canonicalReadiness.confidence || null;
+    readiness.readinessInputFingerprint = canonicalReadiness.inputFingerprint || null;
+    readiness.status = active?.status === 'WITHHELD'
+      ? 'CURRENT RECOMMENDATION WITHHELD'
+      : active?.fzRecommendedLane ? `CURRENT · ${active.fzRecommendedLane}` : (canonicalReadiness.band || 'CURRENT READINESS');
+    readiness.systemicRecovery = canonicalReadiness.systemicState || readiness.systemicRecovery;
+    readiness.localTissueState = canonicalReadiness.localTissueState || readiness.localTissueState;
+    readiness.canonicalReadinessCurrent = true;
+    readiness.historicalRuntimeReadinessSuppressed = staleRuntimeReadiness;
+    return next;
+  }
+
   if (staleRuntimeReadiness) {
-    const headline = active.explanation?.athleteFacing?.headline || activeText(active) || 'Current recommendation context is available.';
+    const headline = active?.explanation?.athleteFacing?.headline || activeText(active) || 'Current recommendation context is available.';
     readiness.score = null;
-    readiness.status = active.status === 'WITHHELD' ? 'CURRENT RECOMMENDATION WITHHELD' : `CURRENT · ${active.fzRecommendedLane || 'RECOMMENDATION'}`;
+    readiness.status = active?.status === 'WITHHELD' ? 'CURRENT RECOMMENDATION WITHHELD' : `CURRENT · ${active?.fzRecommendedLane || 'RECOMMENDATION'}`;
     readiness.systemicRecovery = `Current decision state · ${humanDate(activeDate)}. ${headline}`;
     readiness.localTissueState = `Freshness guard: the ${humanDate(runtimeDate)} readiness snapshot is historical and is not being presented as today's readiness.`;
-    readiness.successCriteria = active.explanation?.recommendation?.successConditions?.[0] || readiness.successCriteria;
+    readiness.canonicalReadinessCurrent = false;
   }
   return next;
 }
@@ -121,7 +146,15 @@ async function converge({sources=false}={}){
     const result=await nativeJson('/api/intelligence/refresh',{timeoutMs:sources?45000:20000,method:'POST',payload:{sources}});
     intelligenceError=false;
     if(result?.afterRevision)revision=result.afterRevision;
-    if(result?.activeRecommendation){intelligence={...(intelligence||{}),activeRecommendation:result.activeRecommendation,pendingPropagation:result.pendingPropagation,pending:result.pending,revision:result.afterRevision,affectedSurfaces:result.affectedSurfaces};}
+    intelligence={
+      ...(intelligence||{}),
+      ...(result?.currentReadiness!==undefined?{currentReadiness:result.currentReadiness}:{}),
+      ...(result?.activeRecommendation?{activeRecommendation:result.activeRecommendation}:{}),
+      pendingPropagation:result?.pendingPropagation,
+      pending:result?.pending,
+      revision:result?.afterRevision||revision,
+      affectedSurfaces:result?.affectedSurfaces
+    };
     dispatchCanonicalReread();
     return result;
   } finally {converging=false;decorateRecommendation();}
@@ -135,7 +168,7 @@ async function pollIntelligence(){
     intelligence=next;revision=next.revision||revision;
     if(next.pendingPropagation){await converge({sources:false});return;}
     const changed=Boolean(previousRevision&&next.revision&&previousRevision!==next.revision);
-    if(changed||(!initialIntelligenceApplied&&next.activeRecommendation))dispatchCanonicalReread();
+    if(changed||(!initialIntelligenceApplied&&(next.activeRecommendation||next.currentReadiness)))dispatchCanonicalReread();
     initialIntelligenceApplied=true;decorateRecommendation();
   }catch{intelligenceError=true;decorateRecommendation();}
 }
@@ -145,8 +178,9 @@ function statusText(){
   if(converging)return'Reconciling new evidence through FZ intelligence…';
   if(stalePaths.size)return`Showing last known canonical state · ${stalePaths.size} live read${stalePaths.size===1?'':'s'} unavailable.`;
   if(intelligenceError)return'Intelligence refresh is temporarily unavailable · current canonical display retained.';
-  if(intelligence?.pendingPropagation)return'New evidence detected · recommendation propagation pending.';
+  if(intelligence?.pendingPropagation)return'New evidence detected · readiness/recommendation propagation pending.';
   if(intelligence?.activeRecommendation?.status==='WITHHELD')return'Recommendation withheld by the intelligence contract · no stale lane substituted.';
+  if(intelligence?.currentReadiness?.status==='READY'&&intelligence?.activeRecommendation)return`FZ Readiness ${intelligence.currentReadiness.score} · active recommendation reconciled to canonical truth.`;
   if(intelligence?.activeRecommendation)return'Active recommendation reconciled to canonical truth.';
   return'Active recommendation is not yet available.';
 }

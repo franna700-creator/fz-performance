@@ -18,7 +18,9 @@ const memoryIndex=responseBody.indexOf('await recordAthleteMemory(normalized)');
 const materialityIndex=responseBody.indexOf('await persistMaterialityAssessment(');
 const propagationIndex=responseBody.indexOf('await propagateCanonicalChangeSafely(');
 assert.ok(memoryIndex>=0&&materialityIndex>memoryIndex&&propagationIndex>materialityIndex,'Athlete evidence must persist before materiality and propagation');
-assert.match(responseBody,/changedNodes:\['source\.athlete\.feedback','athlete\.memory','materiality\.current'\]/,'Athlete ingestion must enter canonical dependency propagation');
+for(const requiredNode of ["'source.athlete.feedback'","'athlete.memory'","'materiality.current'"])assert.ok(responseBody.includes(requiredNode),`Athlete ingestion propagation missing core node ${requiredNode}`);
+assert.match(responseBody,/choiceOutcome\?\.observation\?\['choice\.outcome'\]/,'Outcome observation may join propagation only when it actually exists');
+assert.match(responseBody,/changedNodes:\['source\.athlete\.feedback','athlete\.memory','materiality\.current',\.\.\.\(choiceOutcome\?\.observation\?\['choice\.outcome'\]:\[\]\)\]/,'Athlete ingestion must preserve core propagation while adding choice.outcome only as observed evidence');
 
 const propagation=fs.readFileSync('lib/canonical-propagation.js','utf8');
 assert.match(propagation,/affectedNodes/,'Propagation must execute dependency graph closure');
@@ -68,6 +70,7 @@ assert.match(shell,/canonicalTrainingMetrics:true/,'Release contract must identi
 
 console.log('PASS architecture closeout regression matrix');
 console.log('  ✓ natural athlete input -> Athlete Memory -> materiality -> executable dependency propagation');
+console.log('  ✓ observed choice outcomes are additive evidence and do not replace core materiality propagation');
 console.log('  ✓ recommendation-grade evidence -> 4.2 shadow -> 4.3 active projection');
 console.log('  ✓ Tredict/Garmin -> canonical session/evidence -> dependent intelligence + TRAIN/TRENDS');
 console.log('  ✓ late Athlete Memory binding participates in propagation');

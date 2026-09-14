@@ -27,11 +27,16 @@ assert.match(athleteResponse,/materiality,/,'Athlete Voice propagation must carr
 
 assert.match(canonicalPropagation,/const recommendationAffected = closure\.includes\('recommendation\.shadow'\)/,'recommendation recomputation must be dependency-closure aware');
 assert.match(canonicalPropagation,/materiality\?\.shouldRecomputeRecommendation === true/,'canonical propagation must keep ordinary recommendation recomputation materiality-gated');
-assert.match(canonicalPropagation,/forceRecommendationRecompute \|\| materiality\?\.shouldRecomputeRecommendation === true/,'only an explicit systemic convergence path may bypass the ordinary materiality gate');
+assert.match(canonicalPropagation,/const readinessChanged = readiness\?\.changed === true/,'canonical readiness change must be an explicit versioned decision-input trigger');
+assert.match(canonicalPropagation,/forceRecommendationRecompute \|\|\s*readinessChanged \|\|\s*materiality\?\.shouldRecomputeRecommendation === true/s,'only explicit systemic convergence, a canonical readiness change, or recommendation-grade materiality may trigger recomputation');
+assert.match(canonicalPropagation,/recomputeCurrentReadinessSafely/,'canonical propagation must compute readiness before the recommendation shadow');
+assert.ok(canonicalPropagation.indexOf('recomputeCurrentReadinessSafely') < canonicalPropagation.lastIndexOf('recomputeRecommendationShadowSafely'),'readiness must be recomputed upstream of the recommendation shadow');
 assert.match(canonicalPropagation,/recomputeRecommendationShadowSafely/,'canonical propagation must own immutable 4.2 shadow recomputation');
 assert.match(canonicalPropagation,/persistActiveRecommendationFromShadow/,'canonical propagation must own controlled 4.3 projection when recommendation.current is actually pending');
 
 assert.doesNotMatch(shadowStore,/active-recommendation-store|recordType:\s*['"]recommendation['"]/,'4.2 shadow persistence itself must remain isolated from active recommendation writes');
+assert.match(intelligenceRefresh,/current\.pending\.readiness/,'systemic refresh must detect a pending canonical readiness derivation');
+assert.match(intelligenceRefresh,/INTELLIGENCE_REFRESH_READINESS/,'readiness convergence must retain explicit trigger provenance');
 assert.match(intelligenceRefresh,/current\.pending\.activeRecommendation/,'systemic refresh must detect a pending active recommendation projection');
 assert.match(intelligenceRefresh,/changedNodes:\['recommendation\.shadow'\]/,'systemic refresh must converge pending 4.3 projection through canonical propagation rather than bypassing it');
 assert.match(intelligenceRefresh,/forceRecommendationRecompute:true/,'systemic refresh must retain an explicit forced convergence path for stale decision inputs');
@@ -42,4 +47,8 @@ for(const source of ['source.tredict.activity','source.garmin.activity','source.
   assert.ok(closure.includes('recommendation.current'),`${source} must reach controlled 4.3 recommendation.current projection`);
   assert.ok(closure.includes('ui.today'),`${source} must reach the athlete-facing TODAY dependency closure in 4.3`);
 }
-console.log('PASS executable 4.3 trigger coverage: evidence reaches materiality, centralized propagation, immutable shadow, controlled active projection and TODAY closure');
+for(const source of ['source.garmin.wellness','source.athlete.feedback']){
+  const closure=affectedNodes(source);
+  assert.ok(closure.includes('readiness.current'),`${source} must reach canonical readiness before adaptive recommendation`);
+}
+console.log('PASS executable readiness + recommendation trigger coverage: evidence reaches materiality/readiness, immutable shadow, controlled active projection and TODAY closure');

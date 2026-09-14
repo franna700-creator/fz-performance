@@ -8,7 +8,9 @@ on:
       - 'src/adaptive-choice.js'
       - 'src/training-memory-rich.js'
       - 'src/ui-context-recovery.js'
+      - 'src/layout-stability.js'
       - 'scripts/mobile-shell-browser-smoke.mjs'
+      - 'scripts/layout-stability-browser-smoke.mjs'
       - 'scripts/clean-shell.mjs'
       - 'package.json'
       - '.github/workflows/mobile-shell-browser.yml'
@@ -29,8 +31,10 @@ jobs:
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - name: Install pinned Playwright
-        run: npm install --no-save playwright@1.55.0
+        run: npm install --no-save playwright@1.56.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Exercise the complete mobile shell in a real browser
         run: node scripts/mobile-shell-browser-smoke.mjs
+      - name: Exercise TODAY/TRENDS viewport stability
+        run: node scripts/layout-stability-browser-smoke.mjs
