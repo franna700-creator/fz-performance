@@ -26,7 +26,7 @@ const endpoint=fs.readFileSync('api/training/athlete-event.js','utf8');
 assert.match(endpoint,/AUTHENTICATED_ADAPTIVE_CHOICE_ONLY/);
 assert.match(endpoint,/validRuntimeBearer/,'existing trusted runtime bearer path must remain available');
 assert.match(endpoint,/requireAthleteSession\(req,\{csrf:true,consumeNonce:true\}\)/,'browser choice writes must require session, CSRF and replay nonce');
-assert.match(endpoint,/kind==='ATHLETE_RESPONSE'/);
+assert.match(endpoint,/kind!=='ATHLETE_RESPONSE'/,'Athlete Memory writes must remain a separate trusted-runtime path');
 const client=fs.readFileSync('src/adaptive-choice.js','utf8');
 assert.match(client,/ATHLETE MODE · EDITING ENABLED/);
 assert.match(client,/X-FZ-CSRF/);
