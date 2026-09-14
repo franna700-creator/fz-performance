@@ -27,7 +27,52 @@ The protocol family owns:
 - comparison metrics;
 - protocol version and fingerprint.
 
-## 2. Benchmark + development-variant model
+## 2. Measurement priority by adaptive lane
+
+Measurement rigor is not equally important across all adaptive lanes.
+
+### ABSORB — LOW measurement priority
+ABSORB exists primarily to preserve recovery, movement and future training value. These sessions still need exact execution instructions and basic capture, but they do not need to become formal benchmarks unless a specific recovery question requires it.
+
+Default treatment:
+- prescription must be executable and safe;
+- capture compliance, duration, intensity anchor and notable symptoms/response;
+- comparison class normally `TRAINING_ONLY`;
+- no requirement to force repeated recovery sessions into a benchmark series.
+
+### MAINTAIN — HIGH measurement priority
+MAINTAIN should preserve known capability and make deterioration, stability or unexpected efficiency changes visible over time.
+
+Recurring MAINTAIN categories that materially support the athlete objective should therefore resolve to stable protocol families wherever practical. The aim is not to turn every maintenance workout into a test, but to retain a consistent enough measurement spine that FZ can tell whether the maintained capability is actually being preserved.
+
+Priority families include:
+- controlled aerobic / running efficiency;
+- strength reserve maintenance;
+- hybrid movement / transition economy when relevant to the primary event;
+- other objective-linked maintenance categories that recur often enough to justify comparison.
+
+### ADAPT — VERY HIGH measurement priority
+ADAPT is where FZ deliberately spends recovery budget to create or measure adaptation. Therefore each important ADAPT category should be strongly protocolised.
+
+A released ADAPT option should normally resolve to a known protocol family before the athlete can select it. Generic quality work that cannot explain its family, measurement question, comparison class and required capture should be withheld or explicitly marked `TRAINING_ONLY` rather than presented as measurement-grade adaptation.
+
+Priority families include:
+- compromised running repeatability;
+- matched Run AET / controlled running efficiency;
+- wall-ball tolerance / repeatability;
+- erg efficiency;
+- station work-rate / sled capability;
+- strength-endurance repeatability;
+- other primary-objective gaps that become recurring decision targets.
+
+### Coverage rule
+For Tranche 4.6 release readiness:
+- ABSORB may remain largely execution-structured without a benchmark family;
+- MAINTAIN options that materially support the primary objective should carry a protocol family or an explicit reason why comparison is not useful;
+- ADAPT options must carry a protocol family unless intentionally classified `TRAINING_ONLY` with a documented reason;
+- a generic fallback such as `targeted-quality` may not silently masquerade as a measurable protocol.
+
+## 3. Benchmark + development-variant model
 
 Each important protocol family should support two related use cases.
 
@@ -66,7 +111,7 @@ This prevents two errors:
 - making training so rigid that progression is impossible;
 - changing so much every time that longitudinal comparison becomes meaningless.
 
-## 3. Comparison classes
+## 4. Comparison classes
 
 Every prescribed session should declare one of three comparison classes:
 
@@ -82,7 +127,57 @@ or
 
 `Training variant · same capability, but today’s reduced volume means total-time comparison is not valid.`
 
-## 4. Compromised Running example architecture
+## 5. Initial protocol-family coverage map
+
+The first 4.6 registry should cover the categories already emitted by the current 4.4 option composer.
+
+### MAINTAIN
+
+`STEADY_AEROBIC_EFFICIENCY`
+- maps current `Controlled steady aerobic`;
+- measurement spine: duration, route/treadmill assumption, RPE/HR envelope, pace or power, HR drift/decoupling where valid, cadence where reliable, post-session RPE;
+- benchmark use: periodic, not every exposure;
+- ordinary maintenance exposures may be `FAMILY_COMPARABLE`.
+
+`STRENGTH_RESERVE_MAINTENANCE`
+- maps current `Strength maintenance`;
+- measurement spine: movement identity, load, reps, sets, RIR, rest, technical completion standard, pain/local limiter;
+- comparison focus: same-movement strength reserve and effort cost rather than generic gym volume.
+
+`HYBRID_TRANSITION_ECONOMY`
+- maps current `Controlled hybrid technique`;
+- measurement spine: fixed transition sequence, submaximal station prescription, running/erg transition rules, movement-quality standard and transition time where useful;
+- benchmark use only when the protocol is sufficiently standardised.
+
+### ADAPT
+
+`COMPROMISED_RUNNING_REPEATABILITY`
+- maps `Compromised running repeatability`;
+- high-value benchmark family.
+
+`MATCHED_RUN_AET`
+- maps `Matched Run AET`;
+- benchmark protocol should preserve the established matched AET structure exactly within version.
+
+`WALL_BALL_TOLERANCE`
+- maps `Standardised Wall Ball tolerance`;
+- benchmark protocol should include local next-day/48 h response as part of the measurement spine.
+
+`ERG_EFFICIENCY`
+- maps `Standardised erg efficiency`;
+- benchmark invariants include erg type, distance/work unit, machine settings where material, recovery and output target.
+
+`STATION_WORK_RATE`
+- maps `Standardised station work-rate` and may specialise into sled or other station-specific child protocols;
+- benchmark invariants must include qualified load, movement standard, work unit, recovery and downstream-cost capture.
+
+`STRENGTH_ENDURANCE_REPEATABILITY`
+- used when the unresolved capability is strength-endurance rather than a specific station;
+- measurement spine should preserve exercise/load/reps/rest and degradation metrics.
+
+No ADAPT family should infer race-load values that are not present in authoritative event or athlete capability data.
+
+## 6. Compromised Running example architecture
 
 The exact final prescription must be calibrated before release, but the family structure should resemble:
 
@@ -110,13 +205,14 @@ Primary comparison should focus on the variables that answer the capability ques
 
 The benchmark should not be scored as "better" simply because one session used less pre-fatigue or longer recovery.
 
-## 5. Protocol versioning and provenance
+## 7. Protocol versioning and provenance
 
 Every execution-grade prescription should carry at minimum:
 - `protocolFamilyId`;
 - `protocolVersion`;
 - `prescriptionLevel` (`SIMPLE`, `STRUCTURED`, `PROTOCOL`);
 - `comparisonClass`;
+- `measurementPriority`;
 - `prescriptionFingerprint`;
 - `benchmarkInvariants`;
 - `declaredVariantChanges`;
@@ -129,7 +225,7 @@ The execution reconciler should preserve:
 
 `recommendation → selected option → exact prescription → execution fidelity → athlete response → outcome observation`
 
-## 6. Progression policy
+## 8. Progression policy
 
 Progression should be explicit rather than silently changing the test.
 
@@ -140,7 +236,7 @@ Examples:
 
 FZ should never infer improvement from two materially different tests without clearly qualifying the comparison.
 
-## 7. Athlete PIN enrolment — agreed flow
+## 9. Athlete PIN enrolment — agreed flow
 
 Francois chooses his own PIN. The PIN must be created inside the FZ app and must never be requested or transmitted through ordinary chat.
 
@@ -172,7 +268,7 @@ A valid athlete session may bypass the landing page and resume Athlete Mode dire
 
 PIN reset must not rely on knowing the old PIN alone. It should require a new one-time trusted bootstrap/recovery proof, then allow Francois to choose a new PIN. Reset revokes existing athlete sessions.
 
-## 8. PIN security requirements
+## 10. PIN security requirements
 
 - Francois selects the PIN; FZ does not assign a permanent PIN.
 - Minimum length: 6 digits unless future policy allows a stronger alphanumeric passcode.
@@ -187,16 +283,18 @@ PIN reset must not rely on knowing the old PIN alone. It should require a new on
 - CSRF and replay/idempotency protections remain mandatory for writes.
 - Viewer/share-link sessions can never be promoted to Athlete Mode without successful athlete authentication.
 
-## 9. 4.6 acceptance additions
+## 11. 4.6 acceptance additions
 
 ### Protocol families
+- every high-priority MAINTAIN/ADAPT option resolves to a declared protocol family or carries an explicit `TRAINING_ONLY` reason;
 - repeated benchmark generation for the same family/version is deterministic for all declared invariants;
 - development variants explicitly declare every changed comparison-relevant variable;
 - benchmark sessions cannot be labelled directly comparable when a required invariant differs;
-- planned intent stores protocol family/version/fingerprint;
+- planned intent stores protocol family/version/fingerprint and measurement priority;
 - UI clearly distinguishes benchmark vs family-comparable vs training-only;
 - execution reconciliation retains execution-fidelity evidence;
-- longitudinal comparison uses only metrics valid for the declared comparison class.
+- longitudinal comparison uses only metrics valid for the declared comparison class;
+- ABSORB remains executable and observable without unnecessary benchmark pressure.
 
 ### PIN enrolment
 - first-time setup requires one-time bootstrap proof before PIN creation;
