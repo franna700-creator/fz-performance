@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { evaluateReadiness, mergeCanonicalReadinessIntoContext, READINESS_ENGINE_VERSION } from '../lib/readiness-engine.js';
 
 const history = [
@@ -59,4 +60,10 @@ assert.equal(context.recovery.readinessEngineVersion,READINESS_ENGINE_VERSION);
 assert.deepEqual(context.uncertainty.missing,['x']);
 assert.equal(context.provenance.readinessSource,'FZ_CANONICAL_READINESS');
 
-console.log('PASS canonical readiness engine calibration, local override and adaptive-context projection');
+const readinessStore=fs.readFileSync('lib/readiness-store.js','utf8');
+assert.match(readinessStore,/const RECORD_TYPE = 'event_context'/,'canonical readiness must persist inside the deployed generic event_context ledger envelope');
+assert.match(readinessStore,/payload->>'contextType'=\$\{READINESS_STATE_CONTEXT\}/,'readiness reads must discriminate READINESS_STATE by canonical contextType');
+assert.doesNotMatch(readinessStore,/const RECORD_TYPE = 'readiness'/,'readiness must never invent an unsupported database record_type');
+assert.match(readinessStore,/recordType: RECORD_TYPE/,'readiness persistence must use the same supported record type as its read contract');
+
+console.log('PASS canonical readiness engine calibration, local override, adaptive-context projection and deployed ledger compatibility');
