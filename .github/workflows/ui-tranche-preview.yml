@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/today-experience.js'
       - 'src/today-experience.css'
+      - 'src/fz-design-system.css'
       - 'scripts/today-experience-browser-preview.mjs'
       - 'scripts/clean-shell.mjs'
       - '.github/workflows/ui-tranche-preview.yml'
