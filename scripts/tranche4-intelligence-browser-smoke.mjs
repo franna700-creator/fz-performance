@@ -23,6 +23,12 @@ assert.match(adaptiveChoice, /observer\.observe\(observerRoot,\{childList:true,s
 assert.match(adaptiveChoice, /document\.querySelector\('\.main'\)/, '4.4 observer must be scoped to the application surface rather than the whole document');
 assert.match(adaptiveChoice, /setTimeout\(\(\)=>\{FZ_CHOICE\.renderScheduled=false;render\(\);\},0\)/, '4.4 observer writes must yield to the browser event loop');
 assert.doesNotMatch(adaptiveChoice, /function scheduleRender\(\)[\s\S]*?queueMicrotask/, '4.4 observer must not recursively schedule DOM rewrites in the microtask queue');
+assert.match(adaptiveChoice, /successCondition/, '4.4 option UI must expose the success condition already present in canonical session composition');
+assert.match(adaptiveChoice, /stopCondition/, '4.4 option UI must expose the modify\/stop condition already present in canonical session composition');
+assert.match(adaptiveChoice, /option\.confidence/, '4.4 option UI must expose composition confidence rather than hiding material uncertainty');
+assert.match(adaptiveChoice, /evidenceBasis/, '4.4 option UI may expose concise evidence basis without dumping raw telemetry');
+assert.doesNotMatch(adaptiveChoice, /<code>\$\{esc\(option\.optionId\)\}<\/code>/, 'internal option identity must remain provenance rather than the primary athlete interaction');
+assert.match(adaptiveChoice, /To select it, tell FZ/, 'option selection guidance must use natural athlete language');
 
 const intelligenceScript = '/assets/intelligence-refresh.js';
 const appScript = '/assets/app-clean.js';
@@ -30,4 +36,4 @@ assert(cleanShell.includes(intelligenceScript), 'clean shell must package the 4.
 assert(cleanShell.indexOf(intelligenceScript) < cleanShell.indexOf(appScript), '4.3 intelligence controller must load before app-clean reads canonical APIs');
 assert.match(cleanShell, /\[intelligenceRefreshJs,'intelligence-refresh\.js'\]/, '4.3 controller must be copied into the build artifact through the canonical asset-copy list');
 
-console.log('PASS Tranche 4.3/4.4 browser safety: revision, fail-stale, recommendation wiring and observer idempotence');
+console.log('PASS Tranche 4.3/4.4 browser safety: revision, fail-stale, complete option guidance and observer idempotence');
