@@ -1,6 +1,6 @@
 # Tranche 4.6 Addendum — Repeatable Protocol Families + Athlete PIN Enrolment
 
-Status: PREPARATION ONLY. No production deployment is authorized by this document.
+Status: RELEASE CANDIDATE. Production promotion is not authorized by this document. The original sections below retain the design rationale; the implementation closeout at the end is authoritative for current RC status.
 
 ## 1. Training structure principle
 
@@ -179,9 +179,7 @@ No ADAPT family should infer race-load values that are not present in authoritat
 
 ## 6. Compromised Running example architecture
 
-The exact final prescription must be calibrated before release, but the family structure should resemble:
-
-`COMPROMISED_RUNNING_REPEATABILITY v1`
+The family is implemented as `COMPROMISED_RUNNING_REPEATABILITY v1.0`.
 
 **Question:** Can Francois reproduce target running quality after a controlled, repeatable pre-fatigue exposure?
 
@@ -207,7 +205,7 @@ The benchmark should not be scored as "better" simply because one session used l
 
 ## 7. Protocol versioning and provenance
 
-Every execution-grade prescription should carry at minimum:
+Every execution-grade prescription carries:
 - `protocolFamilyId`;
 - `protocolVersion`;
 - `prescriptionLevel` (`SIMPLE`, `STRUCTURED`, `PROTOCOL`);
@@ -221,13 +219,13 @@ Every execution-grade prescription should carry at minimum:
 
 The selected planned intent stores the exact version/fingerprint. Later recommendation changes must never rewrite what was originally prescribed.
 
-The execution reconciler should preserve:
+The execution reconciler preserves:
 
 `recommendation → selected option → exact prescription → execution fidelity → athlete response → outcome observation`
 
 ## 8. Progression policy
 
-Progression should be explicit rather than silently changing the test.
+Progression is explicit rather than silently changing the test.
 
 Examples:
 - If the goal is **measurement**, repeat the benchmark unchanged.
@@ -236,73 +234,87 @@ Examples:
 
 FZ should never infer improvement from two materially different tests without clearly qualifying the comparison.
 
-## 9. Athlete PIN enrolment — agreed flow
+## 9. Athlete PIN enrolment — implemented flow
 
-Francois chooses his own PIN. The PIN must be created inside the FZ app and must never be requested or transmitted through ordinary chat.
+Francois chooses his own PIN. The PIN is created inside the FZ app and is never requested or transmitted through ordinary chat.
 
 ### First-time athlete establishment
 
-1. New/unrecognised browser opens the FZ landing page.
-2. Francois chooses `Athlete Login / Set up Athlete Access`.
-3. Because no athlete PIN exists yet, FZ requires a **one-time athlete bootstrap proof** generated through a trusted administrative/runtime path.
-4. Successful bootstrap establishes that this browser is performing the initial athlete enrolment; it does not itself become a reusable login credential.
-5. FZ asks Francois to choose a PIN and enter it twice.
-6. Server validates PIN policy, hashes it using the approved password-hashing implementation, stores only the hash, and never logs or returns the PIN.
-7. The bootstrap credential is immediately invalidated.
-8. Server creates the normal opaque HttpOnly/Secure/SameSite athlete session.
-9. App enters `ATHLETE MODE · EDITING ENABLED`.
+1. New/unrecognised browser opens the FZ access gate.
+2. Francois chooses `Set up Athlete Access`.
+3. FZ requires a one-time athlete bootstrap proof supplied through the trusted administrative/runtime path.
+4. FZ asks Francois to choose a PIN and enter it twice.
+5. Server validates a 6–12 digit PIN policy and stores only a salted scrypt hash.
+6. The bootstrap proof is retained only as a digest and cannot be reused unchanged.
+7. Server creates an opaque HttpOnly/Secure/SameSite=Strict athlete session.
+8. App enters `ATHLETE MODE · EDITING ENABLED`.
 
 ### Normal subsequent login
 
-1. Select `Athlete Login` on the landing page.
+1. Select `Athlete Login`.
 2. Enter the chosen PIN.
-3. Server verifies the PIN subject to rate limiting / lockout controls.
-4. Successful verification creates/rotates the athlete session cookie.
+3. Server verifies the PIN subject to progressive backoff and temporary lockout.
+4. Successful verification creates the athlete session.
 5. Browser enters Athlete Mode.
 
-### Already paired / authenticated browser
+### Already authenticated browser
 
-A valid athlete session may bypass the landing page and resume Athlete Mode directly. `Lock Athlete Mode` or logout destroys that session and returns to Viewer Mode.
+A valid athlete session bypasses the role gate and resumes Athlete Mode. `Lock Athlete Mode` revokes that session and returns to Viewer Mode.
 
 ### PIN reset
 
-PIN reset must not rely on knowing the old PIN alone. It should require a new one-time trusted bootstrap/recovery proof, then allow Francois to choose a new PIN. Reset revokes existing athlete sessions.
+PIN reset requires the trusted recovery proof. It increments credential version and revokes existing sessions.
 
-## 10. PIN security requirements
+## 10. PIN security requirements — implemented
 
 - Francois selects the PIN; FZ does not assign a permanent PIN.
-- Minimum length: 6 digits unless future policy allows a stronger alphanumeric passcode.
-- PIN is entered only into the FZ origin over HTTPS.
-- Store only an Argon2id/scrypt-equivalent hash with salt and appropriate cost.
-- No PIN in localStorage, query strings, analytics, logs, browser source, or canonical athlete records.
-- Rate limit and progressive backoff on failed attempts.
-- Temporary lockout after repeated failures.
-- Generic failure response.
-- Successful login rotates the session identifier.
-- Session cookie is HttpOnly, Secure and appropriately SameSite-scoped.
-- CSRF and replay/idempotency protections remain mandatory for writes.
-- Viewer/share-link sessions can never be promoted to Athlete Mode without successful athlete authentication.
+- 6–12 digits.
+- PIN entered only into the FZ origin over HTTPS.
+- salted scrypt hash; no plaintext PIN persistence.
+- no PIN in localStorage, query strings, analytics, browser source or canonical athlete records.
+- progressive backoff and lockout after repeated failures.
+- generic failure response.
+- opaque session cookie is HttpOnly, Secure and SameSite=Strict.
+- CSRF and replay/idempotency protections are mandatory for browser writes.
+- browser Athlete Mode cannot access `FZ_STATE_WRITE_TOKEN`.
+- Viewer Mode cannot mutate canonical athlete state.
 
-## 11. 4.6 acceptance additions
+Authentication data is isolated in dedicated operational tables: `fz_athlete_auth_credentials`, `fz_athlete_auth_sessions` and `fz_athlete_auth_nonces`.
+
+## 11. 4.6 release acceptance
 
 ### Protocol families
-- every high-priority MAINTAIN/ADAPT option resolves to a declared protocol family or carries an explicit `TRAINING_ONLY` reason;
-- repeated benchmark generation for the same family/version is deterministic for all declared invariants;
-- development variants explicitly declare every changed comparison-relevant variable;
-- benchmark sessions cannot be labelled directly comparable when a required invariant differs;
-- planned intent stores protocol family/version/fingerprint and measurement priority;
-- UI clearly distinguishes benchmark vs family-comparable vs training-only;
-- execution reconciliation retains execution-fidelity evidence;
-- longitudinal comparison uses only metrics valid for the declared comparison class;
-- ABSORB remains executable and observable without unnecessary benchmark pressure.
+- high-priority MAINTAIN/ADAPT options resolve to a declared protocol family or explicit `TRAINING_ONLY`/withheld state;
+- prescription fingerprints are deterministic for a fixed family/version;
+- changed comparison-relevant variables are declared;
+- selected planned intent retains protocol family/version/fingerprint and comparison class;
+- UI distinguishes benchmark, family-comparable and training-only evidence;
+- unsupported generic station/load variants fail closed.
 
-### PIN enrolment
+### Recovered established protocols
+
+`MATCHED_RUN_AET v1.1` uses the established MH1.1 preparation and `3 × 13` structure: `30 s work / 15 s recovery`, `4:00` between sets, warm to approximately `75%` maximum HR and work at `85–88%`. It is `FAMILY_COMPARABLE` because historical route/terrain/footwear were not invariant; set durability and Power/HR are stronger anchors than raw pace alone.
+
+`WALL_BALL_TOLERANCE v2.0` fixes the HYROX Open Men race load at `6 kg` with the established `3 × 13 × 30:15 / 4:00` structure and controlled `85–88%` HR target. Future invariant v2.0 repeats are `BENCHMARK_EXACT`. The 2 September baseline remains `FAMILY_COMPARABLE` because the load changed from 14 lb to 5 kg late in Set 3.
+
+### Athlete Mode
 - first-time setup requires one-time bootstrap proof before PIN creation;
-- athlete chooses and confirms PIN inside the FZ origin;
+- athlete chooses and confirms PIN inside FZ;
 - plaintext PIN is never persisted or returned;
-- bootstrap credential becomes unusable after enrolment;
-- normal PIN login establishes Athlete Mode;
-- viewer path requires no PIN and remains read-only;
-- repeated wrong PIN attempts trigger rate limiting/lockout;
-- PIN reset revokes existing athlete sessions;
-- direct mutation without a valid athlete session is rejected server-side.
+- Viewer Mode remains read-only;
+- correct PIN establishes Athlete Mode;
+- wrong attempts trigger backoff/lockout;
+- reset revokes existing sessions;
+- browser `ADAPTIVE_CHOICE` writes require session + same-origin + CSRF + replay nonce;
+- `ATHLETE_RESPONSE` remains on the trusted runtime/ChatGPT ingestion path;
+- direct browser mutation without a valid athlete session is rejected server-side.
+
+### Automated gates
+
+The release candidate is covered by the repository quality suite, protocol-family regression, released-prescription regression, Athlete Mode security regression, mobile-shell real-browser acceptance, secure Athlete Mode real-browser acceptance, live-physiology browser acceptance, training-auto-sync browser acceptance and viewport-stability acceptance.
+
+## 12. Release boundary
+
+This tranche changes software/UI/authentication behaviour and therefore uses the controlled release process. The auth migration and `FZ_ATHLETE_BOOTSTRAP_TOKEN` configuration are release prerequisites and are **not** routine athlete-state changes.
+
+Once deployed, normal athlete feedback, workout ingestion, readiness changes, event changes, recommendation recomputation and supported workout selection remain runtime data operations and must not require another deployment.
