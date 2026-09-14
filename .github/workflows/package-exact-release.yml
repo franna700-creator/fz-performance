@@ -1,0 +1,29 @@
+name: package-exact-release
+
+on:
+  push:
+    branches:
+      - release-package-d1309c54
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d1309c54f1c58f163f017ccac5af25a9d909855e
+          fetch-depth: 1
+      - name: Verify immutable release SHA
+        run: |
+          test "$(git rev-parse HEAD)" = "d1309c54f1c58f163f017ccac5af25a9d909855e"
+      - name: Archive exact tracked source
+        run: git archive --format=zip --output=exact-source-d1309c54.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exact-source-d1309c54
+          path: exact-source-d1309c54.zip
+          if-no-files-found: error
+          retention-days: 2
