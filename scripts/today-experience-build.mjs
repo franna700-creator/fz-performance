@@ -26,4 +26,5 @@ if(!html.includes(scriptTag)){
 if(html.indexOf('/assets/today-experience.css')<html.indexOf('/assets/fz-design-system.css'))throw new Error('TODAY experience CSS must load after the shared design system');
 if(html.indexOf('/assets/today-experience.js')<html.indexOf('/assets/ui-context-recovery.js'))throw new Error('TODAY experience JS must load after canonical/adaptive UI modules');
 fs.writeFileSync(htmlPath,html);
-console.log('PASS TODAY experience assets wired after canonical clean shell');
+await import('./today-redesign-v2-build.mjs');
+console.log('PASS TODAY v1 compatibility assets plus v2 redesign wired');
