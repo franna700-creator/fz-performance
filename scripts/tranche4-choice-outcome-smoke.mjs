@@ -37,7 +37,7 @@ const mixed={level:'UPDATE_STATE',reasonCodes:['ATHLETE_RESPONSE_MATERIAL_POSITI
 assert.equal(classifyChoiceResponse(mixed),'MIXED');
 
 assert.match(store,/recordType:RECORD_TYPE/,'choice outcome observations must use the existing append-only intelligence ledger rather than new schema');
-assert.match(store,/recordType='planned_workout'/,'response linkage must recover the canonical FZ plan attached to the execution');
+assert.match(store,/record_type='planned_workout'/,'response linkage must recover the canonical FZ plan attached to the execution');
 assert.doesNotMatch(store,/recommendation-shadow|active-recommendation|recomputeRecommendation/i,'observation persistence must not directly influence recommendation logic');
 assert.match(reconcile,/persistChoiceOutcome\(/,'planned-intent execution reconciliation must create the first outcome observation');
 assert.match(athleteResponse,/persistChoiceOutcomeResponse\(/,'direct Athlete Voice linked to an execution must enrich the existing outcome observation');
