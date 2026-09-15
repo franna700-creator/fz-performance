@@ -171,7 +171,13 @@ try {
   assert((await page.locator('.fz-alternate-lanes').innerText()).includes('Controlled steady aerobic'), 'alternate lane exposes the actual MAINTAIN option, not only its count');
   assert((await page.locator('.fz-alternate-lanes').innerText()).includes('40–60 min controlled steady work'), 'alternate option exposes its prescribed dose');
   assert((await page.locator('.fz-alternate-lanes').innerText()).includes('No session option is currently released for this lane.'), 'empty alternate lane is explicit rather than pretending options exist');
-  await clickPage('system', 'System Health');
+
+  const systemButton = page.locator('.bottom [data-page="system"]');
+  await systemButton.click({ timeout: 1500 });
+  await page.waitForFunction(() => document.getElementById('system')?.classList.contains('active'), null, { timeout: 1500 });
+  await page.waitForSelector('#system .fz-system-v1 .fz-system-hero', { timeout: 1500 });
+  assert((await page.locator('#system').innerText()).includes('Can I trust what FZ is showing right now?'), 'SYSTEM navigation renders trust-first rationalised content');
+
   await clickPage('today', 'Live Physiology');
 
   await page.waitForTimeout(250);
@@ -179,7 +185,7 @@ try {
   assert(finalPulse > pulse, 'browser event loop remains responsive after repeated navigation');
   assert((requestCounts.get('/api/intelligence/current') || 0) < 10, 'intelligence polling does not run away during initial render');
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'mobile shell has no horizontal overflow');
-  console.log('PASS mobile shell real-browser canonical readiness, complete 4.4 guidance, alternate options, liveness and navigation acceptance');
+  console.log('PASS mobile shell real-browser canonical readiness, complete 4.4 guidance, Phase 4 SYSTEM trust surface, liveness and navigation acceptance');
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
