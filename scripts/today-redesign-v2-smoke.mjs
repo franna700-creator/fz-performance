@@ -26,7 +26,9 @@ for(const [label,photo] of [['legacy',legacyPhoto],['desktop',desktopHero],['mob
   assert.equal(photo[1],0xd8,`${label} hero begins with JPEG SOI byte 2`);
   assert.ok(photo.length>10000,`${label} hero has a non-placeholder production payload`);
 }
+assert.ok(desktopHero.length>25000,'desktop approved hero retains useful production detail');
+assert.ok(mobileHero.length>30000,'mobile approved hero retains useful production detail');
 assert.ok(mobileHero.length>desktopHero.length,'portrait mobile hero retains dedicated crop/detail rather than reusing desktop bytes');
 assert.ok(!js.includes('How are you feeling'),'undeveloped subjective check-in is not exposed');
 assert.ok(!js.includes('Goals & Progress'),'Goals & Progress remains out of tranche 1 live UI');
-console.log('PASS FZ TODAY redesign v2 responsive-hero visual contract');
+console.log('PASS FZ TODAY redesign v2 approved responsive-hero visual contract');
