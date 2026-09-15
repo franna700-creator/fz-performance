@@ -16,7 +16,9 @@ assert.ok(html.includes('/assets/today-redesign-v2.js'),'TODAY v2 JS is wired');
 assert.ok(!html.includes('/assets/today-experience.js')&&!html.includes('/assets/today-experience.css'),'superseded TODAY v1 assets are not wired');
 assert.ok(js.includes("v2Json('/api/runtime-state')")&&js.includes("v2Json('/api/wellness/today?refresh=0')")&&js.includes("v2Json('/api/training/memory?backDays=45&forwardDays=0')"),'TODAY v2 uses existing canonical read contracts');
 assert.ok(js.includes('FZ_TODAY_V2_QUOTES')&&js.includes('v2Quote()')&&js.includes('v2DayOrdinal()'),'daily quote system is deterministic by SAST day');
-assert.ok(js.includes('v2MountTopShell()')&&js.includes("v2TopNavButton('today'")&&js.includes("v2TopNavButton('trends'")&&js.includes("v2TopNavButton('train'")&&js.includes("v2TopNavButton('system'"),'topside desktop navigation is implemented through existing page contracts');
+assert.ok(js.includes('v2MountTopShell()')&&js.includes("v2TopNavButton('today'")&&js.includes("v2TopNavButton('trends'")&&js.includes("v2TopNavButton('train'")&&js.includes("v2TopNavButton('goals'")&&js.includes("v2TopNavButton('system'"),'shared topside navigation natively owns all five product surfaces');
+assert.ok(js.includes("goals:['Goals','Objective runway, capability evidence and progress.']"),'shared shell owns GOALS page metadata');
+assert.ok(js.includes("'\"':'&quot;'"),'TODAY HTML escaping retains complete quote entity');
 assert.ok(js.includes('function v2LiveKind(')&&js.includes('v2DecorateLive(root)')&&js.includes("['heart','cyan']")&&js.includes("['moon','violet']"),'semantic colour/icon decoration is presentation-only and runtime driven');
 assert.ok(css.includes('.fz2-stage')&&css.includes('.fz2-photo')&&css.includes('.fz2-legacy-live'),'new editorial composition preserves the real live physiology engine');
 assert.ok(!css.includes('fz-training-hero.jpg'),'superseded personal-photo fallback is absent from TODAY v2 CSS');
@@ -32,5 +34,4 @@ for(const [label,photo] of [['desktop',desktopHero],['mobile',mobileHero]]){
 assert.notDeepEqual(desktopHero,mobileHero,'desktop and mobile hero assets are dedicated variants');
 assert.ok(!fs.existsSync('dist/assets/fz-training-hero.jpg'),'superseded hero JPEG is not emitted');
 assert.ok(!js.includes('How are you feeling'),'undeveloped subjective check-in is not exposed');
-assert.ok(!js.includes('Goals & Progress'),'Goals & Progress remains out of tranche 1 live UI');
-console.log('PASS FZ TODAY redesign v2 release-candidate visual contract');
+console.log('PASS FZ TODAY redesign v2 five-surface shared-shell visual contract');
