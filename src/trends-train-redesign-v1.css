@@ -1,0 +1,74 @@
+/* FZ Performance — TRENDS + TRAIN redesign v1
+   Presentation only. Athlete truth remains owned by canonical runtime contracts. */
+
+#trends.fz-phase2-trends,#train.fz-phase2-train{--fz-p2-trends:#67d7e7;--fz-p2-train:#91d4a4}
+.fz-phase2-lead{margin:6px 0 26px;padding:28px 30px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-lg);background:linear-gradient(135deg,var(--fz-surface-2),var(--fz-surface-1));box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.fz-phase2-lead>span,.fz-phase2-kicker{display:block;margin-bottom:7px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.fz-phase2-lead h1{max-width:900px;margin:0;color:var(--fz-text);font-size:clamp(30px,4vw,52px);line-height:1.02;letter-spacing:-.045em}
+.fz-phase2-lead p{max-width:760px;margin:12px 0 0;color:var(--fz-text-muted);font-size:14px;line-height:1.55}
+.fz-phase2-lead-trends>span,#trends .fz-phase2-kicker{color:var(--fz-p2-trends)}
+.fz-phase2-lead-train>span,#train .fz-phase2-kicker{color:var(--fz-p2-train)}
+
+.fz-phase2-section{position:relative}
+.fz-phase2-section>.section-head{align-items:flex-end}
+.fz-phase2-section>.section-head h2{font-size:clamp(22px,2.2vw,30px);letter-spacing:-.035em}
+.fz-phase2-section>.section-head p{max-width:780px}
+
+/* TRENDS: interpretation and evidence quality before graph density. */
+#trends .fz-phase2-summary{margin-top:0}
+#trends .fz-phase2-summary .fz-signal-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#trends .fz-phase2-summary .fz-signal-card{min-height:154px;padding:18px;background:linear-gradient(180deg,var(--fz-surface-2),var(--fz-surface-1));border-color:var(--fz-border)}
+#trends .fz-phase2-summary .fz-signal-card .eyebrow{color:var(--fz-p2-trends)}
+#trends .fz-phase2-summary .fz-signal-card p{margin-top:12px;font-size:13px;line-height:1.6;color:var(--fz-text)}
+#trends .fz-phase2-gaps{padding:20px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-lg);background:var(--fz-surface-1)}
+#trends .fz-phase2-gaps .cap-grid{margin-top:8px}
+#trends .fz-phase2-recovery .two,#trends .fz-phase2-performance .two{gap:14px}
+#trends .chart-card{overflow:hidden;background:var(--fz-surface-1);border-color:var(--fz-border)}
+#trends .chart-card h3{font-size:17px;letter-spacing:-.02em}
+#trends .fz-clean-chart{min-height:210px}
+#trends .fz-phase2-exposure .card.chart-card{box-shadow:inset 2px 0 0 rgba(103,215,231,.55)}
+#trends .fz-phase2-performance .kpi-row{gap:10px}
+#trends .fz-phase2-performance .kpi{background:var(--fz-surface-1);border-color:var(--fz-border);border-radius:var(--fz-radius-md)}
+#trends .fz-phase2-voice .fz-athlete-voice-bridge{background:var(--fz-surface-1);border-color:var(--fz-border)}
+#trends .fz-phase2-provenance{opacity:.88}
+#trends .fz-phase2-provenance .fz-provenance-strip{margin-top:4px}
+
+/* TRAIN: decision -> prescription -> execution memory -> subjective context. */
+#train .fz-phase2-choice{margin-top:0}
+#train .fz-phase2-choice .fz-choice-summary{gap:14px}
+#train .fz-phase2-choice .card.decision{box-shadow:var(--fz-shadow-raised);border-color:rgba(145,212,164,.35)}
+#train .fz-phase2-choice .fz-options-grid{margin-top:14px}
+#train .fz-phase2-choice .fz-option-card{background:var(--fz-surface-1);border-color:var(--fz-border)}
+#train .fz-phase2-choice .fz-option-card:first-child{border-color:rgba(245,207,25,.42);box-shadow:0 16px 38px rgba(0,0,0,.2)}
+#train .fz-phase2-choice .fz-execution-prescription{margin-top:12px;border-top:1px solid var(--fz-border)}
+#train .fz-phase2-training-memory{padding:20px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-lg);background:linear-gradient(180deg,var(--fz-surface-1),var(--fz-bg))}
+#train .fz-phase2-training-memory .fz-training-lenses{position:sticky;top:74px;z-index:3;padding:8px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-md);background:rgba(9,9,9,.94);backdrop-filter:blur(12px)}
+#train .fz-phase2-training-memory .fz-training-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+#train .fz-phase2-training-memory .fz-training-card{margin:0;min-width:0}
+#train .fz-phase2-training-memory .fz-training-card:first-child{grid-column:1/-1;border-color:rgba(145,212,164,.35);background:linear-gradient(135deg,var(--fz-surface-2),var(--fz-surface-1))}
+#train .fz-phase2-training-memory .fz-execution-metrics{margin-top:12px}
+#train .fz-phase2-athlete-memory{padding-top:6px}
+#train .fz-phase2-athlete-memory .fz-athlete-memory-shell{background:var(--fz-surface-1);box-shadow:none}
+#train .fz-phase2-athlete-memory .fz-athlete-memory-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#train .fz-phase2-athlete-memory .fz-athlete-memory-event{margin:0}
+
+@media(max-width:1080px){
+  #trends .fz-phase2-summary .fz-signal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #train .fz-phase2-training-memory .fz-training-list,#train .fz-phase2-athlete-memory .fz-athlete-memory-list{grid-template-columns:1fr}
+  #train .fz-phase2-training-memory .fz-training-card:first-child{grid-column:auto}
+}
+@media(max-width:760px){
+  .fz-phase2-lead{margin:0 0 20px;padding:20px 18px;border-radius:16px}
+  .fz-phase2-lead h1{font-size:32px;line-height:1.04}
+  .fz-phase2-lead p{font-size:13px}
+  .fz-phase2-section>.section-head{align-items:flex-start}
+  #trends .fz-phase2-summary .fz-signal-grid{grid-template-columns:1fr}
+  #trends .fz-phase2-summary .fz-signal-card{min-height:0}
+  #trends .fz-phase2-gaps,#train .fz-phase2-training-memory{padding:14px}
+  #trends .two,#trends .fz-phase2-performance .two{grid-template-columns:1fr}
+  #trends .fz-clean-chart{min-height:190px}
+  #train .fz-phase2-training-memory .fz-training-lenses{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:7px}
+  #train .fz-phase2-training-memory .fz-training-lenses button:last-child{grid-column:1/-1}
+  #train .fz-phase2-athlete-memory .fz-athlete-memory-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){.fz-phase2-lead,.fz-phase2-section{scroll-behavior:auto}}
