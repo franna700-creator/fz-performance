@@ -1,0 +1,47 @@
+name: ui-tranche-preview
+
+on:
+  pull_request:
+    paths:
+      - 'src/today-redesign-v2.js'
+      - 'src/today-redesign-v2.css'
+      - 'src/fz-design-system.css'
+      - 'src/fz-topside-shell.css'
+      - 'src/fz-hero-responsive.css'
+      - 'src/fz-hero-desktop.webp'
+      - 'src/fz-hero-mobile.webp'
+      - 'scripts/today-redesign-v2-browser-preview.mjs'
+      - 'scripts/today-redesign-v2-build.mjs'
+      - 'scripts/today-redesign-v2-smoke.mjs'
+      - 'scripts/design-system-smoke.mjs'
+      - 'scripts/clean-shell.mjs'
+      - '.github/workflows/ui-tranche-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Capture rebuilt desktop and mobile TODAY
+        run: node scripts/today-redesign-v2-browser-preview.mjs
+      - name: Upload rebuilt UI preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-ui-tranche1-v2-preview-${{ github.sha }}
+          path: artifacts/ui-tranche1-v2/
+          if-no-files-found: error
+          retention-days: 14
