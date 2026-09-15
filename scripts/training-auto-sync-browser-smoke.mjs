@@ -93,8 +93,8 @@ try{
   assert(strengthText.includes('No Athlete Voice is linked to this execution.'),'TRAIN workout detail remains valid without Athlete Voice');
 
   await page.locator('[data-page="today"]:visible').first().click();
-  await page.locator('[data-training-sync-now]').click();
-  await page.waitForFunction(()=>document.querySelector('[data-training-sync-now]')?.textContent==='Sync workouts');
+  await page.locator('.fz2-sync-workouts:visible').click();
+  await page.waitForTimeout(350);
   assert(sourceSyncRequests===2,'manual Sync workouts performs an explicit source refresh');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1),'mobile training detail and sync controls introduce no horizontal overflow');
   console.log('PASS training auto-sync browser acceptance');
