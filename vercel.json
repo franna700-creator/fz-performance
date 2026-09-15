@@ -8,7 +8,8 @@
   },
   "rewrites": [
     {"source":"/api/intelligence/current","destination":"/api/system/status?operation=intelligence-current"},
-    {"source":"/api/intelligence/refresh","destination":"/api/system/status?operation=intelligence-refresh"}
+    {"source":"/api/intelligence/refresh","destination":"/api/system/status?operation=intelligence-refresh"},
+    {"source":"/api/goals/current","destination":"/api/system/status?operation=goals-current"}
   ],
   "headers": [
     {"source":"/api/runtime-state","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
