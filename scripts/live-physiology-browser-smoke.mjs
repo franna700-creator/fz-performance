@@ -59,12 +59,14 @@ async function waitForNode(predicate,timeoutMs=2000){const started=Date.now();wh
 
 try{
   await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded'});
-  await page.waitForSelector('.fz2-phys-summary',{timeout:1500});
-  assert((await page.locator('.fz2-phys-summary').innerText()).includes('HRV'),'compact athlete-facing physiology summary renders first');
-  await page.waitForSelector('.fz-live-physiology-v3[data-freshness="STALE"]',{state:'attached',timeout:800});
+  // Validate persisted-first behaviour before TODAY v2's own async summary load can
+  // outlive the deliberately short STALE fixture window.
+  await page.waitForSelector('.fz-live-physiology-v3[data-freshness="STALE"]',{state:'attached',timeout:1500});
   assert(await page.locator('.fz-live-grid').evaluate(el=>el.hidden),'persisted static grid is hidden after immediate DB render');
   assert(await page.locator('.fz-live-chart-v3').count()===4,'four Live Physiology scrub graphs render in the detail layer');
   assert((await page.locator('[data-live-key="respiration"] [data-live-value]').textContent()).startsWith('13.8'),'respiration zero placeholders are excluded');
+  await page.waitForSelector('.fz2-phys-summary',{timeout:1500});
+  assert((await page.locator('.fz2-phys-summary').innerText()).includes('HRV'),'compact athlete-facing physiology summary renders');
   await page.locator('[data-fz2-live-details]').click();
   assert(await page.locator('[data-fz2-live-details]').getAttribute('aria-expanded')==='true','physiology detail opens explicitly');
   assert(await waitForNode(()=>backgroundRefreshes===1,1500),'DB-only render triggers one background Garmin refresh');
