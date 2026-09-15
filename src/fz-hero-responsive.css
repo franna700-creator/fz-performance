@@ -1,12 +1,14 @@
 /* FZ Performance — responsive TODAY hero imagery.
    Presentation-only asset selection; no athlete state is encoded here. */
 .fz2-photo{
+  background-color:#050505!important;
   background-image:
     linear-gradient(180deg,rgba(5,5,5,.03),rgba(5,5,5,.18) 45%,rgba(5,5,5,.84)),
     linear-gradient(90deg,rgba(5,5,5,.48),rgba(5,5,5,.03) 38%),
     url('/assets/fz-hero-desktop.webp')!important;
-  background-position:center center!important;
-  background-size:cover!important;
+  background-position:center center,center center,right center!important;
+  background-size:cover,cover,auto 90%!important;
+  background-repeat:no-repeat!important;
   filter:saturate(.92) contrast(1.04)!important;
 }
 
@@ -18,6 +20,7 @@
       url('/assets/fz-hero-mobile.webp')!important;
     background-position:center 58%!important;
     background-size:cover!important;
+    background-repeat:no-repeat!important;
     filter:saturate(.94) contrast(1.03)!important;
   }
 }
