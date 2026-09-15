@@ -87,8 +87,10 @@ try{
   assert(persistedIndex>=0&&backgroundIndex>persistedIndex,'persisted wellness read precedes background source refresh');
   await page.waitForSelector('.fz-live-physiology-v3[data-freshness="LIVE"]',{timeout:2500});
   assert((await page.locator('.fz-live-toolbar').innerText()).includes('20:45'),'successful source refresh repaints LIVE physiology with the SAST source time');
-  const chart=page.locator('.fz-live-chart-v3').nth(2);const box=await chart.boundingBox();
-  await chart.dispatchEvent('pointerdown',{pointerType:'mouse',clientX:box.x+box.width*.25,clientY:box.y+30,buttons:1,pressure:.5});
+  const chart=page.locator('.fz-live-chart-v3').nth(2);
+  const svg=chart.locator('svg');
+  const box=await svg.boundingBox();
+  await svg.dispatchEvent('pointerdown',{pointerType:'mouse',clientX:box.x+box.width*.25,clientY:box.y+30,buttons:1,pressure:.5});
   assert((await page.locator('[data-live-key="heart_rate"] [data-live-value]').textContent()).includes('·'),'pointer scrubbing exposes timestamped value');
   await page.locator('[data-live-refresh]:visible').click();
   await page.waitForFunction(()=>document.querySelector('.fz-live-toolbar')?.textContent?.includes('20:45'));
