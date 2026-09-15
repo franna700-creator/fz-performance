@@ -8,11 +8,10 @@ const jsSrc=path.join(root,'src','today-redesign-v2.js');
 const cssSrc=path.join(root,'src','today-redesign-v2.css');
 const topsideCssSrc=path.join(root,'src','fz-topside-shell.css');
 const heroCssSrc=path.join(root,'src','fz-hero-responsive.css');
-const photoSrc=path.join(root,'src','fz-training-hero.jpg');
 const heroDesktopSrc=path.join(root,'src','fz-hero-desktop.webp');
 const heroMobileSrc=path.join(root,'src','fz-hero-mobile.webp');
 
-for(const input of [htmlPath,jsSrc,cssSrc,topsideCssSrc,heroCssSrc,photoSrc,heroDesktopSrc,heroMobileSrc]){
+for(const input of [htmlPath,jsSrc,cssSrc,topsideCssSrc,heroCssSrc,heroDesktopSrc,heroMobileSrc]){
   if(!fs.existsSync(input))throw new Error(`TODAY v2 build input missing: ${input}`);
 }
 
@@ -35,7 +34,6 @@ fs.copyFileSync(jsSrc,path.join(outDir,'today-redesign-v2.js'));
 fs.copyFileSync(cssSrc,path.join(outDir,'today-redesign-v2.css'));
 fs.copyFileSync(topsideCssSrc,path.join(outDir,'fz-topside-shell.css'));
 fs.copyFileSync(heroCssSrc,path.join(outDir,'fz-hero-responsive.css'));
-fs.copyFileSync(photoSrc,path.join(outDir,'fz-training-hero.jpg'));
 fs.writeFileSync(path.join(outDir,'fz-hero-desktop.webp'),assertWebp(heroDesktopSrc,'fz-hero-desktop.webp'));
 fs.writeFileSync(path.join(outDir,'fz-hero-mobile.webp'),assertWebp(heroMobileSrc,'fz-hero-mobile.webp'));
 console.log('PASS TODAY redesign v2 + verified responsive WebP hero + topside shell assets wired');
