@@ -7,28 +7,7 @@ const gpNum=value=>Number.isFinite(Number(value))?Number(value):null;
 const gpWords=value=>String(value||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 function gpDate(value){if(!value)return'—';const d=new Date(String(value).length===10?`${value}T12:00:00Z`:value);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',day:'2-digit',month:'short',year:'numeric'}).format(d)}
 function gpTone(value=''){const s=String(value).toUpperCase();if(/REAL POSITIVE|STRONG|MEASURED|HIGH|READY|QUALIFIED|PRIMARY/.test(s))return'good';if(/PENDING|UNRESOLVED|LOW|GAP|UNKNOWN/.test(s))return'warn';return'neutral'}
-function gpIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m14 10 6-6"/></svg>'}
 async function gpJson(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.json()}
-
-function gpEnsureNavigation(){
-  const top=document.querySelector('.fz2-topnav');
-  if(top&&!top.querySelector('[data-page="goals"]')){
-    const button=document.createElement('button');
-    button.type='button';button.dataset.page='goals';button.className='fz2-topnav-button tone-yellow fz-goals-nav';
-    button.innerHTML=`<span class="fz2-topnav-icon">${gpIcon()}</span><span>Goals</span>`;
-    const system=top.querySelector('[data-page="system"]');
-    if(system)top.insertBefore(button,system);else top.append(button);
-  }
-  gpSyncShellMeta();
-}
-function gpSyncShellMeta(){
-  if(document.querySelector('.page.active')?.id!=='goals')return;
-  const shell=document.querySelector('.fz2-top-shell');if(!shell)return;
-  const title=shell.querySelector('[data-fz2-page-title]');
-  const subtitle=shell.querySelector('[data-fz2-page-subtitle]');
-  if(title)title.textContent='Goals';
-  if(subtitle)subtitle.textContent='Objective runway, capability evidence and progress.';
-}
 
 function gpPrimaryCard(primary,measurement,uncertainty){
   if(!primary)return `<section class="fz-goals-primary fz-goals-empty"><div><span class="fz-goals-kicker">PRIMARY OBJECTIVE</span><h2>No canonical primary objective is currently resolved.</h2><p>Goals remains evidence-led; it will not substitute static UI truth for a missing runtime objective.</p></div></section>`;
@@ -80,7 +59,6 @@ function gpRender(){
     <section class="fz-goals-provenance"><b>Objective truth</b><span>${gpEsc(goals.provenance?.objectiveSource||'—')}</span><b>Runtime state</b><span>${gpEsc(goals.provenance?.runtimeStateId||'—')}</span><b>Progress contract</b><span>${gpEsc(goals.contract||'—')}</span></section>
   </div>`;
   FZ_GOALS_V1.mounted=true;
-  gpSyncShellMeta();
 }
 async function gpLoad(){
   if(FZ_GOALS_V1.busy)return;FZ_GOALS_V1.busy=true;
@@ -92,10 +70,9 @@ async function gpLoad(){
   }finally{FZ_GOALS_V1.busy=false}
 }
 
-function gpSchedule(){queueMicrotask(()=>{gpEnsureNavigation();gpSyncShellMeta();if(document.querySelector('.page.active')?.id==='goals'&&!FZ_GOALS_V1.busy&&!FZ_GOALS_V1.mounted)gpLoad();})}
-new MutationObserver(gpSchedule).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+function gpSchedule(){queueMicrotask(()=>{if(document.querySelector('.page.active')?.id==='goals'&&!FZ_GOALS_V1.busy&&!FZ_GOALS_V1.mounted)gpLoad();})}
+new MutationObserver(gpSchedule).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
 document.addEventListener('click',event=>{if(event.target.closest('[data-page],[data-open-page]'))setTimeout(gpSchedule,0)});
 window.addEventListener('fz:intelligence-updated',()=>{FZ_GOALS_V1.mounted=false;gpLoad()});
 window.addEventListener('focus',gpSchedule);
-gpEnsureNavigation();
 gpLoad();
