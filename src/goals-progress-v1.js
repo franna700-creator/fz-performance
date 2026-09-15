@@ -92,7 +92,7 @@ async function gpLoad(){
   }finally{FZ_GOALS_V1.busy=false}
 }
 
-function gpSchedule(){queueMicrotask(()=>{gpEnsureNavigation();gpSyncShellMeta();if(document.querySelector('.page.active')?.id==='goals'&&!FZ_GOALS_V1.busy)gpLoad();})}
+function gpSchedule(){queueMicrotask(()=>{gpEnsureNavigation();gpSyncShellMeta();if(document.querySelector('.page.active')?.id==='goals'&&!FZ_GOALS_V1.busy&&!FZ_GOALS_V1.mounted)gpLoad();})}
 new MutationObserver(gpSchedule).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
 document.addEventListener('click',event=>{if(event.target.closest('[data-page],[data-open-page]'))setTimeout(gpSchedule,0)});
 window.addEventListener('fz:intelligence-updated',()=>{FZ_GOALS_V1.mounted=false;gpLoad()});
