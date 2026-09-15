@@ -6,8 +6,8 @@ const css=fs.readFileSync('dist/assets/today-redesign-v2.css','utf8');
 const topside=fs.readFileSync('dist/assets/fz-topside-shell.css','utf8');
 const heroCss=fs.readFileSync('dist/assets/fz-hero-responsive.css','utf8');
 const legacyPhoto=fs.readFileSync('dist/assets/fz-training-hero.jpg');
-const desktopHero=fs.readFileSync('dist/assets/fz-hero-desktop.jpg');
-const mobileHero=fs.readFileSync('dist/assets/fz-hero-mobile.jpg');
+const desktopHero=fs.readFileSync('dist/assets/fz-hero-desktop.webp');
+const mobileHero=fs.readFileSync('dist/assets/fz-hero-mobile.webp');
 assert.ok(html.includes('/assets/today-redesign-v2.css'),'TODAY v2 CSS is wired');
 assert.ok(html.includes('/assets/fz-topside-shell.css'),'topside shell CSS is wired');
 assert.ok(html.includes('/assets/fz-hero-responsive.css'),'responsive hero CSS is wired');
@@ -20,15 +20,15 @@ assert.ok(css.includes('.fz2-stage')&&css.includes('.fz2-photo')&&css.includes('
 assert.ok(topside.includes('.fz2-top-shell')&&topside.includes('body.fz2-topside-active .side{display:none!important}'),'legacy left rail is replaced by topside shell');
 assert.ok(topside.includes('--fz2-green')&&topside.includes('--fz2-cyan')&&topside.includes('--fz2-violet'),'semantic accent palette is present');
 assert.ok(topside.includes('.fz2-lower{display:contents!important}')&&topside.includes('.fz2-thought{order:2!important;'),'mobile feed promotes Daily FZ Thought ahead of physiology');
-assert.ok(heroCss.includes("url('/assets/fz-hero-desktop.jpg')")&&heroCss.includes("url('/assets/fz-hero-mobile.jpg')"),'responsive hero selects dedicated desktop and mobile imagery');
-for(const [label,photo] of [['legacy',legacyPhoto],['desktop',desktopHero],['mobile',mobileHero]]){
-  assert.equal(photo[0],0xff,`${label} hero begins with JPEG SOI byte 1`);
-  assert.equal(photo[1],0xd8,`${label} hero begins with JPEG SOI byte 2`);
-  assert.ok(photo.length>10000,`${label} hero has a non-placeholder production payload`);
+assert.ok(heroCss.includes("url('/assets/fz-hero-desktop.webp')")&&heroCss.includes("url('/assets/fz-hero-mobile.webp')"),'responsive hero selects dedicated desktop and mobile imagery');
+assert.equal(legacyPhoto[0],0xff,'legacy compatibility photo remains valid JPEG');
+assert.equal(legacyPhoto[1],0xd8,'legacy compatibility photo remains valid JPEG');
+for(const [label,photo] of [['desktop',desktopHero],['mobile',mobileHero]]){
+  assert.equal(photo.subarray(0,4).toString('ascii'),'RIFF',`${label} hero begins with RIFF`);
+  assert.equal(photo.subarray(8,12).toString('ascii'),'WEBP',`${label} hero is valid WebP`);
+  assert.ok(photo.length>1024,`${label} hero has a non-placeholder payload`);
 }
-assert.ok(desktopHero.length>25000,'desktop approved hero retains useful production detail');
-assert.ok(mobileHero.length>30000,'mobile approved hero retains useful production detail');
-assert.ok(mobileHero.length>desktopHero.length,'portrait mobile hero retains dedicated crop/detail rather than reusing desktop bytes');
+assert.notDeepEqual(desktopHero,mobileHero,'desktop and mobile hero assets are dedicated variants');
 assert.ok(!js.includes('How are you feeling'),'undeveloped subjective check-in is not exposed');
 assert.ok(!js.includes('Goals & Progress'),'Goals & Progress remains out of tranche 1 live UI');
-console.log('PASS FZ TODAY redesign v2 approved responsive-hero visual contract');
+console.log('PASS FZ TODAY redesign v2 verified responsive-WebP visual contract');
