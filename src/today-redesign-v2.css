@@ -7,6 +7,7 @@
 #today.fz-today-v2>.fz2-legacy-live{order:2;margin-top:22px!important}
 #today.fz-today-v2>.fz2-legacy-training{order:4;margin-top:12px!important}
 .fz2-stage{order:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);min-height:610px;border:1px solid #272727;border-radius:26px;overflow:hidden;background:#080808;box-shadow:0 32px 90px rgba(0,0,0,.38)}
+.fz2-phys-summary{order:2}
 .fz2-lower{order:3;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(330px,.75fr);gap:18px;margin-top:22px}
 .fz2-hero-copy{position:relative;z-index:2;display:flex;flex-direction:column;padding:52px 48px 38px;background:linear-gradient(150deg,#10100d 0%,#090909 58%,#060606 100%)}
 .fz2-hero-copy:before{content:"";position:absolute;left:0;top:0;width:6px;height:38%;background:var(--fz-accent,#f5cf19)}
