@@ -147,7 +147,7 @@ function v2ClassifyLegacy(root){
   const hero=root.querySelector(':scope > .fz-clean-hero');if(hero)hero.classList.add('fz2-legacy-hidden');
   v2DecorateLive(root);
 }
-function v2SyncDetailButton(root){const button=root?.querySelector('[data-fz2-live-details]');if(!button)return;const open=root.classList.contains('fz2-live-detail-open');button.setAttribute('aria-expanded',String(open));button.textContent=open?'Hide details ↑':'View details →'}
+function v2SyncDetailButton(root){const button=root?.querySelector('[data-fz2-live-details]');if(!button)return;const open=root.classList.contains('fz2-live-detail-open');button.setAttribute('aria-expanded',String(open));v2SetText(button,open?'Hide details ↑':'View details →')}
 function v2ToggleLiveDetails(){const root=document.getElementById('today');if(!root)return;root.classList.toggle('fz2-live-detail-open');v2SyncDetailButton(root);if(root.classList.contains('fz2-live-detail-open'))setTimeout(()=>root.querySelector(':scope > .fz2-legacy-live')?.scrollIntoView({behavior:'smooth',block:'start'}),20)}
 function v2Mount(){
   v2MountTopShell();
