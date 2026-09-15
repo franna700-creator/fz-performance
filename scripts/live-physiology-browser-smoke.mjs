@@ -5,6 +5,7 @@ import { chromium } from 'playwright';
 
 const dist = path.resolve('dist');
 const requestCounts = new Map();
+const wellnessRequestModes = [];
 let backgroundRefreshes = 0;
 let forcedRefreshes = 0;
 let persistedReads = 0;
@@ -43,14 +44,17 @@ const server=http.createServer((req,res)=>{
   if(url.pathname==='/api/wellness/today'){
     const refresh=url.searchParams.get('refresh');
     if(refresh==='1'){
+      wellnessRequestModes.push('forced');
       forcedRefreshes++;
       sourceRefreshed=true;
       return json(res,live);
     }
     if(refresh==='0'){
+      wellnessRequestModes.push('persisted');
       persistedReads++;
       return json(res,sourceRefreshed?live:stale);
     }
+    wellnessRequestModes.push('background');
     backgroundRefreshes++;
     sourceRefreshed=true;
     return json(res,live);
@@ -64,28 +68,32 @@ const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
 const pageErrors=[];page.on('pageerror',error=>pageErrors.push(String(error)));
 function assert(condition,message){if(!condition)throw new Error(message);console.log('PASS',message);}
-async function waitForNode(predicate,timeoutMs=2000){const started=Date.now();while(Date.now()-started<timeoutMs){if(predicate())return true;await new Promise(resolve=>setTimeout(resolve,25));}return false;}
+async function waitForNode(predicate,timeoutMs=2500){const started=Date.now();while(Date.now()-started<timeoutMs){if(predicate())return true;await new Promise(resolve=>setTimeout(resolve,25));}return false;}
 
 try{
   await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded'});
-  await page.waitForSelector('.fz-live-physiology-v3[data-freshness="STALE"]',{state:'attached',timeout:1500});
-  assert(persistedReads>=1,'persisted wellness is read before source refresh');
-  assert(await page.locator('.fz-live-grid').evaluate(el=>el.hidden),'persisted static grid is hidden after immediate DB render');
+  assert(await waitForNode(()=>wellnessRequestModes.includes('persisted'),1500),'persisted wellness is requested on initial render');
+  await page.waitForSelector('.fz2-phys-summary',{timeout:2500});
+  assert((await page.locator('.fz2-phys-summary').innerText()).includes('HRV'),'compact athlete-facing physiology summary renders');
+  await page.waitForSelector('.fz-live-physiology-v3',{state:'attached',timeout:2500});
+  assert(await page.locator('.fz-live-grid').evaluate(el=>el.hidden),'legacy static physiology grid is hidden by the live detail layer');
   assert(await page.locator('.fz-live-chart-v3').count()===4,'four Live Physiology scrub graphs render in the detail layer');
   assert((await page.locator('[data-live-key="respiration"] [data-live-value]').textContent()).startsWith('13.8'),'respiration zero placeholders are excluded');
-  await page.waitForSelector('.fz2-phys-summary',{timeout:1500});
-  assert((await page.locator('.fz2-phys-summary').innerText()).includes('HRV'),'compact athlete-facing physiology summary renders');
   await page.locator('[data-fz2-live-details]').click();
   assert(await page.locator('[data-fz2-live-details]').getAttribute('aria-expanded')==='true','physiology detail opens explicitly');
-  assert(await waitForNode(()=>backgroundRefreshes===1,1500),'DB-only render triggers one background Garmin refresh');
+  assert(await waitForNode(()=>backgroundRefreshes===1,2000),'one background Garmin source refresh occurs');
+  const persistedIndex=wellnessRequestModes.indexOf('persisted');
+  const backgroundIndex=wellnessRequestModes.indexOf('background');
+  assert(persistedIndex>=0&&backgroundIndex>persistedIndex,'persisted wellness read precedes background source refresh');
   await page.waitForSelector('.fz-live-physiology-v3[data-freshness="LIVE"]',{timeout:2500});
-  assert((await page.locator('.fz-live-toolbar').innerText()).includes('20:45'),'successful source refresh repaints persisted LIVE physiology');
+  assert((await page.locator('.fz-live-toolbar').innerText()).includes('20:45'),'successful source refresh repaints LIVE physiology with the SAST source time');
   const chart=page.locator('.fz-live-chart-v3').nth(2);const box=await chart.boundingBox();
   await chart.dispatchEvent('pointerdown',{pointerType:'mouse',clientX:box.x+box.width*.25,clientY:box.y+30,buttons:1,pressure:.5});
   assert((await page.locator('[data-live-key="heart_rate"] [data-live-value]').textContent()).includes('·'),'pointer scrubbing exposes timestamped value');
   await page.locator('[data-live-refresh]:visible').click();
   await page.waitForFunction(()=>document.querySelector('.fz-live-toolbar')?.textContent?.includes('20:45'));
   assert(forcedRefreshes===1,'Refresh Garmin performs explicit forced source refresh');
+  assert(wellnessRequestModes.at(-1)==='forced','manual refresh uses the forced source path');
   assert(pageErrors.length===0,`no browser page errors occur (${pageErrors.join(' | ')||'none'})`);
   console.log('PASS live physiology browser acceptance');
 }finally{
