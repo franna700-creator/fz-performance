@@ -1,6 +1,9 @@
 /* FZ Performance — TRENDS + TRAIN redesign v1
    Presentation only. Athlete truth remains owned by canonical runtime contracts. */
 
+/* Cross-surface invariant: TODAY v2 must respect canonical page activation. */
+#today.fz-today-v2.page:not(.active){display:none!important}
+
 #trends.fz-phase2-trends,#train.fz-phase2-train{--fz-p2-trends:#67d7e7;--fz-p2-train:#91d4a4}
 .fz-phase2-lead{margin:6px 0 26px;padding:28px 30px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-lg);background:linear-gradient(135deg,var(--fz-surface-2),var(--fz-surface-1));box-shadow:0 20px 50px rgba(0,0,0,.18)}
 .fz-phase2-lead>span,.fz-phase2-kicker{display:block;margin-bottom:7px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
@@ -41,6 +44,9 @@
 #train .fz-phase2-choice .fz-option-card{background:var(--fz-surface-1);border-color:var(--fz-border)}
 #train .fz-phase2-choice .fz-option-card:first-child{border-color:rgba(245,207,25,.42);box-shadow:0 16px 38px rgba(0,0,0,.2)}
 #train .fz-phase2-choice .fz-execution-prescription{margin-top:12px;border-top:1px solid var(--fz-border)}
+#train .fz-phase2-choice .fz-execution-prescription[open]{padding-top:10px}
+#train .fz-phase2-choice .fz-execution-prescription[open] summary{color:var(--fz-text);font-weight:800}
+#train .fz-phase2-choice .fz-execution-body{margin-top:10px;padding:12px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-md);background:var(--fz-surface-2)}
 #train .fz-phase2-training-memory{padding:20px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-lg);background:linear-gradient(180deg,var(--fz-surface-1),var(--fz-bg))}
 #train .fz-phase2-training-memory .fz-training-lenses{position:sticky;top:74px;z-index:3;padding:8px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-md);background:rgba(9,9,9,.94);backdrop-filter:blur(12px)}
 #train .fz-phase2-training-memory .fz-training-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
@@ -67,6 +73,7 @@
   #trends .fz-phase2-gaps,#train .fz-phase2-training-memory{padding:14px}
   #trends .two,#trends .fz-phase2-performance .two{grid-template-columns:1fr}
   #trends .fz-clean-chart{min-height:190px}
+  #train .fz-phase2-choice .fz-execution-body{padding:10px}
   #train .fz-phase2-training-memory .fz-training-lenses{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:7px}
   #train .fz-phase2-training-memory .fz-training-lenses button:last-child{grid-column:1/-1}
   #train .fz-phase2-athlete-memory .fz-athlete-memory-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
