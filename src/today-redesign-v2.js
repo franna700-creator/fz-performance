@@ -16,7 +16,7 @@ const FZ_TODAY_V2_QUOTES=[
   ['ADAPTATION','The body responds to the dose you can recover from, not the dose you can endure once.'],
   ['PROCESS','Build the athlete you want to be by repeating the behaviours that athlete requires.']
 ];
-const v2Esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const v2Esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const v2Fmt=(value,decimals=0)=>Number.isFinite(Number(value))?Number(value).toLocaleString('en-ZA',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}):'—';
 function v2Date(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Johannesburg',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 function v2DayOrdinal(){const [year,month,day]=v2Date().split('-').map(Number);return Math.floor(Date.UTC(year,month-1,day)/86400000)}
