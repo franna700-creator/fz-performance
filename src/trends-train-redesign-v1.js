@@ -65,6 +65,15 @@ function decorateTrends(){
     if(!section.querySelector(':scope > .section-head h2'))section.classList.add('fz-phase2-provenance');
   });
 }
+function primeRecommendedPrescription(choice){
+  if(!choice)return;
+  const fingerprint=choice.dataset.fz44Fingerprint||'current';
+  if(choice.dataset.fzPhase2PrescriptionFor===fingerprint)return;
+  const prescription=choice.querySelector(':scope .fz-options-grid > .fz-option-card:first-child .fz-execution-prescription');
+  if(!prescription)return;
+  prescription.open=true;
+  choice.dataset.fzPhase2PrescriptionFor=fingerprint;
+}
 function decorateTrain(){
   const root=document.getElementById('train');
   if(!root)return;
@@ -82,6 +91,7 @@ function decorateTrain(){
   phase2Kicker(choice,'CURRENT / NEXT EXECUTION');
   phase2Kicker(training,'CANONICAL EXECUTION MEMORY');
   phase2Kicker(athlete,'ATHLETE VOICE / SUBJECTIVE CONTEXT');
+  primeRecommendedPrescription(choice);
 }
 function applyPhase2(){
   FZ_PHASE2.scheduled=false;
