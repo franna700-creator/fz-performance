@@ -8,7 +8,7 @@ The surface must answer:
 - how much time was spent training;
 - which modalities contributed that time;
 - how much canonical relative cardio load/intensity was accumulated where Tredict HR-zone evidence supports it;
-- what modality-specific volume is available (for example running distance);
+- what modality-specific volume is available;
 - how those exposures differ over 7-day, 28-day and user-selected date windows.
 
 ## Canonical ownership
@@ -17,7 +17,7 @@ This is a projection over existing canonical training evidence and `/api/trends/
 
 No new athlete-state store, database table, recommendation model or independent load formula is introduced.
 
-Canonical session identity, modality classification, duration, distance, HR-zone distribution and NCL remain owned by the existing training-evidence/TRENDS pipeline.
+Canonical session identity, modality classification, duration, distance, HR-zone distribution, workout detail and NCL remain owned by the existing training-evidence/TRENDS pipeline.
 
 ## Exposure dimensions
 
@@ -33,7 +33,12 @@ No substitute FZ load score may be inferred when NCL is unavailable.
 HR-zone composition may be shown where `hrDistributionSeconds` exists.
 
 ### Volume
-Volume stays modality-specific. Initial release supports running distance (`distanceKm`) and does not add metres/calories/tonnage unless their source semantics are explicitly qualified in a later tranche.
+Volume stays modality-specific and is only totalled after one modality is selected.
+
+- Distance may be shown for a single selected modality where canonical source semantics support `distanceKm` (for example running, cycling/Assault Bike, rowing, SkiErg or elliptical).
+- Strength volume is represented by canonical set count where structured set detail exists.
+- Mobility/walking/OTHER do not receive a synthetic volume unit merely to complete the interface.
+- The ALL-modality view never sums distance, sets, repetitions, calories or other unlike quantities into one volume number.
 
 ## Window semantics
 
@@ -71,7 +76,8 @@ Filtering is presentation-level and operates over the canonical session exposure
 
 ## Quality rules
 
-- Never sum kilometres, metres, repetitions, calories and minutes into one number.
+- Never sum kilometres, metres, repetitions, sets, calories and minutes into one synthetic number.
+- Never aggregate distance across unlike modalities in the ALL view.
 - Never infer NCL from duration when HR-zone detail is missing.
 - Never treat a workout with missing duration/load detail as a zero-duration/load workout.
 - Mixed/OTHER sessions stay visible rather than being silently reclassified.
