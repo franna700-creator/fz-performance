@@ -5,6 +5,8 @@ on:
     paths:
       - 'src/today-redesign-v2.js'
       - 'src/today-redesign-v2.css'
+      - 'src/trends-train-redesign-v1.js'
+      - 'src/trends-train-redesign-v1.css'
       - 'src/fz-design-system.css'
       - 'src/fz-topside-shell.css'
       - 'src/fz-hero-responsive.css'
@@ -13,8 +15,13 @@ on:
       - 'scripts/today-redesign-v2-browser-preview.mjs'
       - 'scripts/today-redesign-v2-build.mjs'
       - 'scripts/today-redesign-v2-smoke.mjs'
+      - 'scripts/trends-train-redesign-v1-build.mjs'
+      - 'scripts/trends-train-redesign-v1-smoke.mjs'
+      - 'scripts/trends-train-redesign-v1-browser-preview.mjs'
+      - 'scripts/trends-train-phase2-acceptance.mjs'
       - 'scripts/design-system-smoke.mjs'
       - 'scripts/clean-shell.mjs'
+      - 'package.json'
       - '.github/workflows/ui-tranche-preview.yml'
   workflow_dispatch:
 
@@ -38,10 +45,16 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Capture rebuilt desktop and mobile TODAY
         run: node scripts/today-redesign-v2-browser-preview.mjs
+      - name: Capture rebuilt desktop and mobile TRENDS + TRAIN
+        run: node scripts/trends-train-redesign-v1-browser-preview.mjs
+      - name: Validate Phase 2 cross-surface and exact prescription
+        run: node scripts/trends-train-phase2-acceptance.mjs
       - name: Upload rebuilt UI preview
         uses: actions/upload-artifact@v4
         with:
-          name: fz-ui-tranche1-v2-preview-${{ github.sha }}
-          path: artifacts/ui-tranche1-v2/
+          name: fz-ui-overhaul-preview-${{ github.sha }}
+          path: |
+            artifacts/ui-tranche1-v2/
+            artifacts/ui-tranche2-v1/
           if-no-files-found: error
           retention-days: 14

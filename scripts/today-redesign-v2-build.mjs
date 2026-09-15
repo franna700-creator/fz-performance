@@ -37,3 +37,4 @@ fs.copyFileSync(heroCssSrc,path.join(outDir,'fz-hero-responsive.css'));
 fs.writeFileSync(path.join(outDir,'fz-hero-desktop.webp'),assertWebp(heroDesktopSrc,'fz-hero-desktop.webp'));
 fs.writeFileSync(path.join(outDir,'fz-hero-mobile.webp'),assertWebp(heroMobileSrc,'fz-hero-mobile.webp'));
 console.log('PASS TODAY redesign v2 + verified responsive WebP hero + topside shell assets wired');
+await import('./trends-train-redesign-v1-build.mjs');
