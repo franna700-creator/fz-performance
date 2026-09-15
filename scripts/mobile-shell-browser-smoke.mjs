@@ -21,8 +21,8 @@ function staticFile(res, pathname) {
     res.writeHead(404); res.end('not found'); return;
   }
   const ext = path.extname(file);
-  const type = ext === '.js' ? 'text/javascript' : ext === '.css' ? 'text/css' : ext === '.json' ? 'application/json' : 'text/html';
-  res.writeHead(200, { 'content-type': `${type}; charset=utf-8`, 'cache-control': 'no-store' });
+  const type = ext === '.js' ? 'text/javascript' : ext === '.css' ? 'text/css' : ext === '.json' ? 'application/json' : ext === '.webp' ? 'image/webp' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'text/html';
+  res.writeHead(200, { 'content-type': type.startsWith('text/') ? `${type}; charset=utf-8` : type, 'cache-control': 'no-store' });
   fs.createReadStream(file).pipe(res);
 }
 
@@ -138,8 +138,10 @@ try {
   assert(await page.locator('#today .fz-clean-loading').count() === 0, 'TODAY leaves the loading shell');
   assert((await page.locator('#stateStamp').innerText()).includes('CANONICAL RUNTIME'), 'canonical sync completes and updates shell state');
   await page.waitForFunction(() => document.querySelector('#today .fz-clean-readiness .score strong')?.textContent?.trim() === '82', { timeout: 3000 });
+  await page.waitForSelector('#today .fz2-decision-kicker b', { timeout: 3000 });
   const todayText = await page.locator('#today').innerText();
-  assert(todayText.includes('CURRENT · ABSORB'), 'current recommendation lane remains distinct from the numeric readiness score');
+  const decisionLane = (await page.locator('#today .fz2-decision-kicker b').innerText()).trim();
+  assert(decisionLane === 'ABSORB', 'current recommendation lane remains distinct from the numeric readiness score');
   assert(todayText.includes('Current systemic recovery is supportive'), 'current canonical readiness narrative renders on TODAY');
   assert(todayText.includes('local readiness remains unconfirmed'), 'missing Athlete Voice remains explicit instead of being inferred normal');
   assert(!todayText.includes('MORNING RECOVERY SIGNAL REMAINED SOFTENED'), 'stale 10 Sep readiness narrative is suppressed from current TODAY');
