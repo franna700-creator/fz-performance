@@ -1,0 +1,1 @@
+Phase 5 Training Exposure Explorer notes live on this non-release branch only. Do not merge into the frozen Phase 4 release. The implementation belongs in a new controlled tranche after Phase 4 production acceptance.
