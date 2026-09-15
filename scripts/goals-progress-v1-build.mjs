@@ -38,3 +38,4 @@ if(fs.existsSync(contractPath)){
   fs.writeFileSync(contractPath,JSON.stringify(contract,null,2));
 }
 console.log('PASS Goals & Progress v1 canonical athlete surface wired');
+await import('./training-exposure-v1-build.mjs');
