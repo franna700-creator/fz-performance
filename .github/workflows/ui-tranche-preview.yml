@@ -9,6 +9,8 @@ on:
       - 'src/trends-train-redesign-v1.css'
       - 'src/goals-progress-v1.js'
       - 'src/goals-progress-v1.css'
+      - 'src/system-intelligence.js'
+      - 'src/system-rationalization-v1.css'
       - 'src/fz-design-system.css'
       - 'src/fz-topside-shell.css'
       - 'src/fz-hero-responsive.css'
@@ -26,6 +28,8 @@ on:
       - 'scripts/goals-progress-v1-build.mjs'
       - 'scripts/goals-progress-v1-smoke.mjs'
       - 'scripts/goals-progress-v1-browser-preview.mjs'
+      - 'scripts/system-rationalization-v1-browser-preview.mjs'
+      - 'scripts/system-intelligence-smoke.mjs'
       - 'scripts/design-system-smoke.mjs'
       - 'scripts/clean-shell.mjs'
       - 'package.json'
@@ -58,6 +62,8 @@ jobs:
         run: node scripts/trends-train-phase2-acceptance.mjs
       - name: Capture rebuilt desktop and mobile GOALS
         run: node scripts/goals-progress-v1-browser-preview.mjs
+      - name: Capture rebuilt desktop and mobile SYSTEM
+        run: node scripts/system-rationalization-v1-browser-preview.mjs
       - name: Upload rebuilt UI preview
         uses: actions/upload-artifact@v4
         with:
@@ -66,5 +72,6 @@ jobs:
             artifacts/ui-tranche1-v2/
             artifacts/ui-tranche2-v1/
             artifacts/ui-tranche3-goals-v1/
+            artifacts/ui-tranche4-system-v1/
           if-no-files-found: error
           retention-days: 14
