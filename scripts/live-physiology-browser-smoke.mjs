@@ -8,6 +8,7 @@ const requestCounts = new Map();
 let backgroundRefreshes = 0;
 let forcedRefreshes = 0;
 let persistedReads = 0;
+let sourceRefreshed = false;
 
 function count(pathname){requestCounts.set(pathname,(requestCounts.get(pathname)||0)+1);}
 function json(res,value){res.writeHead(200,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value));}
@@ -40,10 +41,18 @@ const server=http.createServer((req,res)=>{
   if(url.pathname==='/api/intelligence/current')return json(res,intelligence);
   if(url.pathname==='/api/intelligence/refresh')return json(res,{...intelligence,afterRevision:intelligence.revision});
   if(url.pathname==='/api/wellness/today'){
-    const refresh=url.searchParams.get('refresh')==='1';
-    if(refresh){forcedRefreshes++;return json(res,live);}
-    persistedReads++;
-    if(persistedReads===1){setTimeout(()=>{backgroundRefreshes++;},50);return json(res,stale);}
+    const refresh=url.searchParams.get('refresh');
+    if(refresh==='1'){
+      forcedRefreshes++;
+      sourceRefreshed=true;
+      return json(res,live);
+    }
+    if(refresh==='0'){
+      persistedReads++;
+      return json(res,sourceRefreshed?live:stale);
+    }
+    backgroundRefreshes++;
+    sourceRefreshed=true;
     return json(res,live);
   }
   return staticFile(res,url.pathname);
@@ -59,9 +68,8 @@ async function waitForNode(predicate,timeoutMs=2000){const started=Date.now();wh
 
 try{
   await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded'});
-  // Validate persisted-first behaviour before TODAY v2's own async summary load can
-  // outlive the deliberately short STALE fixture window.
   await page.waitForSelector('.fz-live-physiology-v3[data-freshness="STALE"]',{state:'attached',timeout:1500});
+  assert(persistedReads>=1,'persisted wellness is read before source refresh');
   assert(await page.locator('.fz-live-grid').evaluate(el=>el.hidden),'persisted static grid is hidden after immediate DB render');
   assert(await page.locator('.fz-live-chart-v3').count()===4,'four Live Physiology scrub graphs render in the detail layer');
   assert((await page.locator('[data-live-key="respiration"] [data-live-value]').textContent()).startsWith('13.8'),'respiration zero placeholders are excluded');
