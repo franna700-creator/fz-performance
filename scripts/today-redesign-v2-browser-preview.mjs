@@ -29,19 +29,21 @@ async function capture(name,viewport,isMobile=false){
   await page.waitForSelector('.fz2-top-shell',{timeout:6000});
   await page.waitForSelector('#today.fz-today-v2 .fz2-stage',{timeout:6000});
   await page.waitForSelector('#today .fz2-thought',{timeout:6000});
+  await page.waitForSelector('#today .fz2-phys-summary',{timeout:6000});
   const viewerButton=page.getByRole('button',{name:/Continue in Viewer Mode/i});
   if(await viewerButton.count()){try{await viewerButton.click({timeout:2000});await page.waitForTimeout(250);}catch{}}
   await page.waitForTimeout(900);
-  const metrics=await page.evaluate(({isMobile})=>{const legacy=document.querySelector('#today .fz-clean-hero');const overlay=document.querySelector('.fz-mode-overlay');const side=document.querySelector('.side');const thought=document.querySelector('.fz2-thought');const live=document.querySelector('#today>.fz2-legacy-live');const bottom=document.querySelector('.bottom');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:thought?.querySelector('blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),topShell:!!document.querySelector('.fz2-top-shell'),topNavButtons:document.querySelectorAll('.fz2-topnav [data-page]').length,liveIcons:document.querySelectorAll('.fz2-legacy-live .fz2-live-icon').length,legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false,sideVisible:side?getComputedStyle(side).display!=='none':false,overlayVisible:overlay?getComputedStyle(overlay).display!=='none'&&!overlay.hidden:false,bottomVisible:bottom?getComputedStyle(bottom).display!=='none':false,thoughtBeforeLive:thought&&live?thought.getBoundingClientRect().top<live.getBoundingClientRect().top:false,isMobile};},{isMobile});
+  const metrics=await page.evaluate(({isMobile})=>{const legacy=document.querySelector('#today .fz-clean-hero');const overlay=document.querySelector('.fz-mode-overlay');const side=document.querySelector('.side');const thought=document.querySelector('.fz2-thought');const physiology=document.querySelector('#today .fz2-phys-summary');const bottom=document.querySelector('.bottom');return{width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,decision:document.querySelector('.fz2-decision h2')?.textContent?.trim(),thought:thought?.querySelector('blockquote')?.textContent?.trim(),photo:!!document.querySelector('.fz2-photo'),topShell:!!document.querySelector('.fz2-top-shell'),topNavButtons:document.querySelectorAll('.fz2-topnav [data-page]').length,liveIcons:document.querySelectorAll('.fz2-legacy-live .fz2-live-icon').length,summaryMetrics:document.querySelectorAll('.fz2-summary-metric').length,legacyVisible:legacy?getComputedStyle(legacy).display!=='none':false,sideVisible:side?getComputedStyle(side).display!=='none':false,overlayVisible:overlay?getComputedStyle(overlay).display!=='none'&&!overlay.hidden:false,bottomVisible:bottom?getComputedStyle(bottom).display!=='none':false,thoughtBeforePhysiology:thought&&physiology?thought.getBoundingClientRect().top<physiology.getBoundingClientRect().top:false,isMobile};},{isMobile});
   if(metrics.width>metrics.client+1)throw new Error(`${name} horizontal overflow ${metrics.width}>${metrics.client}`);
   if(!metrics.decision||!metrics.thought||!metrics.photo||!metrics.topShell)throw new Error(`${name} missing v2 content`);
   if(metrics.topNavButtons!==4)throw new Error(`${name} missing topside navigation contract`);
   if(metrics.liveIcons<4)throw new Error(`${name} semantic physiology icons did not mount`);
+  if(metrics.summaryMetrics!==6)throw new Error(`${name} compact physiology summary is incomplete`);
   if(metrics.legacyVisible)throw new Error(`${name} legacy TODAY hero is still visibly competing with v2`);
   if(metrics.sideVisible)throw new Error(`${name} legacy left rail remains visible`);
   if(metrics.overlayVisible)throw new Error(`${name} access overlay obscures visual QA`);
   if(isMobile&&!metrics.bottomVisible)throw new Error(`${name} mobile bottom navigation is not visible`);
-  if(isMobile&&!metrics.thoughtBeforeLive)throw new Error(`${name} mobile Daily FZ Thought is not promoted ahead of physiology`);
+  if(isMobile&&!metrics.thoughtBeforePhysiology)throw new Error(`${name} mobile Daily FZ Thought is not promoted ahead of physiology summary`);
   if(errors.length)throw new Error(`${name} page errors: ${errors.join(' | ')}`);
   await page.screenshot({path:path.join(out,`${name}.png`),fullPage:true});
   await page.close();console.log('CAPTURED',name,metrics);
