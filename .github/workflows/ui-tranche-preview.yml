@@ -18,6 +18,7 @@ on:
       - 'scripts/trends-train-redesign-v1-build.mjs'
       - 'scripts/trends-train-redesign-v1-smoke.mjs'
       - 'scripts/trends-train-redesign-v1-browser-preview.mjs'
+      - 'scripts/trends-train-phase2-acceptance.mjs'
       - 'scripts/design-system-smoke.mjs'
       - 'scripts/clean-shell.mjs'
       - 'package.json'
@@ -46,6 +47,8 @@ jobs:
         run: node scripts/today-redesign-v2-browser-preview.mjs
       - name: Capture rebuilt desktop and mobile TRENDS + TRAIN
         run: node scripts/trends-train-redesign-v1-browser-preview.mjs
+      - name: Validate Phase 2 cross-surface and exact prescription
+        run: node scripts/trends-train-phase2-acceptance.mjs
       - name: Upload rebuilt UI preview
         uses: actions/upload-artifact@v4
         with:
