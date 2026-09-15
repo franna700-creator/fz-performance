@@ -1,0 +1,84 @@
+/* FZ Performance — Training Exposure v1 */
+#trends .fz-training-exposure-v1{margin-top:28px}
+#trends .fz-training-exposure-v1>.section-head{margin-bottom:12px}
+#trends .fz-exposure-shell{padding:18px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-lg);background:linear-gradient(180deg,var(--fz-surface-1),var(--fz-bg));box-shadow:inset 2px 0 0 rgba(103,215,231,.48)}
+#trends .fz-exposure-interpretation{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:14px;padding:0 2px}
+#trends .fz-exposure-interpretation>span{flex:0 0 auto;color:var(--fz-p2-trends);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+#trends .fz-exposure-interpretation h3{max-width:850px;margin:0;color:var(--fz-text);font-size:16px;line-height:1.45;text-align:right}
+#trends .fz-exposure-controls{display:grid;gap:9px;margin:12px 0}
+#trends .fz-exposure-control-group{display:flex;flex-wrap:wrap;gap:6px}
+#trends .fz-exposure-control-group button{min-height:34px;padding:7px 11px;border:1px solid var(--fz-border);border-radius:999px;background:var(--fz-surface-2);color:var(--fz-text-muted);font:inherit;font-size:11px;font-weight:800;letter-spacing:.035em;cursor:pointer}
+#trends .fz-exposure-control-group button:hover,#trends .fz-exposure-control-group button:focus-visible{color:var(--fz-text);border-color:rgba(103,215,231,.45);outline:none}
+#trends .fz-exposure-control-group button.active{color:var(--fz-text);border-color:rgba(103,215,231,.68);background:rgba(103,215,231,.10);box-shadow:inset 0 0 0 1px rgba(103,215,231,.08)}
+#trends .fz-exposure-modalities{padding-top:2px;border-top:1px solid rgba(255,255,255,.05)}
+#trends .fz-exposure-custom{display:flex;gap:10px;align-items:center}
+#trends .fz-exposure-custom label{display:flex;align-items:center;gap:7px;color:var(--fz-text-muted);font-size:11px;font-weight:700}
+#trends .fz-exposure-custom input{padding:7px 9px;border:1px solid var(--fz-border);border-radius:10px;background:var(--fz-surface-2);color:var(--fz-text);font:inherit;color-scheme:dark}
+#trends .fz-exposure-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:15px 0}
+#trends .fz-exposure-summary>div{min-width:0;padding:13px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-md);background:rgba(255,255,255,.018)}
+#trends .fz-exposure-summary small,#trends .fz-exposure-summary span{display:block;color:var(--fz-text-muted)}
+#trends .fz-exposure-summary small{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+#trends .fz-exposure-summary b{display:block;margin:5px 0 4px;color:var(--fz-text);font-size:21px;letter-spacing:-.03em}
+#trends .fz-exposure-summary span{font-size:10px;line-height:1.35}
+#trends .fz-exposure-plot{padding:15px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-md);background:var(--fz-surface-1);overflow:hidden}
+#trends .fz-exposure-plot-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
+#trends .fz-exposure-plot-head>div>*{display:block}
+#trends .fz-exposure-plot-head b{color:var(--fz-text);font-size:15px}
+#trends .fz-exposure-plot-head span{color:var(--fz-text-muted);font-size:11px}
+#trends .fz-exposure-chart{display:flex;align-items:flex-end;gap:4px;height:230px;padding:26px 2px 22px;border-bottom:1px solid var(--fz-border)}
+#trends .fz-exposure-day{position:relative;display:flex;flex:1 1 0;min-width:3px;height:100%;align-items:flex-end;justify-content:center}
+#trends .fz-exposure-day>span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;color:var(--fz-text-muted);font-size:9px}
+#trends .fz-exposure-value{position:absolute;top:-18px;left:50%;transform:translateX(-50%);color:var(--fz-text-muted);font-size:9px;white-space:nowrap}
+#trends .fz-exposure-value sup{color:var(--fz-warning,#f5cf19);font-size:9px}
+#trends .fz-exposure-bar{position:relative;width:min(22px,78%);min-height:0;border-radius:6px 6px 2px 2px;background:rgba(255,255,255,.035);overflow:hidden}
+#trends .fz-exposure-bar>i{position:absolute;left:0;width:100%;min-height:1px;background:rgba(103,215,231,.52);border-top:1px solid rgba(0,0,0,.22)}
+#trends .fz-exposure-bar>i[data-bucket="RUNNING"]{background:rgba(103,215,231,.86)}
+#trends .fz-exposure-bar>i[data-bucket="STRENGTH"]{background:rgba(145,212,164,.82)}
+#trends .fz-exposure-bar>i[data-bucket="BIKE"]{background:rgba(245,207,25,.72)}
+#trends .fz-exposure-bar>i[data-bucket="ROWING"]{background:rgba(137,174,255,.74)}
+#trends .fz-exposure-bar>i[data-bucket="SKI_ERG"]{background:rgba(205,160,255,.72)}
+#trends .fz-exposure-bar>i[data-bucket="ELLIPTICAL"]{background:rgba(255,166,113,.74)}
+#trends .fz-exposure-bar>i[data-bucket="MOBILITY_WALKING"]{background:rgba(165,186,191,.68)}
+#trends .fz-exposure-lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px}
+#trends .fz-exposure-composition,#trends .fz-exposure-intensity,#trends .fz-exposure-quality,#trends .fz-exposure-empty{padding:13px;border:1px solid var(--fz-border);border-radius:var(--fz-radius-md);background:rgba(255,255,255,.015)}
+#trends .fz-exposure-composition{display:grid;gap:9px}
+#trends .fz-exposure-composition>div>div{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;font-size:11px}
+#trends .fz-exposure-composition b{color:var(--fz-text)}
+#trends .fz-exposure-composition span{color:var(--fz-text-muted)}
+#trends .fz-exposure-composition meter{display:block;width:100%;height:7px;accent-color:var(--fz-p2-trends)}
+#trends .fz-exposure-intensity-head{display:flex;justify-content:space-between;gap:10px;font-size:11px}
+#trends .fz-exposure-intensity-head b{color:var(--fz-text)}
+#trends .fz-exposure-intensity-head span{color:var(--fz-text-muted)}
+#trends .fz-exposure-intensity-bar{display:flex;height:12px;margin:13px 0 10px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.04)}
+#trends .fz-exposure-intensity-bar>i[data-zone="0"],#trends .fz-exposure-intensity-legend i[data-zone="0"]{background:rgba(145,212,164,.82)}
+#trends .fz-exposure-intensity-bar>i[data-zone="1"],#trends .fz-exposure-intensity-legend i[data-zone="1"]{background:rgba(245,207,25,.78)}
+#trends .fz-exposure-intensity-bar>i[data-zone="2"],#trends .fz-exposure-intensity-legend i[data-zone="2"]{background:rgba(239,112,112,.82)}
+#trends .fz-exposure-intensity-legend{display:flex;flex-wrap:wrap;gap:10px;color:var(--fz-text-muted);font-size:10px}
+#trends .fz-exposure-intensity-legend span{display:flex;align-items:center;gap:5px}
+#trends .fz-exposure-intensity-legend i{width:7px;height:7px;border-radius:50%}
+#trends .fz-exposure-quality{display:flex;gap:10px;align-items:flex-start;margin-top:10px;font-size:11px;line-height:1.45}
+#trends .fz-exposure-quality b,#trends .fz-exposure-empty b{flex:0 0 auto;color:var(--fz-text)}
+#trends .fz-exposure-quality span,#trends .fz-exposure-empty span{color:var(--fz-text-muted)}
+#trends .fz-exposure-empty{display:grid;gap:5px;min-height:120px;place-content:center;text-align:center}
+
+@media(max-width:1080px){
+  #trends .fz-exposure-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  #trends .fz-exposure-shell{padding:13px;border-radius:16px}
+  #trends .fz-exposure-interpretation{display:block}
+  #trends .fz-exposure-interpretation h3{margin-top:7px;font-size:14px;text-align:left}
+  #trends .fz-exposure-summary{grid-template-columns:1fr 1fr}
+  #trends .fz-exposure-summary b{font-size:18px}
+  #trends .fz-exposure-control-group{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;scrollbar-width:none}
+  #trends .fz-exposure-control-group::-webkit-scrollbar{display:none}
+  #trends .fz-exposure-control-group button{flex:0 0 auto}
+  #trends .fz-exposure-custom{display:grid;grid-template-columns:1fr 1fr}
+  #trends .fz-exposure-custom label{display:grid;gap:4px}
+  #trends .fz-exposure-custom input{min-width:0;width:100%}
+  #trends .fz-exposure-chart{height:190px;gap:2px}
+  #trends .fz-exposure-bar{width:min(14px,84%)}
+  #trends .fz-exposure-value{display:none}
+  #trends .fz-exposure-lower{grid-template-columns:1fr}
+  #trends .fz-exposure-quality{display:grid;gap:4px}
+}
