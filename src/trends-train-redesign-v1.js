@@ -39,7 +39,7 @@ function decorateTrends(){
   if(!root)return;
   const summary=phase2Section(root,'Longitudinal Signals');
   if(!summary)return;
-  const gaps=phase2Section(root,'Trajectory & Measurement Gaps');
+  const gaps=phase2Section(root,'Trajectory & Measurement Gaps')||phase2Section(root,'Primary Objective Capability Priorities');
   const recovery=phase2Section(root,'Recovery Response');
   const exposure=phase2Section(root,'Exposure Cost');
   const performance=phase2Section(root,'Performance Trajectory');
