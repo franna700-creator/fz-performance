@@ -15,6 +15,7 @@
     {"source":"/api/wellness/today","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/training/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/trends/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
+    {"source":"/api/goals/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/system/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/intelligence/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
     {"source":"/api/source/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},
