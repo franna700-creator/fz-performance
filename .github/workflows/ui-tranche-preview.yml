@@ -7,11 +7,15 @@ on:
       - 'src/today-redesign-v2.css'
       - 'src/trends-train-redesign-v1.js'
       - 'src/trends-train-redesign-v1.css'
+      - 'src/goals-progress-v1.js'
+      - 'src/goals-progress-v1.css'
       - 'src/fz-design-system.css'
       - 'src/fz-topside-shell.css'
       - 'src/fz-hero-responsive.css'
       - 'src/fz-hero-desktop.webp'
       - 'src/fz-hero-mobile.webp'
+      - 'api/system/status.js'
+      - 'vercel.json'
       - 'scripts/today-redesign-v2-browser-preview.mjs'
       - 'scripts/today-redesign-v2-build.mjs'
       - 'scripts/today-redesign-v2-smoke.mjs'
@@ -19,6 +23,9 @@ on:
       - 'scripts/trends-train-redesign-v1-smoke.mjs'
       - 'scripts/trends-train-redesign-v1-browser-preview.mjs'
       - 'scripts/trends-train-phase2-acceptance.mjs'
+      - 'scripts/goals-progress-v1-build.mjs'
+      - 'scripts/goals-progress-v1-smoke.mjs'
+      - 'scripts/goals-progress-v1-browser-preview.mjs'
       - 'scripts/design-system-smoke.mjs'
       - 'scripts/clean-shell.mjs'
       - 'package.json'
@@ -49,6 +56,8 @@ jobs:
         run: node scripts/trends-train-redesign-v1-browser-preview.mjs
       - name: Validate Phase 2 cross-surface and exact prescription
         run: node scripts/trends-train-phase2-acceptance.mjs
+      - name: Capture rebuilt desktop and mobile GOALS
+        run: node scripts/goals-progress-v1-browser-preview.mjs
       - name: Upload rebuilt UI preview
         uses: actions/upload-artifact@v4
         with:
@@ -56,5 +65,6 @@ jobs:
           path: |
             artifacts/ui-tranche1-v2/
             artifacts/ui-tranche2-v1/
+            artifacts/ui-tranche3-goals-v1/
           if-no-files-found: error
           retention-days: 14

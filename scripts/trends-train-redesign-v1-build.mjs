@@ -30,3 +30,4 @@ if(fs.existsSync(contractPath)){
   fs.writeFileSync(contractPath,JSON.stringify(contract,null,2));
 }
 console.log('PASS TRENDS + TRAIN redesign v1 presentation assets wired');
+await import('./goals-progress-v1-build.mjs');

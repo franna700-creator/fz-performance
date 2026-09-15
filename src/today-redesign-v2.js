@@ -44,7 +44,7 @@ function v2Icon(name){
 }
 function v2Glyph(name){return({pulse:'∿',heart:'♥',moon:'☾',battery:'▣',bolt:'ϟ',steps:'••'}[name]||'•')}
 function v2PageMeta(page){
-  const map={today:['Today','Your data. Your decision.'],trends:['Trends','Change over time, interpreted.'],train:['Training','Execution, memory and response.'],system:['System','Source truth and provenance.']};
+  const map={today:['Today','Your data. Your decision.'],trends:['Trends','Change over time, interpreted.'],train:['Training','Execution, memory and response.'],goals:['Goals','Objective runway, capability evidence and progress.'],system:['System','Source truth and provenance.']};
   return map[page]||map.today;
 }
 function v2TopNavButton(page,label,icon,tone){return `<button type="button" data-page="${page}" class="fz2-topnav-button tone-${tone}"><span class="fz2-topnav-icon">${v2Icon(icon)}</span><span>${label}</span></button>`}
@@ -55,7 +55,7 @@ function v2MountTopShell(){
   let shell=main.querySelector(':scope > .fz2-top-shell');
   if(!shell){
     shell=document.createElement('header');shell.className='fz2-top-shell';
-    shell.innerHTML=`<div class="fz2-brand"><div class="fz2-brand-mark">FZ</div><div><strong>PERFORMANCE</strong><small>TRAIN SMARTER. GO FURTHER.</small></div></div><div class="fz2-page-context"><small data-fz2-date></small><strong data-fz2-page-title>Today</strong><span data-fz2-page-subtitle>Your data. Your decision.</span></div><nav class="fz2-topnav" aria-label="Primary navigation">${v2TopNavButton('today','Today','home','yellow')}${v2TopNavButton('trends','Trends','trends','cyan')}${v2TopNavButton('train','Training','train','green')}${v2TopNavButton('system','System','system','violet')}</nav><div class="fz2-shell-ops"><div class="fz2-countdown-slot"></div><div class="fz2-auth-slot"></div></div>`;
+    shell.innerHTML=`<div class="fz2-brand"><div class="fz2-brand-mark">FZ</div><div><strong>PERFORMANCE</strong><small>TRAIN SMARTER. GO FURTHER.</small></div></div><div class="fz2-page-context"><small data-fz2-date></small><strong data-fz2-page-title>Today</strong><span data-fz2-page-subtitle>Your data. Your decision.</span></div><nav class="fz2-topnav" aria-label="Primary navigation">${v2TopNavButton('today','Today','home','yellow')}${v2TopNavButton('trends','Trends','trends','cyan')}${v2TopNavButton('train','Training','train','green')}${v2TopNavButton('goals','Goals','target','yellow')}${v2TopNavButton('system','System','system','violet')}</nav><div class="fz2-shell-ops"><div class="fz2-countdown-slot"></div><div class="fz2-auth-slot"></div></div>`;
     main.prepend(shell);
   }
   const legacyTop=main.querySelector(':scope > .topbar');
