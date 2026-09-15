@@ -7,6 +7,8 @@ on:
       - 'src/today-redesign-v2.css'
       - 'src/trends-train-redesign-v1.js'
       - 'src/trends-train-redesign-v1.css'
+      - 'src/training-exposure-v1.js'
+      - 'src/training-exposure-v1.css'
       - 'src/goals-progress-v1.js'
       - 'src/goals-progress-v1.css'
       - 'src/system-intelligence.js'
@@ -16,8 +18,10 @@ on:
       - 'src/fz-hero-responsive.css'
       - 'src/fz-hero-desktop.webp'
       - 'src/fz-hero-mobile.webp'
+      - 'lib/trends-dynamic.js'
       - 'api/system/status.js'
       - 'vercel.json'
+      - 'docs/PHASE5_TRAINING_EXPOSURE_CONTRACT.md'
       - 'scripts/today-redesign-v2-browser-preview.mjs'
       - 'scripts/today-redesign-v2-build.mjs'
       - 'scripts/today-redesign-v2-smoke.mjs'
@@ -25,6 +29,9 @@ on:
       - 'scripts/trends-train-redesign-v1-smoke.mjs'
       - 'scripts/trends-train-redesign-v1-browser-preview.mjs'
       - 'scripts/trends-train-phase2-acceptance.mjs'
+      - 'scripts/training-exposure-v1-build.mjs'
+      - 'scripts/training-exposure-v1-smoke.mjs'
+      - 'scripts/training-exposure-v1-browser-preview.mjs'
       - 'scripts/goals-progress-v1-build.mjs'
       - 'scripts/goals-progress-v1-smoke.mjs'
       - 'scripts/goals-progress-v1-browser-preview.mjs'
@@ -60,6 +67,8 @@ jobs:
         run: node scripts/trends-train-redesign-v1-browser-preview.mjs
       - name: Validate Phase 2 cross-surface and exact prescription
         run: node scripts/trends-train-phase2-acceptance.mjs
+      - name: Capture Phase 5 Training Exposure interactions
+        run: node scripts/training-exposure-v1-browser-preview.mjs
       - name: Capture rebuilt desktop and mobile GOALS
         run: node scripts/goals-progress-v1-browser-preview.mjs
       - name: Capture rebuilt desktop and mobile SYSTEM
@@ -71,6 +80,7 @@ jobs:
           path: |
             artifacts/ui-tranche1-v2/
             artifacts/ui-tranche2-v1/
+            artifacts/ui-phase5-training-exposure-v1/
             artifacts/ui-tranche3-goals-v1/
             artifacts/ui-tranche4-system-v1/
           if-no-files-found: error
