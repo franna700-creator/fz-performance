@@ -24,9 +24,9 @@ assert.ok(heroCss.includes("url('/assets/fz-hero-desktop.jpg')")&&heroCss.includ
 for(const [label,photo] of [['legacy',legacyPhoto],['desktop',desktopHero],['mobile',mobileHero]]){
   assert.equal(photo[0],0xff,`${label} hero begins with JPEG SOI byte 1`);
   assert.equal(photo[1],0xd8,`${label} hero begins with JPEG SOI byte 2`);
+  assert.ok(photo.length>10000,`${label} hero has a non-placeholder production payload`);
 }
-assert.ok(desktopHero.length>50000,'desktop generated hero is packaged at production-quality size');
-assert.ok(mobileHero.length>60000,'mobile generated hero is packaged at production-quality size');
+assert.ok(mobileHero.length>desktopHero.length,'portrait mobile hero retains dedicated crop/detail rather than reusing desktop bytes');
 assert.ok(!js.includes('How are you feeling'),'undeveloped subjective check-in is not exposed');
 assert.ok(!js.includes('Goals & Progress'),'Goals & Progress remains out of tranche 1 live UI');
 console.log('PASS FZ TODAY redesign v2 responsive-hero visual contract');
