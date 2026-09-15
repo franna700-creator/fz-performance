@@ -54,6 +54,9 @@ function metricUnit(){
   if(FZ_EXPOSURE.modality==='STRENGTH')return'sets';
   return'km';
 }
+function distanceTotalAllowed(){
+  return FZ_EXPOSURE.modality!=='ALL'&&!['STRENGTH','MOBILITY_WALKING','OTHER'].includes(FZ_EXPOSURE.modality);
+}
 function volumeComparable(){
   if(FZ_EXPOSURE.metric!=='VOLUME')return true;
   if(FZ_EXPOSURE.modality==='ALL')return false;
@@ -107,10 +110,13 @@ function controls(){
   </div>`;
 }
 function summaryStrip(sum){
+  const distanceAllowed=distanceTotalAllowed();
+  const distanceText=distanceAllowed&&sum.distanceKnown?`${exposureFmt(sum.distanceKm,1)} km`:'—';
+  const distanceNote=FZ_EXPOSURE.modality==='ALL'?'Choose one modality to total distance':FZ_EXPOSURE.modality==='STRENGTH'?'Strength volume is represented by canonical set detail':distanceAllowed?'Only source-supported distance':'Distance is not treated as the primary volume unit for this category';
   return `<div class="fz-exposure-summary">
     <div><small>Training time</small><b>${formatDuration(sum.durationMin)}</b><span>${sum.durationKnown}/${sum.sessions} sessions covered</span></div>
     <div><small>Relative load</small><b>${sum.nclKnown?exposureFmt(sum.ncl,1):'—'}</b><span>${sum.nclKnown}/${sum.sessions} sessions with NCL</span></div>
-    <div><small>Distance evidence</small><b>${sum.distanceKnown?`${exposureFmt(sum.distanceKm,1)} km`:'—'}</b><span>Only source-supported distance</span></div>
+    <div><small>Distance evidence</small><b>${distanceText}</b><span>${exposureEsc(distanceNote)}</span></div>
     <div><small>Strength detail</small><b>${sum.strengthKnown?`${exposureFmt(sum.strengthSets)} sets`:'—'}</b><span>${sum.strengthKnown}/${sum.sessions} sessions with set detail</span></div>
   </div>`;
 }
@@ -118,7 +124,7 @@ function chart(){
   if(!volumeComparable())return `<div class="fz-exposure-empty"><b>Choose one modality for volume.</b><span>FZ will not sum running kilometres, machine distance and strength sets into one synthetic volume number.</span></div>`;
   const series=dailySeries();const max=Math.max(...series.map(p=>p.total),0);const unit=metricUnit();
   const visible=series.filter((_,i)=>series.length<=14||i%Math.ceil(series.length/14)===0||i===series.length-1);
-  return `<div class="fz-exposure-chart" role="img" aria-label="Training exposure over selected dates">${series.map((point,index)=>{
+  return `<div class="fz-exposure-chart" role="img" aria-label="Training exposure over selected dates">${series.map(point=>{
     const height=max>0?Math.max(2,Math.round(point.total/max*100)):0;
     const label=visible.includes(point)?new Intl.DateTimeFormat('en-ZA',{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(`${point.date}T12:00:00Z`)):'';
     const segments=Object.entries(point.buckets).sort((a,b)=>b[1]-a[1]);let offset=0;
@@ -162,7 +168,15 @@ async function loadExposure(){
     const root=exposureRoot(),anchor=root&&findExposureAnchor(root);if(root&&anchor){let section=root.querySelector(':scope > .fz-training-exposure-v1');if(!section){section=document.createElement('section');section.className='section fz-training-exposure-v1';anchor.insertAdjacentElement('afterend',section);}section.innerHTML=`<div class="fz-exposure-empty"><b>Training Exposure unavailable</b><span>${exposureEsc(error?.message||'Canonical exposure projection could not be loaded.')}</span></div>`;}
   }finally{FZ_EXPOSURE.loading=false;}
 }
-function scheduleExposure(){queueMicrotask(()=>{const root=exposureRoot();if(!root)return;if(findExposureAnchor(root)){if(FZ_EXPOSURE.data)renderExposure();else loadExposure();}});}
+function scheduleExposure(){
+  queueMicrotask(()=>{
+    const root=exposureRoot();
+    if(!root||root.querySelector(':scope > .fz-training-exposure-v1'))return;
+    if(findExposureAnchor(root)){
+      if(FZ_EXPOSURE.data)renderExposure();else loadExposure();
+    }
+  });
+}
 
 document.addEventListener('click',event=>{
   const windowButton=event.target.closest('[data-exposure-window]');if(windowButton){FZ_EXPOSURE.window=windowButton.dataset.exposureWindow;renderExposure();return;}
