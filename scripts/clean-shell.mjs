@@ -14,6 +14,7 @@ const liveCss=path.join(root,'src','live-physiology.css');
 const trainingSyncJs=path.join(root,'src','training-auto-sync.js');
 const trainingSyncCss=path.join(root,'src','training-auto-sync.css');
 const systemIntelligenceJs=path.join(root,'src','system-intelligence.js');
+const systemRationalizationCss=path.join(root,'src','system-rationalization-v1.css');
 const intelligenceRefreshJs=path.join(root,'src','intelligence-refresh.js');
 const trainingMemoryRichJs=path.join(root,'src','training-memory-rich.js');
 const adaptiveChoiceJs=path.join(root,'src','adaptive-choice.js');
@@ -22,7 +23,7 @@ const fzDesignCss=path.join(root,'src','fz-design-system.css');
 const uiContextJs=path.join(root,'src','ui-context-recovery.js');
 const uiContextCss=path.join(root,'src','ui-context-recovery.css');
 
-for(const input of [htmlPath,cssPath,cleanJs,cleanCss,layoutStabilityJs,liveJs,liveCss,trainingSyncJs,trainingSyncCss,systemIntelligenceJs,intelligenceRefreshJs,trainingMemoryRichJs,adaptiveChoiceJs,adaptiveChoiceCss,fzDesignCss,uiContextJs,uiContextCss]){
+for(const input of [htmlPath,cssPath,cleanJs,cleanCss,layoutStabilityJs,liveJs,liveCss,trainingSyncJs,trainingSyncCss,systemIntelligenceJs,systemRationalizationCss,intelligenceRefreshJs,trainingMemoryRichJs,adaptiveChoiceJs,adaptiveChoiceCss,fzDesignCss,uiContextJs,uiContextCss]){
   if(!fs.existsSync(input))throw new Error(`Clean shell input missing: ${input}`);
 }
 
@@ -38,7 +39,7 @@ const pages=`<section class="page active" id="today"><div class="fz-clean-loadin
 html=html.slice(0,start)+pages+html.slice(end);
 html=html
   .replace(/<meta content="[^"]+" name="fz-build"\/>/, '<meta content="2026-09-14-v0.8.0-rc5-secure-athlete-choice" name="fz-build"/><meta content="4.6-secure-athlete-choice" name="fz-shell"/>')
-  .replace('<link href="/assets/app.css" rel="stylesheet"/>','<link href="/assets/app.css" rel="stylesheet"/><link href="/assets/clean.css" rel="stylesheet"/><link href="/assets/live-physiology.css" rel="stylesheet"/><link href="/assets/training-auto-sync.css" rel="stylesheet"/><link href="/assets/adaptive-choice.css" rel="stylesheet"/><link href="/assets/fz-design-system.css" rel="stylesheet"/><link href="/assets/ui-context-recovery.css" rel="stylesheet"/>')
+  .replace('<link href="/assets/app.css" rel="stylesheet"/>','<link href="/assets/app.css" rel="stylesheet"/><link href="/assets/clean.css" rel="stylesheet"/><link href="/assets/live-physiology.css" rel="stylesheet"/><link href="/assets/training-auto-sync.css" rel="stylesheet"/><link href="/assets/adaptive-choice.css" rel="stylesheet"/><link href="/assets/fz-design-system.css" rel="stylesheet"/><link href="/assets/ui-context-recovery.css" rel="stylesheet"/><link href="/assets/system-rationalization-v1.css" rel="stylesheet"/>')
   .replace(/<div class="subtitle">[\s\S]*?<\/div><\/div><div class="fresh">/, '<div class="subtitle">Current state → one decision surface → training choice → exact execution prescription → canonical execution memory → longitudinal change → provenance.</div></div><div class="fresh">')
   .replace(/<div class="side-note">[\s\S]*?<\/div><\/aside>/, '<div class="side-note">v0.8 RC5 · Neon operational truth · canonical readiness · repeatable protocol families · secure Athlete Mode.</div></aside>')
   .replace('FZ Performance · HYROX System','FZ Performance · Adaptive Performance System')
@@ -49,7 +50,7 @@ html=html
 if(html.includes('STRONG SYSTEMIC REBOUND')||html.includes('Matched Run AET · Power/HR')||html.includes('Google Drive master</b><span class="pill">CANONICAL'))throw new Error('Stale athlete-state content remains in static shell');
 if(html.includes('HYROX System'))throw new Error('Objective-specific product branding remains in static shell');
 if(html.includes('06:00 / 13:00 / 20:00'))throw new Error('Stale three-slot cadence remains in clean shell');
-for(const asset of ['/assets/layout-stability.js','/assets/app-clean.js','/assets/clean.css','/assets/live-physiology.js','/assets/live-physiology.css','/assets/training-auto-sync.js','/assets/training-auto-sync.css','/assets/system-intelligence.js','/assets/intelligence-refresh.js','/assets/training-memory-rich.js','/assets/adaptive-choice.js','/assets/adaptive-choice.css','/assets/fz-design-system.css','/assets/ui-context-recovery.js','/assets/ui-context-recovery.css']){
+for(const asset of ['/assets/layout-stability.js','/assets/app-clean.js','/assets/clean.css','/assets/live-physiology.js','/assets/live-physiology.css','/assets/training-auto-sync.js','/assets/training-auto-sync.css','/assets/system-intelligence.js','/assets/system-rationalization-v1.css','/assets/intelligence-refresh.js','/assets/training-memory-rich.js','/assets/adaptive-choice.js','/assets/adaptive-choice.css','/assets/fz-design-system.css','/assets/ui-context-recovery.js','/assets/ui-context-recovery.css']){
   if(!html.includes(asset))throw new Error(`Clean runtime asset not wired: ${asset}`);
 }
 if(html.indexOf('/assets/layout-stability.js')>html.indexOf('/assets/app-clean.js'))throw new Error('Layout stability guard must load before canonical renderer');
@@ -62,12 +63,12 @@ if(html.indexOf('/assets/adaptive-choice.js')<html.indexOf('/assets/app-clean.js
 if(html.indexOf('/assets/ui-context-recovery.js')<html.indexOf('/assets/adaptive-choice.js'))throw new Error('Rationalisation context module must load after adaptive choice');
 
 fs.writeFileSync(htmlPath,html);
-for(const [source,name] of [[layoutStabilityJs,'layout-stability.js'],[cleanJs,'app-clean.js'],[cleanCss,'clean.css'],[liveJs,'live-physiology.js'],[liveCss,'live-physiology.css'],[trainingSyncJs,'training-auto-sync.js'],[trainingSyncCss,'training-auto-sync.css'],[systemIntelligenceJs,'system-intelligence.js'],[intelligenceRefreshJs,'intelligence-refresh.js'],[trainingMemoryRichJs,'training-memory-rich.js'],[adaptiveChoiceJs,'adaptive-choice.js'],[adaptiveChoiceCss,'adaptive-choice.css'],[fzDesignCss,'fz-design-system.css'],[uiContextJs,'ui-context-recovery.js'],[uiContextCss,'ui-context-recovery.css']]){
+for(const [source,name] of [[layoutStabilityJs,'layout-stability.js'],[cleanJs,'app-clean.js'],[cleanCss,'clean.css'],[liveJs,'live-physiology.js'],[liveCss,'live-physiology.css'],[trainingSyncJs,'training-auto-sync.js'],[trainingSyncCss,'training-auto-sync.css'],[systemIntelligenceJs,'system-intelligence.js'],[systemRationalizationCss,'system-rationalization-v1.css'],[intelligenceRefreshJs,'intelligence-refresh.js'],[trainingMemoryRichJs,'training-memory-rich.js'],[adaptiveChoiceJs,'adaptive-choice.js'],[adaptiveChoiceCss,'adaptive-choice.css'],[fzDesignCss,'fz-design-system.css'],[uiContextJs,'ui-context-recovery.js'],[uiContextCss,'ui-context-recovery.css']]){
   fs.copyFileSync(source,path.join(dist,'assets',name));
 }
 fs.rmSync(legacyAppPath,{force:true});
 if(fs.existsSync(legacyAppPath))throw new Error('Legacy static app.js survived clean-shell hardening');
-fs.writeFileSync(path.join(dist,'release-ui-contract.json'),JSON.stringify({shell:'4.6-secure-athlete-choice',canonicalRuntime:true,executableGoldenThreads:true,canonicalTrainingMetrics:true,canonicalReadiness:true,sessionOptionComposer:true,sessionPrescriptionComposer:true,repeatableProtocolFamilies:true,athleteChoiceCanonical:true,athleteMode:true,athletePinAuth:true,plannedIntentReconciliation:true,choiceOutcomeObservation:true,crossSurfaceRationalised:true,layoutStabilityGuard:true,todayExperienceV2:true,dailyFzThought:true,legacyAppJs:false,requiredAssets:['layout-stability.js','app-clean.js','intelligence-refresh.js','training-memory-rich.js','adaptive-choice.js','adaptive-choice.css','ui-context-recovery.js','ui-context-recovery.css','today-redesign-v2.js','today-redesign-v2.css','fz-topside-shell.css','fz-hero-responsive.css','fz-hero-desktop.webp','fz-hero-mobile.webp']},null,2));
+fs.writeFileSync(path.join(dist,'release-ui-contract.json'),JSON.stringify({shell:'4.6-secure-athlete-choice',canonicalRuntime:true,executableGoldenThreads:true,canonicalTrainingMetrics:true,canonicalReadiness:true,sessionOptionComposer:true,sessionPrescriptionComposer:true,repeatableProtocolFamilies:true,athleteChoiceCanonical:true,athleteMode:true,athletePinAuth:true,plannedIntentReconciliation:true,choiceOutcomeObservation:true,crossSurfaceRationalised:true,layoutStabilityGuard:true,todayExperienceV2:true,dailyFzThought:true,systemRationalizationV1:true,legacyAppJs:false,requiredAssets:['layout-stability.js','app-clean.js','intelligence-refresh.js','training-memory-rich.js','adaptive-choice.js','adaptive-choice.css','ui-context-recovery.js','ui-context-recovery.css','system-intelligence.js','system-rationalization-v1.css','today-redesign-v2.js','today-redesign-v2.css','fz-topside-shell.css','fz-hero-responsive.css','fz-hero-desktop.webp','fz-hero-mobile.webp']},null,2));
 
 await import('./today-redesign-v2-build.mjs');
 console.log('PASS clean shell v0.8.0-rc5: repeatable protocol prescriptions + secure Athlete Mode + TODAY v2 reference experience');
