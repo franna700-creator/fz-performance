@@ -2,9 +2,11 @@ import { FZ_DATA_CONTRACTS, validateDataContractRegistry, contractById } from '.
 
 const result=validateDataContractRegistry();
 if(!result.ok) throw new Error(result.errors.join('; '));
-if(FZ_DATA_CONTRACTS.length!==26) throw new Error(`Expected 26 canonical contracts, found ${FZ_DATA_CONTRACTS.length}`);
-for(const id of ['measurement.evidence','wellness.current','training.evidence','athlete.memory','trends.ncl','event.format','event.demand_taxonomy','objective.graph','capability.evidence','capability.priority','measurement.hierarchy','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','recommendation.explanation']) if(!contractById(id)) throw new Error(`Missing contract ${id}`);
+if(FZ_DATA_CONTRACTS.length!==28) throw new Error(`Expected 28 canonical contracts, found ${FZ_DATA_CONTRACTS.length}`);
+for(const id of ['measurement.evidence','wellness.current','wellness.history','training.evidence','athlete.memory','trends.ncl','trends.summary','event.format','event.demand_taxonomy','objective.graph','capability.evidence','capability.priority','measurement.hierarchy','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','recommendation.explanation']) if(!contractById(id)) throw new Error(`Missing contract ${id}`);
 if(contractById('trends.ncl').missingPolicy!=='PENDING_DETAIL_NEVER_ZERO') throw new Error('NCL missing-data rule regressed');
+if(!contractById('wellness.history').fallbackPolicy.includes('NO_RUNTIME_WELLNESS_HISTORY_AS_CURRENT_CANONICAL_SOURCE')) throw new Error('TRENDS wellness history may not fall back to stale runtime history');
+if(!contractById('trends.summary').fallbackPolicy.includes('NO_RUNTIME_RENDERCONTRACT_TRENDS_OR_CAP_SNAPSHOT_AS_CURRENT_TRUTH')) throw new Error('Longitudinal summaries may not reuse runtime narrative/CAP snapshots as current truth');
 if(!contractById('event.format').fallbackPolicy.includes('NEVER_INJECT_STATIC_PROFILE_AS_LIVE_TRUTH')) throw new Error('Event format live-data boundary regressed');
 if(!contractById('objective.graph').fallbackPolicy.includes('NO_STATIC_EVENT_SEED_FALLBACK')) throw new Error('Objective graph may not silently resurrect static event seed');
 if(!contractById('event.intelligence').fallbackPolicy.includes('NO_STALE_STATIC_TRANSFER_CALIBRATION')) throw new Error('Event transfer intelligence may not inject stale static calibration');
@@ -23,4 +25,4 @@ if(!shadow.fallbackPolicy.includes('IMMUTABLE_AUDIT_SOURCE')) throw new Error('4
 if(!active.refreshTriggers.includes('recommendation.shadow')) throw new Error('4.3 active recommendation must refresh from canonical shadow projection');
 if(active.refreshTriggers.some(x=>x==='adaptive.context'||x==='materiality.current')) throw new Error('Adaptive context/materiality may not bypass shadow and directly refresh active recommendation.current');
 if(!active.fallbackPolicy.includes('WITHHELD_SHADOW_CLEARS_ACTIVE_LANE')) throw new Error('WITHHELD shadow must fail closed and clear the athlete-facing active lane');
-console.log('PASS v0.8 RC4 data contract registry: canonical readiness, immutable 4.2 audit shadow, and controlled active projection');
+console.log('PASS v0.8 data contract registry: canonical longitudinal wellness/summaries + readiness + controlled recommendation projection');
