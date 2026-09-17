@@ -114,7 +114,9 @@ assert.match(refresh, /addDays\(date, -45\)/, 'late evidence reconciliation must
 assert.match(refresh, /readPendingCanonicalMutations/, 'refresh must drain direct canonical DB mutations');
 
 const readiness = fs.readFileSync('lib/readiness-store.js', 'utf8');
-assert.doesNotMatch(readiness, /WELLNESS_HISTORY/, 'readiness must not use runtime wellness history');
+assert.doesNotMatch(readiness, /runtimeState\?\.datasets\?\.WELLNESS_HISTORY|loadDatabaseRuntimeState/, 'readiness must not consume runtime wellness history');
+assert.match(readiness, /NEON_ONLY_CANONICAL_WELLNESS_HISTORY/, 'readiness must declare Neon-only canonical wellness history');
+assert.match(readiness, /runtimeWellnessHistoryFallbackAllowed:\s*false/, 'readiness must explicitly forbid runtime wellness-history fallback');
 assert.match(readiness, /athlete-current-state/, 'readiness must consume durable Current Athlete State');
 
 const trends = fs.readFileSync('lib/trends-store.js', 'utf8');
