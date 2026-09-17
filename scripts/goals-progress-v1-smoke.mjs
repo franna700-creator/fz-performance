@@ -23,7 +23,8 @@ for(const marker of ['PRIMARY OBJECTIVE','WHAT MATTERS NOW','EVENT RUNWAY','CAPA
   assert.ok(js.includes(marker),`Goals presentation marker missing: ${marker}`);
 }
 assert.ok(js.includes('/api/goals/current'),'Goals must consume canonical Goals runtime projection');
-assert.ok(js.includes('/api/trends/current?days=45'),'Goals capability trajectory must consume canonical Trends data');
+assert.ok(js.includes('goals.progress?.capabilities'),'Goals capabilities must consume the current Goals projection');
+assert.ok(!js.includes('/api/trends/current'),'Goals must not depend on the legacy Trends capability snapshot');
 assert.ok(!js.includes('HYROX Johannesburg')&&!js.includes('Deadly Dozen')&&!js.includes('HOKA Half'),'Goals static presentation contains athlete/event truth');
 assert.ok(!/progressPercent|completionPercent|% complete/i.test(js),'Goals must not fabricate progress percentages');
 assert.ok(api.includes('buildAdaptiveContext')&&api.includes('CANONICAL_GOALS_PROGRESS_V1')&&api.includes('async function goalsCurrent'),'Goals projection is not based on canonical adaptive context');

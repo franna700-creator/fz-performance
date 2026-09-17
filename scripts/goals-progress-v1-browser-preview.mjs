@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import { chromium } from 'playwright';
@@ -19,7 +20,13 @@ const trends={ok:true,summaries:{recovery:'Recovery is broadly stable.',performa
   {name:'Station capacity',priority:'Priority 2',status:'MEASUREMENT PENDING',evidence:'LOW',summary:'A baseline exists but progression is not yet established.',next:'Matched station repeat with recovery-cost capture.'},
   {name:'Strength reserve',priority:'Support',status:'MAINTAIN',evidence:'MODERATE',summary:'Strength remains supportive rather than the primary limitation.',next:'Maintain stable race-relevant markers.'}
 ],quality:{},provenance:{operationalTruth:'Neon canonical runtime',historicalWellnessSeed:'canonical history',auditRepresentation:'audit representation'}};
-const goals={ok:true,generatedAt:'2026-09-15T08:05:00.000Z',contract:'CANONICAL_GOALS_PROGRESS_V1',objective:{primary:{id:'primary-hybrid-event',name:'Primary Hybrid Performance Event',role:'PRIMARY',runwayDays:74,startsOn:'2026-11-28',participationStatus:'CONFIRMED',knowledgeStatus:'QUALIFIED'},relatedEvents:[{id:'validation-event',name:'Validation Event',role:'VALIDATION',runwayDays:5,startsOn:'2026-09-20',knowledgeStatus:'QUALIFIED',overlapToPrimary:.79},{id:'secondary-run',name:'Secondary Running Event',role:'SECONDARY',runwayDays:9,startsOn:'2026-09-24',knowledgeStatus:'QUALIFIED',overlapToPrimary:.44}]},progress:{measurement:{status:'READY',hierarchyId:'hybrid-primary-v1',measured:[{measurementId:'running.aerobic_efficiency',priority:2,evidence:{status:'MEASURED'}},{measurementId:'strength.reserve',priority:4,evidence:{status:'MEASURED'}}],topGaps:[{measurementId:'running.compromised_repeatability',priority:1,evidence:{status:'UNMEASURED'}},{measurementId:'station.work_rate',priority:2,evidence:{status:'UNMEASURED'}},{measurementId:'running.fade',priority:3,evidence:{status:'UNMEASURED'}}]},evidence:[],uncertainty:{missing:['fixed compromised-running benchmark'],assumptions:[],confidence:'MODERATE'}},provenance:{objectiveSource:'NEON_OBJECTIVE_GRAPH',runtimeStateId:'preview-goals-v1'},rules:{noFabricatedProgressPercentages:true,unknownMeasurementIsNotWeakness:true,directionalOverlapIsNotTrainingValue:true,primaryObjectiveCannotBeDisplacedByProximity:true}};
+const currentCapabilities=[
+  {id:'running_economy',name:'Running economy',status:'EVIDENCE AVAILABLE',evidence:'3 canonical sessions',summary:'Qualified running evidence is available.',next:'Compare qualified executions and their recovery cost.'},
+  {id:'compromised_running',name:'Compromised running',status:'EVIDENCE AVAILABLE',evidence:'1 canonical session',summary:'Qualified run-work evidence is available; improvement is not yet established.',next:'Repeat under comparable conditions.'},
+  {id:'station_strength_endurance',name:'Station capacity',status:'UNMEASURED',evidence:'Not yet measured',summary:'No qualified station evidence in the current window.',next:'Capture a qualified execution.'},
+  {id:'local_tissue_tolerance',name:'Local tissue tolerance',status:'UNAVAILABLE',evidence:'Unavailable',summary:'Current recovery evidence could not be read.',next:'Refresh canonical evidence.'}
+];
+const goals={ok:true,generatedAt:'2026-09-15T08:05:00.000Z',contract:'CANONICAL_GOALS_PROGRESS_V1',objective:{primary:{id:'primary-hybrid-event',name:'Primary Hybrid Performance Event',role:'PRIMARY',runwayDays:74,startsOn:'2026-11-28',participationStatus:'CONFIRMED',knowledgeStatus:'QUALIFIED'},relatedEvents:[{id:'validation-event',name:'Validation Event',role:'VALIDATION',runwayDays:5,startsOn:'2026-09-20',knowledgeStatus:'QUALIFIED',overlapToPrimary:.79},{id:'secondary-run',name:'Secondary Running Event',role:'SECONDARY',runwayDays:9,startsOn:'2026-09-24',knowledgeStatus:'QUALIFIED',overlapToPrimary:.44}]},progress:{capabilities:currentCapabilities,measurement:{status:'READY',hierarchyId:'hybrid-primary-v1',measured:[{measurementId:'running.aerobic_efficiency',priority:2,evidence:{status:'MEASURED'}},{measurementId:'strength.reserve',priority:4,evidence:{status:'MEASURED'}}],topGaps:[{measurementId:'running.compromised_repeatability',priority:1,evidence:{status:'UNMEASURED'}},{measurementId:'station.work_rate',priority:2,evidence:{status:'UNMEASURED'}},{measurementId:'running.fade',priority:3,evidence:{status:'UNMEASURED'}}]},evidence:[],uncertainty:{missing:['fixed compromised-running benchmark'],assumptions:[],confidence:'MODERATE'}},provenance:{objectiveSource:'NEON_OBJECTIVE_GRAPH',runtimeStateId:'preview-goals-v1'},rules:{noFabricatedProgressPercentages:true,unknownMeasurementIsNotWeakness:true,directionalOverlapIsNotTrainingValue:true,primaryObjectiveCannotBeDisplacedByProximity:true}};
 const intelligence={ok:true,revision:'preview-goals-v1',pendingPropagation:false,pending:{materiality:false,readiness:false,shadowRecommendation:false,activeRecommendation:false},currentReadiness:{status:'READY',score:81,confidence:'MODERATE'},activeRecommendation:null,athleteDecision:null,markers:{}};
 const system={ok:true,runtime:{masterValidated:true,stateId:runtime.stateId,masterAsOf:runtime.masterAsOf},garmin:{connection:{status:'CONNECTED'},latestWellness:{source_as_of:wellness.wellness.sourceAsOf}},tredict:{configured:true,latestEvidence:[]},trainingEvidence:[],athleteMemory:{events:0,latest_event:null},intelligence:{current:intelligence}};
 
@@ -54,8 +61,22 @@ async function capture(viewport,isMobile){
   if(state.active!=='goals'||state.title!=='Goals')throw new Error(`${suffix} Goals navigation/meta failed`);
   if(state.events!==2||state.capabilities!==4||state.measured!==2||state.gaps!==3)throw new Error(`${suffix} Goals canonical content counts unexpected: ${JSON.stringify(state)}`);
   if(isMobile&&state.navButtons!==5)throw new Error(`mobile navigation expected 5 buttons, got ${state.navButtons}`);
+  const capabilityText=await page.locator('#goals .fz-goals-capabilities').innerText();
+  assert.ok(capabilityText.includes('Qualified run-work evidence is available'));
+  assert.ok(!capabilityText.includes('Aerobic engine'),'GOALS must not render the legacy TRENDS capability snapshot');
+  for(const status of ['UNMEASURED','UNAVAILABLE'])assert.equal(await page.locator('#goals .fz-goals-capability .pill.warn').filter({hasText:status}).count(),1,`${status} must not have the measured/positive colour`);
   await assertNoOverflow(page,`${suffix} Goals`);
   await page.screenshot({path:path.join(out,`goals-${suffix}-v1.png`),fullPage:true});
+  // A canonical reread must update already-mounted GOALS via the focus event
+  // dispatched by intelligence-refresh, without reviving the TRENDS snapshot.
+  await page.route('**/api/goals/current',route=>route.fulfill({json:{...goals,progress:{...goals.progress,capabilities:[]}}}));
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(()=>document.querySelector('#goals')?.textContent.includes('Capability evidence is not currently available.'));
+  assert.equal(await page.locator('#goals .fz-goals-capability').count(),0);
+  await page.unroute('**/api/goals/current');
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.waitForSelector('#goals .fz-goals-capabilities');
+  assert.equal(await page.locator('#goals .fz-goals-capability').count(),4);
   if(errors.length)throw new Error(`${suffix} page errors: ${errors.join(' | ')}`);
   await page.close();
   console.log('CAPTURED',suffix,state);

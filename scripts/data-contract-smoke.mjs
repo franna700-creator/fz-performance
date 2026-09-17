@@ -2,8 +2,8 @@ import { FZ_DATA_CONTRACTS, validateDataContractRegistry, contractById } from '.
 
 const result=validateDataContractRegistry();
 if(!result.ok) throw new Error(result.errors.join('; '));
-if(FZ_DATA_CONTRACTS.length!==25) throw new Error(`Expected 25 canonical contracts, found ${FZ_DATA_CONTRACTS.length}`);
-for(const id of ['wellness.current','training.evidence','athlete.memory','trends.ncl','event.format','event.demand_taxonomy','objective.graph','capability.evidence','capability.priority','measurement.hierarchy','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','recommendation.explanation']) if(!contractById(id)) throw new Error(`Missing contract ${id}`);
+if(FZ_DATA_CONTRACTS.length!==26) throw new Error(`Expected 26 canonical contracts, found ${FZ_DATA_CONTRACTS.length}`);
+for(const id of ['measurement.evidence','wellness.current','training.evidence','athlete.memory','trends.ncl','event.format','event.demand_taxonomy','objective.graph','capability.evidence','capability.priority','measurement.hierarchy','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','recommendation.explanation']) if(!contractById(id)) throw new Error(`Missing contract ${id}`);
 if(contractById('trends.ncl').missingPolicy!=='PENDING_DETAIL_NEVER_ZERO') throw new Error('NCL missing-data rule regressed');
 if(!contractById('event.format').fallbackPolicy.includes('NEVER_INJECT_STATIC_PROFILE_AS_LIVE_TRUTH')) throw new Error('Event format live-data boundary regressed');
 if(!contractById('objective.graph').fallbackPolicy.includes('NO_STATIC_EVENT_SEED_FALLBACK')) throw new Error('Objective graph may not silently resurrect static event seed');

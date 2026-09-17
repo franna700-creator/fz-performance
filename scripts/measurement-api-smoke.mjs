@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { mock } from 'node:test';
+mock.module('../lib/fitness-ai-client.js',{namedExports:{callFitnessAiTool:async()=>{throw new Error('source network must not be invoked by goals read');},parseFitnessAiToolResult:()=>{throw new Error('not used');}}});
+const fixture=JSON.parse(fs.readFileSync(process.argv[2] || new URL('../fixtures/measurement-execution.json',import.meta.url)));
+const objectives=JSON.parse(fs.readFileSync('config/objective-seed.json'));
+const formats=JSON.parse(fs.readFileSync('config/event-format-profiles.json'));
+const registry=JSON.parse(fs.readFileSync('config/measurement-hierarchies.json'));
+const now=new Date();
+const asOf=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Johannesburg'}).format(now);
+fixture.sessions[0].local_date=asOf;
+fixture.sessions[0].actual_start_at=`${asOf}T01:00:00Z`;
+for(const event of objectives.events){if(event.role==='PRIMARY'){event.date='2099-11-28';event.startsOn='2099-11-28';event.endsOn='2099-11-28';}}
+async function replace(path,namedExports) { const original=await import(path); mock.module(path,{namedExports:{...original,...namedExports}}); }
+await replace('../lib/db.js',{getSql:async()=>async()=>[]});
+await replace('../lib/runtime-store.js',{loadDatabaseRuntimeState:async()=>null});
+await replace('../lib/wellness-store.js',{getWellnessToday:async()=>null});
+await replace('../lib/trends-dynamic.js',{buildDynamicCurrentTrends:async()=>({})});
+await replace('../lib/training-store.js',{readTrainingRange:async(start,end)=>{assert.ok((Date.parse(asOf)-Date.parse(start))/86400000>=44);return fixture;}});
+await replace('../lib/objective-runtime-store.js',{loadObjectiveRuntimeGraph:async()=>({source:'NEON_OBJECTIVE_GRAPH',objectiveRegistry:objectives,formatRegistry:formats}),loadMeasurementRegistry:async()=>registry});
+await replace('../lib/materiality-store.js',{readRecentMaterialityAssessments:async()=>[]});
+await replace('../lib/readiness-store.js',{readCurrentReadiness:async()=>null});
+const {default:handler}=await import('../api/system/status.js');
+function response() { return {headers:{},setHeader(k,v){this.headers[k]=v;},status(code){this.code=code;return this;},json(body){this.body=body;return this;}}; }
+const res=response();await handler({method:'GET',query:{operation:'goals-current'}},res);
+assert.equal(res.code,200);
+const m=res.body.progress.measurement;
+assert.ok(m.measured.some(x=>x.measurementId==='running.compromised_repeatability'));
+assert.ok(m.measured.some(x=>x.measurementId==='running.fade'));
+assert.ok(!m.topGaps.some(x=>['running.fade','running.compromised_repeatability'].includes(x.measurementId)));
+assert.ok(res.body.progress.capabilities.some(x=>x.id==='compromised_running'&&x.status==='EVIDENCE AVAILABLE'));
+assert.equal(m.coverage.lookbackDays,45);
+assert.equal(res.headers['Cache-Control'],'no-store, max-age=0');
+fixture.sources=fixture.sources.filter(row=>row.relationship==='PLAN');
+const empty=response();await handler({method:'GET',query:{operation:'goals-current'}},empty);
+assert.equal(empty.body.progress.measurement.measured.length,0);
+fixture.unavailable=true;
+const unavailable=response();await handler({method:'GET',query:{operation:'goals-current'}},unavailable);
+assert.equal(unavailable.body.progress.measurement.status,'EVIDENCE_UNAVAILABLE');
+console.log('PASS /api/goals/current: canonical fixture -> real adaptive context -> measurement resolver -> API; plan-only evidence remains pending');

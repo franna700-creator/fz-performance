@@ -1,12 +1,12 @@
 /* FZ Performance — Goals & Progress v1
    Canonical objective + measurement presentation. No athlete truth is stored here. */
 
-const FZ_GOALS_V1={goals:null,trends:null,busy:false,mounted:false};
+const FZ_GOALS_V1={goals:null,busy:false,mounted:false};
 const gpEsc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gpNum=value=>Number.isFinite(Number(value))?Number(value):null;
 const gpWords=value=>String(value||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 function gpDate(value){if(!value)return'—';const d=new Date(String(value).length===10?`${value}T12:00:00Z`:value);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',day:'2-digit',month:'short',year:'numeric'}).format(d)}
-function gpTone(value=''){const s=String(value).toUpperCase();if(/REAL POSITIVE|STRONG|MEASURED|HIGH|READY|QUALIFIED|PRIMARY/.test(s))return'good';if(/PENDING|UNRESOLVED|LOW|GAP|UNKNOWN/.test(s))return'warn';return'neutral'}
+function gpTone(value=''){const s=String(value).toUpperCase();if(/UNMEASURED|UNAVAILABLE|PENDING|UNRESOLVED|LOW|GAP|UNKNOWN/.test(s))return'warn';if(/REAL POSITIVE|STRONG|MEASURED|HIGH|READY|QUALIFIED|PRIMARY/.test(s))return'good';return'neutral'}
 async function gpJson(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.json()}
 
 function gpPrimaryCard(primary,measurement,uncertainty){
@@ -45,15 +45,15 @@ function gpConfidence(goals){
 }
 function gpRender(){
   const root=document.getElementById('goals');if(!root)return;
-  const goals=FZ_GOALS_V1.goals;const trends=FZ_GOALS_V1.trends;
+  const goals=FZ_GOALS_V1.goals;
   if(!goals?.ok){root.innerHTML='<div class="section"><div class="card rich"><h3>Goals & Progress is temporarily unavailable.</h3><p>The canonical objective contract could not be read. No fallback goal truth has been substituted.</p></div></div>';return}
-  const primary=goals.objective?.primary||null;const events=goals.objective?.relatedEvents||[];const measurement=goals.progress?.measurement||{};const capabilities=trends?.capabilities||[];
+  const primary=goals.objective?.primary||null;const events=goals.objective?.relatedEvents||[];const measurement=goals.progress?.measurement||{};const capabilities=goals.progress?.capabilities||[];
   root.classList.add('fz-goals-v1');
   root.innerHTML=`<div class="fz-goals-stage">
     ${gpPrimaryCard(primary,measurement,goals.progress?.uncertainty)}
     <div class="fz-goals-two">${gpFocusCard(measurement)}<article class="fz-goals-principle"><span class="fz-goals-kicker">PROGRESS PRINCIPLE</span><h3>Evidence before percentage.</h3><p>FZ shows what is improving, stable, unresolved or still waiting for measurement. It does not manufacture completion bars where no defensible progress derivation exists.</p></article></div>
     <section class="fz-goals-section"><header><div><span>EVENT RUNWAY</span><h2>What is coming next</h2></div><p>Near events influence sequencing without automatically replacing the primary objective.</p></header>${events.length?`<div class="fz-goals-events">${events.map(gpEventCard).join('')}</div>`:'<div class="fz-goals-empty-line">No additional qualified events are currently resolved.</div>'}</section>
-    <section class="fz-goals-section"><header><div><span>CAPABILITY PROGRESS</span><h2>What the evidence says</h2></div><p>Canonical capability status and next evidence — not decorative scoring.</p></header>${capabilities.length?`<div class="fz-goals-capabilities">${capabilities.map(gpCapabilityCard).join('')}</div>`:'<div class="fz-goals-empty-line">Capability trajectory is not currently available.</div>'}</section>
+    <section class="fz-goals-section"><header><div><span>CAPABILITY PROGRESS</span><h2>What the evidence says</h2></div><p>Current qualified capability evidence and next observations. Evidence availability does not establish improvement.</p></header>${capabilities.length?`<div class="fz-goals-capabilities">${capabilities.map(gpCapabilityCard).join('')}</div>`:'<div class="fz-goals-empty-line">Capability evidence is not currently available.</div>'}</section>
     <section class="fz-goals-section"><header><div><span>MEASUREMENT MAP</span><h2>Known versus unresolved</h2></div><p>${gpEsc(measurement.hierarchyId||'Primary objective measurement hierarchy pending')}</p></header><div class="fz-goals-measurements"><div class="fz-goals-measure-col"><h3>Measured</h3>${(measurement.measured||[]).length?(measurement.measured||[]).map(x=>gpMeasurementCard(x,'measured')).join(''):'<p>No measurements are currently marked measured.</p>'}</div><div class="fz-goals-measure-col"><h3>Priority gaps</h3>${(measurement.topGaps||[]).length?(measurement.topGaps||[]).map(x=>gpMeasurementCard(x,'gap')).join(''):'<p>No high-priority gaps are currently exposed.</p>'}</div></div></section>
     ${gpConfidence(goals)}
     <section class="fz-goals-provenance"><b>Objective truth</b><span>${gpEsc(goals.provenance?.objectiveSource||'—')}</span><b>Runtime state</b><span>${gpEsc(goals.provenance?.runtimeStateId||'—')}</span><b>Progress contract</b><span>${gpEsc(goals.contract||'—')}</span></section>
@@ -63,9 +63,8 @@ function gpRender(){
 async function gpLoad(){
   if(FZ_GOALS_V1.busy)return;FZ_GOALS_V1.busy=true;
   try{
-    const [goals,trends]=await Promise.allSettled([gpJson('/api/goals/current'),gpJson('/api/trends/current?days=45')]);
+    const [goals]=await Promise.allSettled([gpJson('/api/goals/current')]);
     if(goals.status==='fulfilled')FZ_GOALS_V1.goals=goals.value;
-    if(trends.status==='fulfilled')FZ_GOALS_V1.trends=trends.value;
     gpRender();
   }finally{FZ_GOALS_V1.busy=false}
 }
@@ -74,5 +73,5 @@ function gpSchedule(){queueMicrotask(()=>{if(document.querySelector('.page.activ
 new MutationObserver(gpSchedule).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
 document.addEventListener('click',event=>{if(event.target.closest('[data-page],[data-open-page]'))setTimeout(gpSchedule,0)});
 window.addEventListener('fz:intelligence-updated',()=>{FZ_GOALS_V1.mounted=false;gpLoad()});
-window.addEventListener('focus',gpSchedule);
+window.addEventListener('focus',()=>{FZ_GOALS_V1.mounted=false;gpSchedule()});
 gpLoad();

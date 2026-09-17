@@ -41,6 +41,7 @@
   "acceptanceRoutes": [
     "/api/system/status",
     "/api/intelligence/current",
+    "/api/goals/current",
     "/api/runtime-state",
     "/api/wellness/today?refresh=0",
     "/api/training/memory?backDays=45&forwardDays=0",
