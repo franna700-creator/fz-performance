@@ -2,8 +2,8 @@ import { FZ_DATA_CONTRACTS, validateDataContractRegistry, contractById } from '.
 
 const result=validateDataContractRegistry();
 if(!result.ok) throw new Error(result.errors.join('; '));
-if(FZ_DATA_CONTRACTS.length!==31) throw new Error(`Expected 31 canonical contracts, found ${FZ_DATA_CONTRACTS.length}`);
-for(const id of ['measurement.evidence','wellness.current','wellness.history','training.evidence','athlete.memory','choice.outcome','trends.ncl','trends.summary','event.format','event.demand_taxonomy','objective.graph','capability.evidence','capability.priority','measurement.hierarchy','canonical.revision','convergence.status','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','recommendation.explanation']) if(!contractById(id)) throw new Error(`Missing contract ${id}`);
+if(FZ_DATA_CONTRACTS.length!==32) throw new Error(`Expected 32 canonical contracts, found ${FZ_DATA_CONTRACTS.length}`);
+for(const id of ['measurement.evidence','wellness.current','wellness.history','training.evidence','athlete.memory','athlete.state.current','choice.outcome','trends.ncl','trends.summary','event.format','event.demand_taxonomy','objective.graph','capability.evidence','capability.priority','measurement.hierarchy','canonical.revision','convergence.status','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','recommendation.explanation']) if(!contractById(id)) throw new Error(`Missing contract ${id}`);
 if(contractById('trends.ncl').missingPolicy!=='PENDING_DETAIL_NEVER_ZERO') throw new Error('NCL missing-data rule regressed');
 if(!contractById('wellness.history').fallbackPolicy.includes('NO_RUNTIME_WELLNESS_HISTORY_AS_CURRENT_CANONICAL_SOURCE')) throw new Error('TRENDS wellness history may not fall back to stale runtime history');
 if(!contractById('trends.summary').fallbackPolicy.includes('NO_RUNTIME_RENDERCONTRACT_TRENDS_OR_CAP_SNAPSHOT_AS_CURRENT_TRUTH')) throw new Error('Longitudinal summaries may not reuse runtime narrative/CAP snapshots as current truth');
@@ -12,11 +12,16 @@ if(!contractById('objective.graph').fallbackPolicy.includes('NO_STATIC_EVENT_SEE
 if(!contractById('event.intelligence').fallbackPolicy.includes('NO_STALE_STATIC_TRANSFER_CALIBRATION')) throw new Error('Event transfer intelligence may not inject stale static calibration');
 if(!contractById('measurement.hierarchy').fallbackPolicy.includes('QUALIFIED_PRIMARY_WITH_CANONICAL_DEMANDS_DERIVES_RUNTIME_HIERARCHY')) throw new Error('Qualified runtime primary objectives must be able to derive a measurement hierarchy without a software release');
 if(!contractById('measurement.hierarchy').fallbackPolicy.includes('NEVER_COERCE_UNSUPPORTED_VARIANT_TO_SPECIALISED_HIERARCHY')) throw new Error('Unsupported event variants must not inherit a specialised hierarchy by family alone');
+const athleteState=contractById('athlete.state.current');
+if(!athleteState.refreshTriggers.includes('athlete.memory')||!athleteState.refreshTriggers.includes('clock.local_day')) throw new Error('Current Athlete State must respond to Athlete Memory and local-day progression');
+if(!athleteState.fallbackPolicy.includes('DO_NOT_REPLACE_UNRESOLVED_CONSTRAINT_WITH_NEWER_UNRELATED_FEEDBACK')) throw new Error('Unresolved athlete constraints must persist across unrelated feedback');
+const recovery=contractById('recovery.current');
+if(!recovery.refreshTriggers.includes('athlete.state.current')) throw new Error('Recovery must consume durable Current Athlete State');
 const readiness=contractById('readiness.current');
-if(!readiness.refreshTriggers.includes('wellness.current')||!readiness.refreshTriggers.includes('athlete.memory')) throw new Error('Canonical readiness must refresh from both physiology and Athlete Voice');
-if(!readiness.fallbackPolicy.includes('NEVER_REUSE_HISTORICAL_SCORE_AS_CURRENT')) throw new Error('Historical readiness must never masquerade as current');
+if(!readiness.refreshTriggers.includes('wellness.current')||!readiness.refreshTriggers.includes('wellness.history')||!readiness.refreshTriggers.includes('athlete.state.current')) throw new Error('Canonical readiness must refresh from canonical wellness history and Current Athlete State');
+if(!readiness.fallbackPolicy.includes('NEVER_REUSE_HISTORICAL_SCORE_AS_CURRENT')||!readiness.fallbackPolicy.includes('NEVER_USE_RUNTIME_WELLNESS_HISTORY')) throw new Error('Readiness may not reuse historical score/runtime wellness history as current');
 if(!readiness.consumers.includes('adaptive.context')) throw new Error('Canonical readiness must feed adaptive context before recommendation');
-if(!contractById('adaptive.context').refreshTriggers.includes('readiness.current')) throw new Error('Adaptive context must refresh from canonical readiness');
+if(!contractById('adaptive.context').refreshTriggers.includes('readiness.current')||!contractById('adaptive.context').refreshTriggers.includes('athlete.state.current')||!contractById('adaptive.context').refreshTriggers.includes('clock.local_day')) throw new Error('Adaptive context must refresh from readiness, Current Athlete State and relevant time progression');
 if(!contractById('adaptive.context').refreshTriggers.includes('source.fz.runtime.publish')) throw new Error('Canonical runtime publication must remain an adaptive-context refresh trigger');
 const choiceOutcome=contractById('choice.outcome');
 if(!choiceOutcome.refreshTriggers.includes('athlete.memory')||!choiceOutcome.refreshTriggers.includes('training.session')) throw new Error('Choice outcome must refresh from athlete response and canonical execution state');
@@ -32,4 +37,4 @@ if(!shadow.fallbackPolicy.includes('IMMUTABLE_AUDIT_SOURCE')) throw new Error('4
 if(!active.refreshTriggers.includes('recommendation.shadow')) throw new Error('4.3 active recommendation must refresh from canonical shadow projection');
 if(active.refreshTriggers.some(x=>x==='adaptive.context'||x==='materiality.current')) throw new Error('Adaptive context/materiality may not bypass shadow and directly refresh active recommendation.current');
 if(!active.fallbackPolicy.includes('WITHHELD_SHADOW_CLEARS_ACTIVE_LANE')) throw new Error('WITHHELD shadow must fail closed and clear the athlete-facing active lane');
-console.log('PASS Tranche 5 data contract registry: choice outcomes + canonical revisions + convergence are first-class contracts');
+console.log('PASS Tranche 5 data contract registry: Current Athlete State + choice outcomes + canonical convergence are first-class contracts');
