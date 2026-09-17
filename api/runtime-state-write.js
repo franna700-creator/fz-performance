@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { publishDatabaseRuntimeState } from '../lib/runtime-store.js';
-import { recomputeRecommendationShadowSafely } from '../lib/recommendation-shadow-orchestrator.js';
+import { propagateCanonicalChangeSafely } from '../lib/canonical-propagation.js';
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
@@ -69,24 +69,33 @@ export default async function handler(req, res) {
     const sourceClass = String(req.headers?.['x-fz-source-class'] || 'FZ_RUNTIME_INGEST');
     const pointer = await publishDatabaseRuntimeState({ state, payloadSha256, sourceClass });
 
-    // 4.2 shadow is downstream and failure-isolated: successful canonical state publication
-    // must never be rolled back because shadow intelligence cannot be recomputed.
-    const recommendationShadow = await recomputeRecommendationShadowSafely({
-      trigger:{type:'RUNTIME_STATE_PUBLISH',stateId:state.stateId,sourceClass},
-      now:new Date(),
-      persist:true
+    // Canonical publication commits first. Intelligence propagation is downstream and
+    // failure-isolated: a valid state publication is never rolled back by derivation failure.
+    const propagation = await propagateCanonicalChangeSafely({
+      changedNodes:['source.fz.runtime.publish'],
+      trigger:{type:'RUNTIME_STATE_PUBLISH',stateId:state.stateId,sourceClass,sourceKey:state.stateId},
+      now:new Date()
     });
+    const shadow = propagation?.shadow?.evaluation || propagation?.shadow?.payload || null;
 
     return res.status(200).json({
       ok: true,
       stateId: state.stateId,
       payloadSha256,
       pointer,
+      propagation:{
+        ok:propagation?.ok===true,
+        canonicalRevisionId:propagation?.canonicalRevisionId||null,
+        pendingPropagation:propagation?.pendingPropagation===true,
+        affectedSurfaces:propagation?.affectedSurfaces||[],
+        convergenceStatus:propagation?.convergence?.status||null,
+        error:propagation?.error||null
+      },
       recommendationShadow:{
-        status:recommendationShadow?.status || recommendationShadow?.evaluation?.status || null,
-        recommendationId:recommendationShadow?.evaluation?.recommendationId || null,
-        lane:recommendationShadow?.evaluation?.lane || null,
-        error:recommendationShadow?.status==='ERROR'?recommendationShadow.error:null
+        status:shadow?.status || (propagation?.convergence?.status==='CONVERGED'?'CURRENT':null),
+        recommendationId:shadow?.recommendationId || null,
+        lane:shadow?.lane || null,
+        error:propagation?.ok===false?(propagation.error||propagation.warnings?.[0]||'propagation_failed'):null
       }
     });
   } catch (error) {
