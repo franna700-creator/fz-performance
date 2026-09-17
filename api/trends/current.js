@@ -1,6 +1,6 @@
 import { buildDynamicCurrentTrends } from '../../lib/trends-dynamic.js';
 import { overlayCanonicalAthleteVoiceOnTrends } from '../../lib/trends-athlete-voice.js';
-import { buildAdaptiveContext } from '../../lib/adaptive-context.js';
+import { buildAdaptiveContext } from '../../lib/adaptive-context-v44.js';
 
 function capabilityPriority(context, capabilityId) {
   const priorities = (context?.measurement?.gaps || [])
@@ -22,9 +22,10 @@ export default async function handler(req, res) {
   }
   try {
     const days = Math.max(28, Math.min(90, Number.parseInt(String(req.query.days || '45'), 10) || 45));
+    const now=new Date();
     const [trends, context] = await Promise.all([
       buildDynamicCurrentTrends({ days }),
-      buildAdaptiveContext().catch(() => null)
+      buildAdaptiveContext({now}).catch(() => null)
     ]);
     const capabilities = (context?.capabilityEvidence || []).map(capability => ({
       ...capability,
@@ -34,8 +35,14 @@ export default async function handler(req, res) {
       ...trends,
       capabilities,
       measurement: context?.measurement || null,
+      adaptiveContext:{
+        temporal:context?.temporal||null,
+        athleteStateFingerprint:context?.athleteState?.inputFingerprint||null,
+        readinessInputFingerprint:context?.recovery?.readinessInputFingerprint||null
+      },
       provenance: {
         ...(trends.provenance || {}),
+        adaptiveContextBuilder:'adaptive-context-v44',
         capabilityProjection: context ? 'current adaptive context + canonical measurement evidence' : 'temporarily unavailable; stale runtime CAP not used'
       }
     };

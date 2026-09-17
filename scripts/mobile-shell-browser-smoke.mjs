@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { overlayCanonicalCurrentState } from '../lib/runtime-current-overlay.js';
 
 const dist = path.resolve('dist');
 const requestCounts = new Map();
@@ -97,11 +98,12 @@ const intelligence = {
     }
   }, athleteDecision: null
 };
+const runtimePresentation = overlayCanonicalCurrentState(runtime, intelligence);
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   count(url.pathname);
-  if (url.pathname === '/api/runtime-state') return json(res, runtime);
+  if (url.pathname === '/api/runtime-state') return json(res, runtimePresentation);
   if (url.pathname === '/api/wellness/today') return json(res, wellness);
   if (url.pathname === '/api/training/memory' || url.pathname === '/api/training/today') return json(res, training);
   if (url.pathname === '/api/trends/current') return json(res, trends);

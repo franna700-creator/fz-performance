@@ -27,8 +27,11 @@ export default async function handler(req, res) {
   const forwardDays = boundedInt(req.query.forwardDays, 14, 0, 30);
   const rangeStart = addDays(date, -backDays);
   const rangeEnd = addDays(date, forwardDays);
-  const syncStart = addDays(date, -2);
-  const syncEnd = addDays(date, 7);
+
+  // Refresh the same canonical history the caller is asking FZ to reason over.
+  // A two-day source window cannot satisfy late-arriving/corrected evidence semantics.
+  const syncStart = rangeStart;
+  const syncEnd = rangeEnd;
 
   let sync = null;
   let warning = null;
@@ -43,7 +46,7 @@ export default async function handler(req, res) {
       ok: true,
       date,
       range: { startDate: rangeStart, endDate: rangeEnd },
-      syncWindow: { startDate: syncStart, endDate: syncEnd },
+      syncWindow: { startDate: syncStart, endDate: syncEnd, policy: 'MATCH_REQUESTED_CANONICAL_MEMORY_WINDOW' },
       sync,
       warning,
       ...decorateTrainingRange(range)

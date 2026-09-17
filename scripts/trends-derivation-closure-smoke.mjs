@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { affectedNodes } from '../lib/runtime-dependency-graph.js';
 
 const store=fs.readFileSync('lib/trends-store.js','utf8');
 const dynamic=fs.readFileSync('lib/trends-dynamic.js','utf8');
@@ -23,7 +24,10 @@ assert.match(classifier,/canonical HYROX session kind/,'HYROX protocol identity 
 assert.match(app,/const s=t\.summaries\|\|\{\}/,'Longitudinal Signals must render the canonical TRENDS summary contract');
 assert.match(registry,/id:'wellness\.history'/,'wellness history must be a first-class contract');
 assert.match(registry,/id:'trends\.summary'/,'longitudinal summary must be a first-class contract');
-assert.match(graph,/'wellness\.history':\['trends\.summary','ui\.trends'\]/,'wellness history must invalidate longitudinal summaries and TRENDS');
+const wellnessHistoryClosure=affectedNodes('wellness.history');
+for(const required of ['readiness.current','trends.summary','ui.trends']){
+  assert.ok(wellnessHistoryClosure.includes(required),`wellness history must invalidate ${required}`);
+}
 assert.match(graph,/'trends\.summary':\['ui\.trends'\]/,'longitudinal summaries must invalidate the TRENDS surface');
 
-console.log('PASS systemic TRENDS derivation closure: live wellness history + execution-only exposure + current summaries/capabilities + dependency visibility');
+console.log('PASS systemic TRENDS derivation closure: live wellness history + readiness baseline + execution-only exposure + current summaries/capabilities + dependency visibility');

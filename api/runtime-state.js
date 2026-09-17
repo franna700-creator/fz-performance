@@ -6,6 +6,8 @@ import {
   loadDatabaseRuntimeState,
   publishDatabaseRuntimeState
 } from '../lib/runtime-store.js';
+import { readIntelligenceCurrent } from '../lib/intelligence-current-v5.js';
+import { overlayCanonicalCurrentState } from '../lib/runtime-current-overlay.js';
 
 const ORIGIN = 'https://fz-performance-state.vercel.app';
 const POINTER_PATH = '/current.json';
@@ -161,15 +163,18 @@ async function resolveState() {
   throw new Error('invalid runtime state pointer');
 }
 
-function sendState(res, { state, sha, generation, source, warning = null }) {
+async function sendState(res, { state, sha, generation, source, warning = null }) {
+  const intelligence = await readIntelligenceCurrent().catch(() => null);
+  const presented = intelligence ? overlayCanonicalCurrentState(state, intelligence) : state;
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('X-FZ-State-Id', state.stateId);
   res.setHeader('X-FZ-State-SHA256', sha);
   res.setHeader('X-FZ-State-Generation', generation);
   res.setHeader('X-FZ-State-Source', source);
+  res.setHeader('X-FZ-Presentation-Contract', intelligence ? 'FZ_CURRENT_PRESENTATION_V5' : 'RUNTIME_SOURCE_ONLY');
   if (warning) res.setHeader('Warning', warning);
-  return res.status(200).json(state);
+  return res.status(200).json(presented);
 }
 
 async function bootstrapDatabaseFromImmutable() {

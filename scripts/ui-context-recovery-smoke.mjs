@@ -5,7 +5,7 @@ const js=fs.readFileSync('src/ui-context-recovery.js','utf8');
 const choice=fs.readFileSync('src/adaptive-choice.js','utf8');
 const layout=fs.readFileSync('src/layout-stability.js','utf8');
 const css=fs.readFileSync('src/ui-context-recovery.css','utf8');
-const shell=fs.readFileSync('scripts/clean-shell.mjs','utf8');
+const shell=fs.readFileSync('src/shell/index.html','utf8');
 const html=fs.readFileSync('dist/index.html','utf8');
 
 assert.match(js,/cross-surface rationalisation v3/,'rationalisation controller must be versioned');
