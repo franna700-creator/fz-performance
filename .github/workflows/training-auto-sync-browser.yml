@@ -7,7 +7,10 @@ on:
       - 'src/training-auto-sync.css'
       - 'scripts/training-auto-sync-browser-smoke.mjs'
       - 'scripts/training-auto-sync-smoke.mjs'
-      - 'scripts/clean-shell.mjs'
+      - 'src/shell/**'
+      - 'src/app.css'
+      - 'scripts/build.mjs'
+      - 'scripts/build-source-smoke.mjs'
       - 'package.json'
       - '.github/workflows/training-auto-sync-browser.yml'
   workflow_dispatch:

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 
 const controller = fs.readFileSync('src/intelligence-refresh.js','utf8');
 const adaptiveChoice = fs.readFileSync('src/adaptive-choice.js','utf8');
-const cleanShell = fs.readFileSync('scripts/clean-shell.mjs','utf8');
+const cleanShell = fs.readFileSync('dist/index.html','utf8');
 
 assert.match(controller, /\/api\/intelligence\/current/, 'visible PWA must poll the cheap read-only intelligence revision contract');
 assert.match(controller, /method:\s*'POST'/, 'PWA convergence must use the POST mutation boundary');
@@ -34,6 +34,6 @@ const intelligenceScript = '/assets/intelligence-refresh.js';
 const appScript = '/assets/app-clean.js';
 assert(cleanShell.includes(intelligenceScript), 'clean shell must package the 4.3 intelligence controller');
 assert(cleanShell.indexOf(intelligenceScript) < cleanShell.indexOf(appScript), '4.3 intelligence controller must load before app-clean reads canonical APIs');
-assert.match(cleanShell, /\[intelligenceRefreshJs,'intelligence-refresh\.js'\]/, '4.3 controller must be copied into the build artifact through the canonical asset-copy list');
+assert.equal(fs.readFileSync('dist/assets/intelligence-refresh.js','utf8'), controller, 'intelligence controller must be copied unchanged from canonical source');
 
 console.log('PASS Tranche 4.3/4.4 browser safety: revision, fail-stale, complete option guidance and observer idempotence');

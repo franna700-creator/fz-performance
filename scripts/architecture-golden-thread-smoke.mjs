@@ -70,10 +70,11 @@ for(const expected of ['durationSeconds','distanceMeters','avgHeartRate','maxHea
 assert.match(richUi,/\['ALL','All sessions'\]/,'All Sessions lens must be retained');
 assert.match(richUi,/No Athlete Voice is linked to this execution/,'Sessions without Athlete Voice must remain valid Training Memory');
 
-const shell=fs.readFileSync('scripts/clean-shell.mjs','utf8');
+const shell=fs.readFileSync('dist/index.html','utf8');
 assert.match(shell,/training-memory-rich\.js/,'Production shell must wire rich Training Memory');
-assert.match(shell,/executableGoldenThreads:true/,'Release contract must identify executable golden threads');
-assert.match(shell,/canonicalTrainingMetrics:true/,'Release contract must identify canonical Training Memory metrics');
+const releaseContract=JSON.parse(fs.readFileSync('dist/release-ui-contract.json','utf8'));
+assert.equal(releaseContract.executableGoldenThreads,true,'Release contract must identify executable golden threads');
+assert.equal(releaseContract.canonicalTrainingMetrics,true,'Release contract must identify canonical Training Memory metrics');
 
 console.log('PASS architecture closeout regression matrix');
 console.log('  ✓ natural athlete input -> Athlete Memory -> materiality -> Current Athlete State -> executable dependency propagation');

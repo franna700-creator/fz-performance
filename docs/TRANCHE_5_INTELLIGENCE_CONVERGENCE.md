@@ -82,6 +82,22 @@ CI verifies that every record type, contract and persistence operation supported
 
 Retire obsolete static-athlete payload construction and patch-chain dependencies so the application builds from current canonical source.
 
+Implemented: the neutral shell, PWA files and release UI contract now live in
+`src/shell`; the base stylesheet is ordinary `src/app.css`. The build copies the
+complete declared asset set without changing source or patching HTML. The six
+archived payload parts, two source hotfix scripts and five chained shell/page
+injectors have been removed. Their accepted fixes remain in canonical source.
+
+The source-only build regression verifies deterministic output, unchanged source,
+removal of obsolete output, preserved runtime ordering and failure on missing
+assets. CI also rejects any tracked source mutation during the full build.
+All browser workflow path filters include the new shell/build inputs.
+
+Implementation validation preserves the pre-cleanup `index.html`, PWA files and
+every browser asset byte-for-byte. Only the UI contract adds the complete asset
+inventory and explicit source-build/server-presentation metadata. Production
+migration, release acceptance and runtime convergence remain separate exit gates.
+
 ## Hard invariants
 
 - Unknown propagation nodes fail closed.
