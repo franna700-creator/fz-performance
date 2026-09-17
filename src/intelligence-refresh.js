@@ -16,15 +16,6 @@ function requestUrl(input) {
 function methodOf(input, init = {}) { return String(init.method || input?.method || 'GET').toUpperCase(); }
 function cloneJson(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
 function setText(element, value) { if (element && element.textContent !== value) element.textContent = value; }
-function dateOnly(value) { const match = /^\d{4}-\d{2}-\d{2}/.exec(String(value || '')); return match ? match[0] : null; }
-function humanDate(value) {
-  const date = dateOnly(value);
-  if (!date) return 'current date';
-  const [year,month,day] = date.split('-');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const monthLabel = months[Number(month)-1];
-  return monthLabel ? `${Number(day)} ${monthLabel} ${year}` : date;
-}
 function jsonResponse(payload, original, extraHeaders = {}) {
   const headers = new Headers(original?.headers || {});
   headers.set('Content-Type','application/json; charset=utf-8');
@@ -36,56 +27,12 @@ function activeText(active) {
   if (active.status === 'WITHHELD') return active.reason || 'FZ recommendation is withheld until the required decision context is available.';
   return active.explanation?.athleteFacing?.summary || active.explanation?.athleteFacing?.headline || active.reason || `FZ recommends ${String(active.fzRecommendedLane || '').toLowerCase()}.`;
 }
-function overlayRuntime(payload) {
-  const active = intelligence?.activeRecommendation;
-  const canonicalReadiness = intelligence?.currentReadiness;
-  if ((!active && !canonicalReadiness) || !payload?.renderContract?.readiness) return payload;
-  const next = cloneJson(payload);
-  const readiness = next.renderContract.readiness;
-  const runtimeDate = dateOnly(next.stateId || next.candidateStateId || next.masterAsOf || readiness.asOfDate);
-  const activeDate = dateOnly(active?.localDate);
-  const readinessDate = dateOnly(canonicalReadiness?.localDate);
-  const currentDate = readinessDate || activeDate || runtimeDate;
-  const canonicalReadinessCurrent = Boolean(canonicalReadiness && readinessDate && readinessDate === currentDate && canonicalReadiness.engineVersion);
-  const staleRuntimeReadiness = Boolean(runtimeDate && currentDate && runtimeDate !== currentDate);
 
-  if (active) {
-    readiness.primaryDecision = activeText(active) || readiness.primaryDecision;
-    readiness.recommendationLane = active.fzRecommendedLane || null;
-    readiness.recommendationVersion = active.recommendationVersion || null;
-    readiness.recommendationStatus = active.status || null;
-    readiness.successCriteria = active.explanation?.recommendation?.successConditions?.[0] || readiness.successCriteria;
-  }
-  readiness.asOfDate = currentDate || null;
-  readiness.runtimeReadinessDate = runtimeDate;
-  readiness.runtimeReadinessFresh = !staleRuntimeReadiness;
-
-  if (canonicalReadinessCurrent) {
-    readiness.score = canonicalReadiness.status === 'READY' ? canonicalReadiness.score : null;
-    readiness.readinessBand = canonicalReadiness.band || null;
-    readiness.readinessEngineVersion = canonicalReadiness.engineVersion || null;
-    readiness.readinessConfidence = canonicalReadiness.confidence || null;
-    readiness.readinessInputFingerprint = canonicalReadiness.inputFingerprint || null;
-    readiness.status = active?.status === 'WITHHELD'
-      ? 'CURRENT RECOMMENDATION WITHHELD'
-      : active?.fzRecommendedLane ? `CURRENT · ${active.fzRecommendedLane}` : (canonicalReadiness.band || 'CURRENT READINESS');
-    readiness.systemicRecovery = canonicalReadiness.systemicState || readiness.systemicRecovery;
-    readiness.localTissueState = canonicalReadiness.localTissueState || readiness.localTissueState;
-    readiness.canonicalReadinessCurrent = true;
-    readiness.historicalRuntimeReadinessSuppressed = staleRuntimeReadiness;
-    return next;
-  }
-
-  if (staleRuntimeReadiness) {
-    const headline = active?.explanation?.athleteFacing?.headline || activeText(active) || 'Current recommendation context is available.';
-    readiness.score = null;
-    readiness.status = active?.status === 'WITHHELD' ? 'CURRENT RECOMMENDATION WITHHELD' : `CURRENT · ${active?.fzRecommendedLane || 'RECOMMENDATION'}`;
-    readiness.systemicRecovery = `Current decision state · ${humanDate(activeDate)}. ${headline}`;
-    readiness.localTissueState = `Freshness guard: the ${humanDate(runtimeDate)} readiness snapshot is historical and is not being presented as today's readiness.`;
-    readiness.canonicalReadinessCurrent = false;
-  }
-  return next;
-}
+// Tranche 5 presentation rule: the browser does not merge or rewrite canonical
+// athlete/readiness state. /api/runtime-state already returns the server-owned
+// FZ_CURRENT_PRESENTATION_V5 contract. This identity function remains only so
+// the fail-stale cache path has one stable call site.
+function overlayRuntime(payload) { return payload; }
 function cachedPayload(path) {
   const raw = responseCache.get(path);
   return path === '/api/runtime-state' ? overlayRuntime(raw) : cloneJson(raw);
@@ -178,7 +125,7 @@ function statusText(){
   if(converging)return'Reconciling new evidence through FZ intelligence…';
   if(stalePaths.size)return`Showing last known canonical state · ${stalePaths.size} live read${stalePaths.size===1?'':'s'} unavailable.`;
   if(intelligenceError)return'Intelligence refresh is temporarily unavailable · current canonical display retained.';
-  if(intelligence?.pendingPropagation)return'New evidence detected · readiness/recommendation propagation pending.';
+  if(intelligence?.pendingPropagation)return'New evidence detected · intelligence convergence pending.';
   if(intelligence?.activeRecommendation?.status==='WITHHELD')return'Recommendation withheld by the intelligence contract · no stale lane substituted.';
   if(intelligence?.currentReadiness?.status==='READY'&&intelligence?.activeRecommendation)return`FZ Readiness ${intelligence.currentReadiness.score} · active recommendation reconciled to canonical truth.`;
   if(intelligence?.activeRecommendation)return'Active recommendation reconciled to canonical truth.';
