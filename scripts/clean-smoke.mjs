@@ -31,7 +31,7 @@ const checks=[
  ['historical daily NCL outranks incomplete activity inventory',trendsStore.includes('if (historicalLoad.has(date))')&&trendsStore.includes("state: 'HISTORICAL_RECONCILED'")],
  ['rolling NCL keeps two-decimal precision',trendsStore.includes('round(tail.reduce((sum, point) => sum + Number(point.value || 0), 0), 2)')],
  ['dynamic AET and run maps',app.includes('cleanAetChart')&&app.includes('cleanRunScatter')],
- ['canonical AET expectation',trendsStore.includes("'2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'")&&trendsStore.includes('expectedMatchedAetMissing')],
+ ['AET comparability is evidence-derived',!trendsStore.includes('EXPECTED_MATCHED_AET_DATES')&&!trendsStore.includes('expectedMatchedAetMissing')&&trendsStore.includes('aetClass(metric, events')&&trendsStore.includes("['MATCHED','MATCHED_CAVEAT'].includes(row.comparison)")],
  ['athlete voice can identify AET',trendsStore.includes("/\\b(run\\s+)?aet\\b/.test(text)")],
  ['canonical system architecture',app.includes('Operational truth')&&app.includes('NEON')&&app.includes('flight recorder')],
  ['Fitness AI source key is truthful',/source_key\s*===\s*['"]fitness-ai['"]/.test(systemStatus)],
