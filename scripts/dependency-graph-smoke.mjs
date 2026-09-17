@@ -1,10 +1,10 @@
-import { FZ_DEPENDENCY_GRAPH, affectedNodes, affectedSurfaces, validateDependencyGraph } from '../lib/runtime-dependency-graph.js';
+import { FZ_DEPENDENCY_GRAPH, affectedNodes, affectedSurfaces, assertKnownChangedNodes, unknownDependencyNodes, validateDependencyGraph } from '../lib/runtime-dependency-graph.js';
 
 const valid=validateDependencyGraph();
 if(!valid.ok) throw new Error(valid.errors.join('; '));
 
 const training=affectedNodes('source.tredict.activity');
-for(const node of ['training.session','training.evidence','materiality.current','trends.ncl','load.rolling','capability.evidence','trends.summary','adaptive.context','recommendation.shadow','recommendation.current']) {
+for(const node of ['training.session','training.evidence','choice.outcome','materiality.current','trends.ncl','load.rolling','capability.evidence','trends.summary','adaptive.context','recommendation.shadow','recommendation.current']) {
   if(!training.includes(node)) throw new Error(`Training change does not reach ${node}`);
 }
 if((FZ_DEPENDENCY_GRAPH['training.evidence']||[]).includes('recommendation.current')) throw new Error('Training evidence may not bypass materiality/shadow and directly target recommendation.current');
@@ -20,7 +20,7 @@ for(const node of ['wellness.current','wellness.history','recovery.current','rea
 if(!affectedSurfaces('source.garmin.wellness').includes('TRENDS')) throw new Error('Wellness change must invalidate TRENDS');
 
 const athlete=affectedNodes('source.athlete.feedback');
-for(const node of ['athlete.memory','recovery.current','capability.evidence','trends.summary','adaptive.context']) {
+for(const node of ['athlete.memory','choice.outcome','recovery.current','capability.evidence','trends.summary','adaptive.context']) {
   if(!athlete.includes(node)) throw new Error(`Athlete feedback does not reach ${node}`);
 }
 
@@ -40,4 +40,12 @@ for(const node of ['recommendation.current','recommendation.explanation','ui.tod
   if(!legacyPublish.includes(node)) throw new Error(`Legacy explicit recommendation publish path does not reach ${node}`);
 }
 
-console.log('PASS v0.8 dependency graph: longitudinal summaries are invalidated by wellness, training and Athlete Voice; active TODAY still projects through shadow');
+const revision=affectedNodes('source.canonical.mutation');
+for(const node of ['canonical.revision','convergence.status','ui.system']) if(!revision.includes(node)) throw new Error(`Canonical mutation does not reach ${node}`);
+assertKnownChangedNodes(['source.athlete.feedback','choice.outcome','canonical.revision']);
+if(unknownDependencyNodes(['source.athlete.feedback','future.unregistered.signal']).join(',')!=='future.unregistered.signal') throw new Error('Unknown dependency-node detection regressed');
+let failedClosed=false;
+try{assertKnownChangedNodes(['future.unregistered.signal']);}catch(error){failedClosed=/unknown_dependency_node/.test(String(error?.message||error));}
+if(!failedClosed) throw new Error('Unknown canonical propagation nodes must fail closed');
+
+console.log('PASS Tranche 5 dependency graph: convergence nodes are registered and unknown propagation inputs fail closed');
