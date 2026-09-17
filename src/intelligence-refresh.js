@@ -28,15 +28,10 @@ function activeText(active) {
   return active.explanation?.athleteFacing?.summary || active.explanation?.athleteFacing?.headline || active.reason || `FZ recommends ${String(active.fzRecommendedLane || '').toLowerCase()}.`;
 }
 
-// Tranche 5 presentation rule: the browser does not merge or rewrite canonical
-// athlete/readiness state. /api/runtime-state already returns the server-owned
-// FZ_CURRENT_PRESENTATION_V5 contract. This identity function remains only so
-// the fail-stale cache path has one stable call site.
-function overlayRuntime(payload) { return payload; }
-function cachedPayload(path) {
-  const raw = responseCache.get(path);
-  return path === '/api/runtime-state' ? overlayRuntime(raw) : cloneJson(raw);
-}
+// Tranche 5 presentation rule: /api/runtime-state is already the canonical,
+// server-owned FZ_CURRENT_PRESENTATION_V5 contract. The browser may cache that
+// response for fail-stale display, but it never merges or rewrites its contents.
+function cachedPayload(path) { return cloneJson(responseCache.get(path)); }
 
 window.fetch = async function fzFailStaleFetch(input, init = {}) {
   const url = requestUrl(input);
@@ -50,8 +45,7 @@ window.fetch = async function fzFailStaleFetch(input, init = {}) {
         const payload = await response.clone().json();
         responseCache.set(path, payload);
         stalePaths.delete(path);
-        const outgoing = path === '/api/runtime-state' ? overlayRuntime(payload) : payload;
-        return jsonResponse(outgoing, response);
+        return jsonResponse(payload, response);
       } catch {
         return response;
       }
