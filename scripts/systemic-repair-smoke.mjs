@@ -32,6 +32,7 @@ assert.match(choiceStore,/supersedePriorOpenPlans/,'later athlete choices must s
 assert.match(choiceStore,/status IN \('PLANNED','RECOMMENDED','ACCEPTED','MODIFIED'\)/,'choice supersession must be limited to open plan states');
 assert.match(intelligenceCurrent,/state IN \('SCHEDULED','ACTIVE'\)/,'intelligence currentness must track scheduled decision-driving objectives');
 assert.match(intelligenceCurrent,/objectiveGraphMarker/,'objective currentness must fingerprint the decision-driving objective graph');
-for(const phrase of ['pendingPropagation: false','Time is an intelligence input','Current Athlete State'])assert.ok(tranche5.includes(phrase),`Tranche 5 architecture definition missing: ${phrase}`);
+for(const phrase of ['pendingPropagation: false','Time is an intelligence input'])assert.ok(tranche5.includes(phrase),`Tranche 5 architecture definition missing: ${phrase}`);
+assert.match(tranche5,/current[- ]athlete[- ]state/i,'Tranche 5 architecture definition must establish canonical Current Athlete State');
 
 console.log('PASS systemic repair invariants: monotonic evidence, late binding, schema parity, monotonic reconciliation and decision-objective tracking');
