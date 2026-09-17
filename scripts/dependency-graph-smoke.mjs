@@ -4,13 +4,24 @@ const valid=validateDependencyGraph();
 if(!valid.ok) throw new Error(valid.errors.join('; '));
 
 const training=affectedNodes('source.tredict.activity');
-for(const node of ['training.session','training.evidence','materiality.current','trends.ncl','load.rolling','capability.evidence','adaptive.context','recommendation.shadow','recommendation.current']) {
+for(const node of ['training.session','training.evidence','materiality.current','trends.ncl','load.rolling','capability.evidence','trends.summary','adaptive.context','recommendation.shadow','recommendation.current']) {
   if(!training.includes(node)) throw new Error(`Training change does not reach ${node}`);
 }
 if((FZ_DEPENDENCY_GRAPH['training.evidence']||[]).includes('recommendation.current')) throw new Error('Training evidence may not bypass materiality/shadow and directly target recommendation.current');
 if(!(FZ_DEPENDENCY_GRAPH['recommendation.shadow']||[]).includes('recommendation.current')) throw new Error('4.3 activation must project from immutable recommendation.shadow');
 for(const surface of ['TODAY','TRAIN','TRENDS','SYSTEM']) {
   if(!affectedSurfaces('source.tredict.activity').includes(surface)) throw new Error(`Training change does not invalidate ${surface}`);
+}
+
+const wellness=affectedNodes('source.garmin.wellness');
+for(const node of ['wellness.current','wellness.history','recovery.current','readiness.current','trends.summary','adaptive.context']) {
+  if(!wellness.includes(node)) throw new Error(`Wellness change does not reach ${node}`);
+}
+if(!affectedSurfaces('source.garmin.wellness').includes('TRENDS')) throw new Error('Wellness change must invalidate TRENDS');
+
+const athlete=affectedNodes('source.athlete.feedback');
+for(const node of ['athlete.memory','recovery.current','capability.evidence','trends.summary','adaptive.context']) {
+  if(!athlete.includes(node)) throw new Error(`Athlete feedback does not reach ${node}`);
 }
 
 const event=affectedNodes('source.athlete.event');
@@ -29,4 +40,4 @@ for(const node of ['recommendation.current','recommendation.explanation','ui.tod
   if(!legacyPublish.includes(node)) throw new Error(`Legacy explicit recommendation publish path does not reach ${node}`);
 }
 
-console.log('PASS v0.8 RC1 dependency graph: evidence reaches active TODAY only through canonical intelligence and immutable shadow projection');
+console.log('PASS v0.8 dependency graph: longitudinal summaries are invalidated by wellness, training and Athlete Voice; active TODAY still projects through shadow');

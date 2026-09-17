@@ -25,6 +25,8 @@ function measured(result) { return resolveMeasurementHierarchy({registry,eventPr
 const base=fixture(),result=derive(base);
 assert.ok(measured(result).includes('running.compromised_repeatability'));
 assert.ok(measured(result).includes('running.fade'));
+const dbDateObject=fixture('db-date-object');dbDateObject.sessions[0].local_date=new Date('2030-02-08T00:00:00.000Z');
+const dbDateResult=derive(dbDateObject);assert.ok(measured(dbDateResult).includes('running.compromised_repeatability'),'PostgreSQL DATE values returned as Date objects must remain in the measurement window');assert.equal(dbDateResult.executions[0].observedOn,'2030-02-08');
 assert.equal(result.executions[0].metrics.runSplitDegradation.firstToLastPct,8.582);
 assert.equal(result.executions[0].benchmarkExact,false);
 assert.equal(result.executions[0].metrics.preFatigueOutput.derived.certainty,'DERIVED');
@@ -82,4 +84,4 @@ assert.equal(buildIntelligenceCurrent({shadowRecommendation:{payload:{contextSum
 assert.notEqual(contextFingerprint({measurement:{evidenceVersion:'old',evidenceFingerprint:'a'}}),contextFingerprint({measurement:{evidenceVersion:MEASUREMENT_EVIDENCE_VERSION,evidenceFingerprint:'a'}}));
 assert.notEqual(contextFingerprint({measurement:{evidenceFingerprint:'a'}}),contextFingerprint({measurement:{evidenceFingerprint:'b'}}),'new values must invalidate context even with unchanged gaps');
 for(const trigger of ['source.athlete.feedback','source.tredict.activity','source.athlete.objective'])assert.ok(affectedSurfaces(trigger).includes('GOALS'));
-console.log('PASS canonical measurement derivation: execution qualification, sparse/late evidence, numeric validity, provenance, transfer, policy invalidation and GOALS propagation');
+console.log('PASS canonical measurement derivation: execution qualification, database date normalization, sparse/late evidence, numeric validity, provenance, transfer, policy invalidation and GOALS propagation');
