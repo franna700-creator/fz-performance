@@ -42,11 +42,7 @@ async function intelligenceCurrent(req, res) {
     const current = await readIntelligenceCurrent({ now: new Date() });
     return res.status(200).json({ ok: true, ...current });
   } catch (error) {
-    return res.status(503).json({
-      ok: false,
-      error: 'intelligence_current_unavailable',
-      detail: error instanceof Error ? error.message : String(error)
-    });
+    return res.status(503).json({ ok: false, error: 'intelligence_current_unavailable', detail: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -56,26 +52,14 @@ async function intelligenceRefresh(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
-  if (crossSiteBrowser(req)) {
-    return res.status(403).json({ ok: false, error: 'cross_site_refresh_forbidden' });
-  }
-
+  if (crossSiteBrowser(req)) return res.status(403).json({ ok: false, error: 'cross_site_refresh_forbidden' });
   const input = requestBody(req);
   if (input === null) return res.status(400).json({ ok: false, error: 'invalid_json' });
-
   try {
-    const result = await refreshIntelligence({
-      refreshSources: input.sources === true,
-      forceWellness: false,
-      now: new Date()
-    });
+    const result = await refreshIntelligence({ refreshSources: input.sources === true, forceWellness: false, now: new Date() });
     return res.status(result.pendingPropagation ? 202 : 200).json(result);
   } catch (error) {
-    return res.status(503).json({
-      ok: false,
-      error: 'intelligence_refresh_unavailable',
-      detail: error instanceof Error ? error.message : String(error)
-    });
+    return res.status(503).json({ ok: false, error: 'intelligence_refresh_unavailable', detail: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -92,42 +76,23 @@ async function goalsCurrent(req, res) {
       ok: true,
       generatedAt: new Date().toISOString(),
       contract: 'CANONICAL_GOALS_PROGRESS_V1',
-      objective: {
-        primary: context?.primaryObjective || null,
-        relatedEvents: [...(context?.eventPressure || [])].sort(sortRunway)
-      },
+      objective: { primary: context?.primaryObjective || null, relatedEvents: [...(context?.eventPressure || [])].sort(sortRunway) },
       progress: {
         capabilities: context?.capabilityEvidence || [],
         measurement: {
-          status: measurement.status || 'UNAVAILABLE',
-          hierarchyId: measurement.hierarchyId || null,
-          evidenceVersion: measurement.evidenceVersion || null,
-          evidenceFingerprint: measurement.evidenceFingerprint || null,
-          coverage: measurement.coverage || null,
-          diagnostics: measurement.diagnostics || [],
-          gaps: measurement.gaps || [],
-          measured: measurement.measured || [],
-          topGaps: measurement.topGaps || []
+          status: measurement.status || 'UNAVAILABLE', hierarchyId: measurement.hierarchyId || null,
+          evidenceVersion: measurement.evidenceVersion || null, evidenceFingerprint: measurement.evidenceFingerprint || null,
+          coverage: measurement.coverage || null, diagnostics: measurement.diagnostics || [], gaps: measurement.gaps || [],
+          measured: measurement.measured || [], topGaps: measurement.topGaps || []
         },
-        evidence: context?.evidence || [],
-        uncertainty: context?.uncertainty || { missing: [], assumptions: [], confidence: 'LOW' }
+        evidence: context?.evidence || [], uncertainty: context?.uncertainty || { missing: [], assumptions: [], confidence: 'LOW' }
       },
       provenance: context?.provenance || {},
-      rules: {
-        ...(context?.rules || {}),
-        noFabricatedProgressPercentages: true,
-        unknownMeasurementIsNotWeakness: true,
-        directionalOverlapIsNotTrainingValue: true,
-        primaryObjectiveCannotBeDisplacedByProximity: true
-      }
+      rules: { ...(context?.rules || {}), noFabricatedProgressPercentages: true, unknownMeasurementIsNotWeakness: true, directionalOverlapIsNotTrainingValue: true, primaryObjectiveCannotBeDisplacedByProximity: true }
     });
   } catch (error) {
     console.error('FZ goals current failed', error instanceof Error ? error.message : String(error));
-    return res.status(503).json({
-      ok: false,
-      error: 'goals_current_unavailable',
-      detail: error instanceof Error ? error.message : String(error)
-    });
+    return res.status(503).json({ ok: false, error: 'goals_current_unavailable', detail: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -138,6 +103,7 @@ async function systemStatus(req, res) {
   }
   try {
     const sql = await getSql();
+    const now = new Date();
     const [runtime, sources, evidence, wellness, athlete, materialityRows, shadowRows, intelligenceCurrentState, systemicSweep] = await Promise.all([
       loadDatabaseRuntimeState().catch(() => null),
       sql`SELECT source_key,status,connected_at,last_sync_at,last_error,updated_at FROM fz_source_connections ORDER BY source_key`,
@@ -146,12 +112,12 @@ async function systemStatus(req, res) {
       sql`SELECT count(*)::int AS events,max(occurred_at) AS latest_event FROM fz_athlete_events WHERE actor='ATHLETE'`,
       readRecentMaterialityAssessments({ limit: req.query?.materialityLimit || 20 }),
       readRecentRecommendationShadows({ limit: req.query?.shadowLimit || 20 }),
-      readIntelligenceCurrent({ now: new Date() }).catch(() => null),
-      runLiveSystemicReconciliationSweep({ now: new Date() }).catch(error => ({ ok:false,errors:1,warnings:0,findings:[{code:'SYSTEMIC_SWEEP_UNAVAILABLE',severity:'ERROR',message:error instanceof Error?error.message:String(error)}] }))
+      readIntelligenceCurrent({ now }).catch(() => null),
+      runLiveSystemicReconciliationSweep({ now }).catch(error => ({ ok:false,errors:1,warnings:0,findings:[{code:'SYSTEMIC_SWEEP_UNAVAILABLE',severity:'ERROR',message:error instanceof Error?error.message:String(error)}] }))
     ]);
     return res.status(200).json({
       ok:true,generatedAt:new Date().toISOString(),
-      architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin / Fitness AI','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',currentAthleteStateTruth:'Tranche 5 durable current-athlete-state projection',convergenceTruth:'Tranche 5 canonical revision + convergence ledger',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
+      architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin / Fitness AI','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',currentAthleteStateTruth:'Tranche 5 durable current-athlete-state projection',canonicalMutationTruth:'Tranche 5 persistence-boundary mutation outbox',convergenceTruth:'Tranche 5 canonical revision + convergence ledger',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
       releaseEnvironment:{databaseConfigured:databaseConfigured(),writeTokenConfigured:Boolean(process.env.FZ_STATE_WRITE_TOKEN),athleteBootstrapConfigured:Boolean(process.env.FZ_ATHLETE_BOOTSTRAP_TOKEN),previewMustPassBeforePromotion:true,secretsExposed:false},
       runtime:runtime?{source:runtime.source,stateId:runtime.stateId,pointerVersion:runtime.pointerVersion,masterAsOf:runtime.state?.masterAsOf||null,generatedAt:runtime.state?.generatedAt||null,masterValidated:runtime.state?.masterValidated===true}:null,
       sources,tredict:{configured:tredictConfigured(),latestEvidence:evidence.filter(row=>row.source_key==='tredict')},
@@ -160,7 +126,9 @@ async function systemStatus(req, res) {
       systemIntegrity:systemicSweep,
       intelligence:{
         current:intelligenceCurrentState,
-        convergence:systemicSweep,
+        convergence:intelligenceCurrentState?.convergence||null,
+        integritySweep:systemicSweep,
+        mutationOutbox:intelligenceCurrentState?.mutationOutbox||null,
         materiality:{engineVersion:MATERIALITY_ENGINE_VERSION,levels:MATERIALITY_LEVELS,count:materialityRows.length,assessments:materialityRows.map(row=>({id:row.id,localDate:row.local_date,assessedAt:row.payload?.assessedAt||row.source_updated_at||row.ingested_at,evidenceKey:row.payload?.evidenceKey||null,evidenceSummary:row.payload?.evidenceSummary||null,sourceType:row.payload?.evidenceSourceType||null,materiality:row.payload?.materiality||null}))},
         recommendationShadow:{engineVersion:RECOMMENDATION_ENGINE_VERSION,mode:RECOMMENDATION_ENGINE_MODE,activeRecommendationWrite:true,todayActivation:true,count:shadowRows.length,evaluations:shadowRows.map(row=>({id:row.id,localDate:row.local_date,evaluatedAt:row.source_updated_at||row.ingested_at,recommendationId:row.payload?.recommendationId||null,status:row.payload?.status||null,lane:row.payload?.lane||null,confidence:row.payload?.confidence||null,trigger:row.payload?.trigger||null,contextSummary:row.payload?.contextSummary||null,explanation:row.payload?.explanation||null}))}
       }
