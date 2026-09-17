@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { affectedNodes, affectedSurfaces } from '../lib/runtime-dependency-graph.js';
 
 const athleteClosure=affectedNodes('source.athlete.feedback');
-for(const node of ['athlete.memory','materiality.current','adaptive.context','recommendation.shadow','recommendation.current','ui.train','ui.trends','ui.today'])assert.ok(athleteClosure.includes(node),`Athlete feedback dependency closure missing ${node}`);
+for(const node of ['athlete.memory','athlete.state.current','materiality.current','readiness.current','adaptive.context','recommendation.shadow','recommendation.current','ui.train','ui.trends','ui.today'])assert.ok(athleteClosure.includes(node),`Athlete feedback dependency closure missing ${node}`);
 const athleteSurfaces=affectedSurfaces('source.athlete.feedback');
 for(const surface of ['TODAY','TRAIN','TRENDS'])assert.ok(athleteSurfaces.includes(surface),`Athlete feedback affected surfaces missing ${surface}`);
 
@@ -16,11 +16,18 @@ assert.ok(responseFunctionStart>=0,'Athlete response capture function must exist
 const responseBody=athleteCapture.slice(responseFunctionStart);
 const memoryIndex=responseBody.indexOf('await recordAthleteMemory(normalized)');
 const materialityIndex=responseBody.indexOf('await persistMaterialityAssessment(');
+const stateIndex=responseBody.indexOf('await recomputeCurrentAthleteStateSafely(');
 const propagationIndex=responseBody.indexOf('await propagateCanonicalChangeSafely(');
-assert.ok(memoryIndex>=0&&materialityIndex>memoryIndex&&propagationIndex>materialityIndex,'Athlete evidence must persist before materiality and propagation');
+assert.ok(memoryIndex>=0&&materialityIndex>memoryIndex&&stateIndex>materialityIndex&&propagationIndex>stateIndex,'Athlete evidence must persist before materiality, Current Athlete State and downstream propagation');
 for(const requiredNode of ["'source.athlete.feedback'","'athlete.memory'","'materiality.current'"])assert.ok(responseBody.includes(requiredNode),`Athlete ingestion propagation missing core node ${requiredNode}`);
-assert.match(responseBody,/choiceOutcome\?\.observation\?\['choice\.outcome'\]/,'Outcome observation may join propagation only when it actually exists');
-assert.match(responseBody,/changedNodes:\['source\.athlete\.feedback','athlete\.memory','materiality\.current',\.\.\.\(choiceOutcome\?\.observation\?\['choice\.outcome'\]:\[\]\)\]/,'Athlete ingestion must preserve core propagation while adding choice.outcome only as observed evidence');
+assert.match(responseBody,/currentState\?\.changed===true\?\['athlete\.state\.current'\]:\[\]/,'Current Athlete State may join changed nodes only when the durable projection changed');
+assert.match(responseBody,/choiceOutcome\?\.observation\?\['choice\.outcome'\]:\[\]/,'Outcome observation may join propagation only when it actually exists');
+const feedbackNodeAt=responseBody.indexOf("'source.athlete.feedback'");
+const memoryNodeAt=responseBody.indexOf("'athlete.memory'",feedbackNodeAt);
+const materialityNodeAt=responseBody.indexOf("'materiality.current'",memoryNodeAt);
+const stateNodeAt=responseBody.indexOf("['athlete.state.current']",materialityNodeAt);
+const outcomeNodeAt=responseBody.indexOf("['choice.outcome']",stateNodeAt);
+assert.ok(feedbackNodeAt>=0&&memoryNodeAt>feedbackNodeAt&&materialityNodeAt>memoryNodeAt&&stateNodeAt>materialityNodeAt&&outcomeNodeAt>stateNodeAt,'Athlete ingestion must preserve core propagation, then conditionally add Current Athlete State and observed choice outcome evidence');
 
 const propagation=fs.readFileSync('lib/canonical-propagation.js','utf8');
 assert.match(propagation,/affectedNodes/,'Propagation must execute dependency graph closure');
@@ -69,8 +76,8 @@ assert.match(shell,/executableGoldenThreads:true/,'Release contract must identif
 assert.match(shell,/canonicalTrainingMetrics:true/,'Release contract must identify canonical Training Memory metrics');
 
 console.log('PASS architecture closeout regression matrix');
-console.log('  ✓ natural athlete input -> Athlete Memory -> materiality -> executable dependency propagation');
-console.log('  ✓ observed choice outcomes are additive evidence and do not replace core materiality propagation');
+console.log('  ✓ natural athlete input -> Athlete Memory -> materiality -> Current Athlete State -> executable dependency propagation');
+console.log('  ✓ observed choice outcomes are additive evidence and do not replace core materiality/current-state propagation');
 console.log('  ✓ recommendation-grade evidence -> 4.2 shadow -> 4.3 active projection');
 console.log('  ✓ Tredict/Garmin -> canonical session/evidence -> dependent intelligence + TRAIN/TRENDS');
 console.log('  ✓ late Athlete Memory binding participates in propagation');
