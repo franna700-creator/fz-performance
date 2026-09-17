@@ -1,0 +1,118 @@
+{
+  "sessions": [
+    {
+      "session_id": "synthetic-execution",
+      "status": "COMPLETED",
+      "actual_start_at": "2030-02-08T16:00:00Z",
+      "local_date": "2030-02-08"
+    }
+  ],
+  "sources": [
+    {
+      "session_id": "synthetic-execution",
+      "relationship": "PLAN",
+      "record_type": "planned_workout",
+      "source_record_pk": "plan",
+      "payload": {
+        "contextType": "FZ_PLANNED_INTENT",
+        "protocolFamilyId": "COMPROMISED_RUNNING_REPEATABILITY",
+        "protocolVersion": "1.0",
+        "comparisonClass": "FAMILY_COMPARABLE"
+      }
+    },
+    {
+      "session_id": "synthetic-execution",
+      "relationship": "EXECUTION",
+      "record_type": "executed_activity",
+      "source_record_pk": "laps",
+      "ingested_at": "2030-02-08T17:00:00Z",
+      "payload": {
+        "runLaps": [
+          {
+            "round": 1,
+            "durationSeconds": 268,
+            "distanceMeters": 1000,
+            "averageHeartRate": 155
+          },
+          {
+            "round": 2,
+            "durationSeconds": 273,
+            "distanceMeters": 1000,
+            "averageHeartRate": 156
+          },
+          {
+            "round": 3,
+            "durationSeconds": 288,
+            "distanceMeters": 1000,
+            "averageHeartRate": 157
+          },
+          {
+            "round": 4,
+            "durationSeconds": 287,
+            "distanceMeters": 1000,
+            "averageHeartRate": 158
+          },
+          {
+            "round": 5,
+            "durationSeconds": 291,
+            "distanceMeters": 1000,
+            "averageHeartRate": 159
+          }
+        ]
+      }
+    },
+    {
+      "session_id": "synthetic-execution",
+      "relationship": "EXECUTION",
+      "record_type": "executed_activity",
+      "source_record_pk": "sparse-followup",
+      "ingested_at": "2030-02-08T18:00:00Z",
+      "payload": {
+        "summary": {
+          "duration": 3000
+        }
+      }
+    },
+    {
+      "session_id": "synthetic-execution",
+      "relationship": "EVIDENCE",
+      "record_type": "athlete_feedback",
+      "source_record_pk": "pm5",
+      "payload": {
+        "comparisonClass": "FAMILY_COMPARABLE",
+        "benchmarkExact": false,
+        "pm5Evidence": {
+          "directlyObservedIntervals": [
+            {
+              "round": 1,
+              "durationSeconds": 120,
+              "averagePowerW": 295
+            },
+            {
+              "round": 2,
+              "durationSeconds": 120,
+              "averagePowerW": 303
+            },
+            {
+              "round": 3,
+              "durationSeconds": 120,
+              "averagePowerW": 305
+            },
+            {
+              "round": 4,
+              "durationSeconds": 120,
+              "averagePowerW": 288
+            }
+          ],
+          "derivedFifthInterval": {
+            "round": 5,
+            "durationSeconds": 120,
+            "averagePowerWApprox": 285,
+            "certainty": "DERIVED"
+          }
+        }
+      }
+    }
+  ],
+  "events": []
+}

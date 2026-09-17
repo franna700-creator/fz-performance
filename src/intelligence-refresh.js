@@ -1,5 +1,5 @@
 const nativeFetch = window.fetch.bind(window);
-const READ_PATHS = new Set(['/api/runtime-state','/api/wellness/today','/api/training/memory','/api/trends/current','/api/system/status']);
+const READ_PATHS = new Set(['/api/runtime-state','/api/wellness/today','/api/training/memory','/api/trends/current','/api/system/status','/api/goals/current']);
 const responseCache = new Map();
 const stalePaths = new Set();
 let intelligence = null;

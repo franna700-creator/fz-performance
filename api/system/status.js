@@ -96,9 +96,15 @@ async function goalsCurrent(req, res) {
         relatedEvents: [...(context?.eventPressure || [])].sort(sortRunway)
       },
       progress: {
+        capabilities: context?.capabilityEvidence || [],
         measurement: {
           status: measurement.status || 'UNAVAILABLE',
           hierarchyId: measurement.hierarchyId || null,
+          evidenceVersion: measurement.evidenceVersion || null,
+          evidenceFingerprint: measurement.evidenceFingerprint || null,
+          coverage: measurement.coverage || null,
+          diagnostics: measurement.diagnostics || [],
+          gaps: measurement.gaps || [],
           measured: measurement.measured || [],
           topGaps: measurement.topGaps || []
         },

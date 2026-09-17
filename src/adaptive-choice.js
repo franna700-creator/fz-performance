@@ -1,4 +1,4 @@
-const FZ_CHOICE={current:null,loading:false,renderScheduled:false,rendering:false,auth:{available:null,configured:false,authenticated:false,mode:'VIEWER',csrfToken:null,expiresAt:null},authBusy:false,landingDismissed:false};
+const FZ_CHOICE={current:null,loading:false,renderScheduled:false,rendering:false,auth:{available:null,configured:false,authenticated:false,mode:'VIEWER',csrfToken:null,expiresAt:null},authBusy:false,landingDismissed:false,authDialogMode:null};
 const esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const words=value=>String(value||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 async function readCurrent(){const response=await fetch('/api/intelligence/current',{cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`${response.status}`);return response.json();}
@@ -50,8 +50,19 @@ function optionGuidance(option){
   const evidence=Array.isArray(option.evidenceBasis)?option.evidenceBasis.filter(Boolean):[];
   return `<details class="fz-option-guidance"><summary>How to execute this well</summary><div class="fz-option-guidance-body"><div><b>Success</b><span>${esc(option.successCondition||'Complete the intended dose without materially worsening the next valuable training opportunity.')}</span></div><div><b>Modify / stop</b><span>${esc(option.stopCondition||'Modify or stop if new pain, illness, GI, local-tissue or recovery evidence materially changes tolerance.')}</span></div><div><b>Confidence</b><span>${esc(words(option.confidence||'UNKNOWN'))}</span></div>${evidence.length?`<div><b>Evidence basis</b><span>${evidence.map(esc).join(' · ')}</span></div>`:''}</div></details>`;
 }
+function selectionReady(option,lane){
+  const p=option?.prescription;
+  if(!p||p.selectionReady!==true||!p.prescriptionFingerprint)return false;
+  if(['MAINTAIN','ADAPT'].includes(lane)&&!p.protocolFamilyId)return false;
+  return true;
+}
+function choiceErrorMessage(error){
+  const raw=String(error?.message||error||'Selection failed');
+  if(raw.includes('choice_prescription_required')||raw.includes('choice_prescription_not_ready'))return 'This session is still being reconciled to its current execution prescription. Refresh FZ and try again.';
+  return raw;
+}
 function selectionControl(option,lane){
-  if(option.prescription?.selectionReady===false)return `<div class="fz-option-choice fz-choice-disabled"><span>${esc(option.prescription.releaseReason||'This protocol is not released for selection.')}</span><button type="button" disabled>Not released</button></div>`;
+  if(!selectionReady(option,lane))return `<div class="fz-option-choice fz-choice-disabled"><span>${esc(option.prescription?.releaseReason||'FZ is reconciling this option to the current prescription version. Refresh FZ and try again.')}</span><button type="button" disabled>Not ready</button></div>`;
   if(!athleteMode())return `<div class="fz-option-choice"><span>To select it, tell FZ: “I’ll do ${esc(option.title)}.” Or enter Athlete Mode to select securely in the app.</span><button type="button" data-athlete-login>Athlete Login</button></div>`;
   return `<div class="fz-option-choice"><span>This stores the exact protocol/version/fingerprint as your planned intent.</span><button type="button" data-select-option="${esc(option.optionId)}" data-select-lane="${esc(lane)}">Select this session</button></div>`;
 }
@@ -116,21 +127,24 @@ function authFormMarkup(mode){
 }
 function ensureOverlay(){let overlay=document.querySelector('[data-fz-mode-overlay]');if(!overlay){overlay=document.createElement('div');overlay.className='fz-mode-overlay';overlay.dataset.fzModeOverlay='1';overlay.hidden=true;document.body.appendChild(overlay);}return overlay;}
 function showLanding(){const overlay=ensureOverlay();overlay.innerHTML=landingMarkup();overlay.hidden=false;document.body.classList.add('fz-modal-open');}
-function showAuth(mode){const overlay=ensureOverlay();overlay.innerHTML=authFormMarkup(mode);overlay.hidden=false;document.body.classList.add('fz-modal-open');queueMicrotask(()=>overlay.querySelector('input')?.focus());}
-function hideOverlay(){const overlay=ensureOverlay();overlay.hidden=true;overlay.innerHTML='';document.body.classList.remove('fz-modal-open');}
+function showAuth(mode){FZ_CHOICE.authDialogMode=mode;const overlay=ensureOverlay();overlay.innerHTML=authFormMarkup(mode);overlay.hidden=false;document.body.classList.add('fz-modal-open');queueMicrotask(()=>overlay.querySelector('input')?.focus());}
+function hideOverlay(){FZ_CHOICE.authDialogMode=null;const overlay=ensureOverlay();overlay.hidden=true;overlay.innerHTML='';document.body.classList.remove('fz-modal-open');}
 function reconcileLanding(){
+  if(FZ_CHOICE.authDialogMode)return;
   if(FZ_CHOICE.auth.available!==true||athleteMode()||FZ_CHOICE.landingDismissed){hideOverlay();return;}
   showLanding();
 }
 async function selectOption(lane,optionId,button){
   const rec=active();if(!athleteMode()||!rec?.recommendationVersion)return;
+  const option=Array.isArray(rec?.lanes?.[lane])?rec.lanes[lane].find(item=>item.optionId===optionId):null;
+  if(!selectionReady(option,lane)){button.disabled=true;button.textContent='Not ready';return;}
   button.disabled=true;const previous=button.textContent;button.textContent='Saving…';
   try{
     const nonce=globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
     const response=await fetch('/api/training/athlete-event',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',Accept:'application/json','X-FZ-CSRF':FZ_CHOICE.auth.csrfToken||'','X-FZ-Idempotency-Key':nonce},body:JSON.stringify({kind:'ADAPTIVE_CHOICE',choice:{recommendationVersion:rec.recommendationVersion,lane,optionId}})});
     const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.detail||payload.error||`Selection failed (${response.status})`);
     button.textContent='Selected';await refresh();
-  }catch(error){button.disabled=false;button.textContent=previous;window.alert?.(String(error?.message||error));}
+  }catch(error){button.disabled=false;button.textContent=previous;window.alert?.(choiceErrorMessage(error));}
 }
 async function submitAuth(form){
   if(FZ_CHOICE.authBusy)return;FZ_CHOICE.authBusy=true;
@@ -164,7 +178,7 @@ async function boot(){await readAuthStatus();await refresh();scheduleRender();}
 document.addEventListener('click',event=>{
   const login=event.target.closest('[data-athlete-login],[data-open-auth]');if(login){showAuth(FZ_CHOICE.auth.configured?'LOGIN':'SETUP');return;}
   if(event.target.closest('[data-enter-viewer]')){FZ_CHOICE.landingDismissed=true;sessionStorage.setItem('fzViewerMode','1');hideOverlay();scheduleRender();return;}
-  if(event.target.closest('[data-auth-close]')){hideOverlay();return;}
+  if(event.target.closest('[data-auth-close]')){hideOverlay();scheduleRender();return;}
   if(event.target.closest('[data-reset-pin]')){showAuth('RESET');return;}
   if(event.target.closest('[data-lock-athlete]')){lockAthleteMode();return;}
   const select=event.target.closest('[data-select-option]');if(select)selectOption(select.dataset.selectLane,select.dataset.selectOption,select);
