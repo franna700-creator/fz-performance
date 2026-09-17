@@ -11,8 +11,11 @@ const materiality = fs.readFileSync('lib/source-materiality.js', 'utf8');
 const wellness = fs.readFileSync('lib/wellness-sync.js', 'utf8');
 
 assert.match(orchestrator, /syncTrainingSources\(\{[\s\S]*recomputeRecommendation:\s*false/, 'central refresh must prevent nested training recommendation recomputation');
-assert.ok(orchestrator.indexOf('repairUnassessedAthleteMateriality') < orchestrator.indexOf('current.pending.shadowRecommendation'), 'Athlete Voice materiality repair must precede recommendation staleness evaluation');
-assert.ok(orchestrator.indexOf('current.pending.shadowRecommendation') < orchestrator.indexOf('current.pending.activeRecommendation'), '4.2 shadow convergence must precede 4.3 activation');
+const materialityRepairAt=orchestrator.indexOf('steps.athleteMaterialityRepair = await repairUnassessedAthleteMateriality');
+const shadowPendingAt=orchestrator.indexOf('current.pending?.shadowRecommendation');
+const activePendingAt=orchestrator.indexOf('current.pending?.activeRecommendation');
+assert.ok(materialityRepairAt>=0&&shadowPendingAt>=0&&materialityRepairAt<shadowPendingAt, 'Athlete Voice materiality repair must precede recommendation staleness evaluation');
+assert.ok(shadowPendingAt>=0&&activePendingAt>=0&&shadowPendingAt<activePendingAt, '4.2 shadow convergence must precede 4.3 activation');
 assert.match(orchestrator, /propagateCanonicalChangeSafely/, 'systemic refresh must converge through the canonical propagation controller');
 assert.match(orchestrator, /changedNodes:\['recommendation\.shadow'\]/, 'pending 4.3 projection must be requested from persisted shadow through canonical propagation');
 assert.match(propagation, /persistActiveRecommendationFromShadow/, 'canonical propagation must own 4.3 projection from persisted shadow');
