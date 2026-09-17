@@ -68,7 +68,9 @@ assert.equal(stale.staleConstraints[0]?.status, 'STALE_UNCONFIRMED');
 
 assert.deepEqual(unknownDependencyNodes(['totally.unknown.node']), ['totally.unknown.node']);
 assert.throws(() => assertKnownChangedNodes(['totally.unknown.node']), /unknown_dependency_node/, 'unknown mutation nodes must fail closed');
-assert.equal(validateDependencyGraph().ok, true, 'dependency graph must remain registry-valid');
+const graphValidation = validateDependencyGraph();
+assert.deepEqual(graphValidation.errors, [], `dependency graph must remain registry-valid: ${graphValidation.errors.join(' | ')}`);
+assert.equal(graphValidation.ok, true, 'dependency graph must remain registry-valid');
 
 const athleteClosure = affectedNodes('source.athlete.feedback');
 for (const required of ['athlete.memory','athlete.state.current','readiness.current','adaptive.context','recommendation.shadow','ui.today','ui.train','ui.trends','ui.system']) {
@@ -89,16 +91,27 @@ assert.match(migration, /CREATE TABLE IF NOT EXISTS fz_canonical_revisions/, 'ca
 assert.match(migration, /CREATE TABLE IF NOT EXISTS fz_convergence_ledger/, 'convergence ledger must be migrated');
 assert.match(migration, /PROVEN_UNAFFECTED/, 'convergence states must distinguish intentional retention');
 
+const outboxMigration = fs.readFileSync('db/migrations/008_canonical_mutation_outbox.sql', 'utf8');
+assert.match(outboxMigration, /CREATE TABLE IF NOT EXISTS fz_canonical_mutation_outbox/, 'canonical mutation outbox must be migrated');
+assert.match(outboxMigration, /fz_wellness_snapshots/, 'outbox must watch persisted wellness snapshots');
+assert.doesNotMatch(outboxMigration, /ON fz_wellness_current/, 'outbox must never install a row trigger on the wellness current view');
+for (const table of ['fz_training_source_records','fz_training_sessions','fz_training_session_sources','fz_athlete_events','fz_objectives','fz_objective_revisions','fz_objective_capabilities','fz_event_format_profiles','fz_event_source_evidence','fz_event_transfer_assessments']) {
+  assert.match(outboxMigration, new RegExp(`ON ${table}\\b`), `outbox trigger coverage missing ${table}`);
+}
+assert.match(outboxMigration, /source_key',''\) = 'fz-intelligence'/, 'derived FZ intelligence writes must be excluded from outbox recursion');
+
 const propagation = fs.readFileSync('lib/canonical-propagation.js', 'utf8');
 assert.match(propagation, /intelligence-current-v5\.js/, 'propagation must use graph-wide Tranche 5 currentness');
 assert.match(propagation, /assertKnownChangedNodes/, 'propagation must fail closed on unknown nodes');
 assert.match(propagation, /PROVEN_UNAFFECTED/, 'propagation must account for intentionally unchanged intelligence');
+assert.match(propagation, /acknowledgeCoveredCanonicalMutations/, 'propagation must acknowledge covered persistence-boundary mutations');
 
 const refresh = fs.readFileSync('lib/intelligence-refresh.js', 'utf8');
 assert.match(refresh, /source\.system\.reconciliation/, 'first convergence revision must bootstrap deterministically');
 assert.match(refresh, /clock\.local_day/, 'local-day temporal invalidation must be explicit');
 assert.match(refresh, /clock\.decision_window/, 'decision-window temporal invalidation must be explicit');
 assert.match(refresh, /addDays\(date, -45\)/, 'late evidence reconciliation must refresh the full 45-day history');
+assert.match(refresh, /readPendingCanonicalMutations/, 'refresh must drain direct canonical DB mutations');
 
 const readiness = fs.readFileSync('lib/readiness-store.js', 'utf8');
 assert.doesNotMatch(readiness, /WELLNESS_HISTORY/, 'readiness must not use runtime wellness history');
