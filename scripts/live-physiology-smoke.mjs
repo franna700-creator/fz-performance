@@ -25,7 +25,7 @@ const checks = [
   ['freshness is explicit', live.includes('freshnessClass') && live.includes('data-freshness') && css.includes('.fz-live-freshness.bad')],
   ['source and persistence timestamps visible', live.includes('fēnix 8 bridge') && live.includes('Garmin via Intervals.icu') && live.includes('FZ persisted ${persistedTime}')],
   ['backend source refresh path retained', wellnessApi.includes('const dbOnly') && wellnessApi.includes('syncWellnessToday') && wellnessSync.includes('MIN_SYNC_INTERVAL_MS = 2 * 60 * 1000')],
-  ['missing wellness values remain unknown rather than rendering as zero', todayV2.includes("if(value===null||value===undefined||value==='')return null") && todayV2.includes("v2Num(w.sleepScore)!==null") && todayV2.includes("v2SleepHours(value){const n=v2Num(value);if(n===null)return'—'"))],
+  ['missing wellness values remain unknown rather than rendering as zero', todayV2.includes("if(value===null||value===undefined||value==='')return null") && todayV2.includes("v2Num(w.sleepScore)!==null") && todayV2.includes("v2SleepHours(value){const n=v2Num(value);if(n===null)return'—'")],
   ['no extra serverless route added for UI correction', !fs.existsSync('api/wellness/live-physiology.js')]
 ];
 
