@@ -34,7 +34,7 @@ const checks=[
  ['AET comparability is evidence-derived',!trendsStore.includes('EXPECTED_MATCHED_AET_DATES')&&!trendsStore.includes('expectedMatchedAetMissing')&&trendsStore.includes('aetClass(metric, events')&&trendsStore.includes("['MATCHED','MATCHED_CAVEAT'].includes(row.comparison)")],
  ['athlete voice can identify AET',trendsStore.includes("/\\b(run\\s+)?aet\\b/.test(text)")],
  ['canonical system architecture',app.includes('Operational truth')&&app.includes('NEON')&&app.includes('flight recorder')],
- ['Fitness AI source key is truthful',/source_key\s*===\s*['"]fitness-ai['"]/.test(systemStatus)],
+ ['Intervals.icu wellness source key is truthful',/source_key\s*:\s*['"]intervals-icu['"]/.test(systemStatus)],
  ['safe area preserved',css.includes('safe-area-inset-top')&&css.includes('safe-area-inset-bottom')],
  ['legacy injector tower removed from active build',!pkg.scripts.build.includes('longitudinal-trends-v4')&&!pkg.scripts.build.includes('tranche3-option-b-ui')&&!pkg.scripts.build.includes('tranche2-live-wellness')],
  ['canonical APIs',fs.existsSync('api/trends/current.js')&&fs.existsSync('api/system/status.js')&&fs.existsSync('lib/trends-store.js')]
