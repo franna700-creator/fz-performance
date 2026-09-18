@@ -145,31 +145,42 @@ async function boot(page, label) {
     await viewerEntry.click();
     await viewerEntry.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
   }
-  await page.waitForSelector('#today .fz-clean-hero', { timeout: 30000 });
-  await page.waitForSelector('#today [data-dynamic-source="physiology"]', { timeout: 15000 });
-  await page.waitForSelector('#today [data-dynamic-source="training"]', { timeout: 15000 });
+  await page.waitForSelector('.fz2-top-shell', { timeout: 30000 });
+  await page.waitForSelector('#today.fz-today-v2 .fz2-stage', { timeout: 30000 });
+  await page.waitForSelector('#today .fz2-phys-summary', { timeout: 15000 });
+  await page.waitForSelector('#today .fz2-training', { timeout: 15000 });
 
   const viewport = await page.locator('meta[name="viewport"]').getAttribute('content');
   assert.match(viewport || '', /viewport-fit=cover/, `${label}: mobile safe-area viewport must remain enabled`);
-  assert.equal((await page.locator('#todayDate').innerText()).trim(), expectedSastDate(), `${label}: SAST date must be correct`);
+  assert.equal((await page.locator('[data-fz2-date]').innerText()).trim(), expectedSastDate(), `${label}: SAST date must be correct`);
   assert.match((await page.locator('#countdown').innerText()).trim(), /^\d{2}:\d{2}:\d{2}$/, `${label}: countdown must render`);
   assert.match(await page.locator('#nextSlot').innerText(), /(06|20):00 SAST/, `${label}: next scheduled intelligence slot must remain 06:00 or 20:00`);
   assert.equal(await page.locator('body').innerText().then(t => t.includes('Why this matters now')), false, `${label}: removed TODAY duplication must not return`);
-  assert.ok(await page.locator('[data-live-refresh]').isVisible(), `${label}: manual wellness refresh control must be visible`);
-  assert.match(await page.locator('#today').innerText(), /Recovery Physiology|Live Physiology/i, `${label}: capability-aware physiology presentation must render`);
-  assert.ok(await page.locator('[data-training-sync-now]').isVisible(), `${label}: manual workout sync must be visible`);
+  assert.match(await page.locator('#today .fz2-phys-summary').innerText(), /Recovery Physiology|Live Physiology/i, `${label}: capability-aware physiology presentation must render`);
+  assert.ok(await page.locator('#today .fz2-training [data-training-sync-now]').isVisible(), `${label}: workout sync control must remain visible`);
+
+  const details = page.locator('#today [data-fz2-live-details]');
+  assert.ok(await details.isVisible(), `${label}: physiology detail control must remain visible`);
+  await details.click();
+  await page.waitForSelector('#today .fz2-legacy-live [data-live-refresh]', { state: 'visible', timeout: 5000 });
+  assert.ok(await page.locator('#today .fz2-legacy-live [data-dynamic-source="physiology"]').isVisible(), `${label}: persisted physiology detail must render`);
+  await details.click();
 
   return { pageErrors, consoleErrors };
 }
 
 async function openPage(page, label, id) {
-  const selector = label === 'mobile' ? `.bottom button[data-page="${id}"]` : `.nav button[data-page="${id}"]`;
-  await page.locator(selector).click();
+  const button = page.locator(`[data-page="${id}"]:visible`).first();
+  assert.ok(await button.count(), `${label}: visible ${id} navigation control must exist`);
+  await button.click();
   await page.waitForFunction(pageId => document.getElementById(pageId)?.classList.contains('active'), id, { timeout: 5000 });
 }
 
 async function assertSurfaces(page, label) {
   await openPage(page, label, 'trends');
+  await page.waitForSelector('#trends .fz-phase2-lead-trends', { timeout: 10000 });
+  await page.waitForSelector('#trends .fz-phase2-summary', { timeout: 10000 });
+  await page.waitForSelector('#trends .fz-phase2-gaps', { timeout: 10000 });
   for (const selector of ['#cleanHrvChart svg','#cleanSleepChart svg','#cleanNclChart svg','#cleanAetChart svg','#cleanRunScatter svg','#trendAthleteVoice']) {
     await page.waitForSelector(selector, { timeout: 10000 });
   }
@@ -179,23 +190,30 @@ async function assertSurfaces(page, label) {
   assert.match(trendsText, /NON.COMPARABLE|NON-COMPARABLE/i, `${label}: excluded AET evidence must remain visible`);
 
   await openPage(page, label, 'train');
-  await page.waitForSelector('#athleteMemory .fz-athlete-memory-shell', { timeout: 10000 });
-  await page.waitForSelector('#train .fz-training-list', { timeout: 10000 });
-  assert.match(await page.locator('#train').innerText(), /Canonical subjective evidence/i, `${label}: Athlete Memory must remain canonical`);
+  await page.waitForSelector('#train .fz-phase2-lead-train', { timeout: 10000 });
+  await page.waitForSelector('#train .fz44-choice-section', { timeout: 10000 });
+  await page.waitForSelector('#train .fz-phase2-training-memory', { timeout: 10000 });
+  await page.waitForSelector('#train .fz-phase2-athlete-memory', { timeout: 10000 });
+  assert.match(await page.locator('#train .fz-phase2-athlete-memory').innerText(), /Canonical subjective evidence/i, `${label}: Athlete Memory must remain canonical`);
+
+  await openPage(page, label, 'goals');
+  await page.waitForSelector('#goals.fz-goals-v1 .fz-goals-primary', { timeout: 10000 });
+  await page.waitForSelector('#goals .fz-goals-capabilities', { timeout: 10000 });
+  const goalsText = await page.locator('#goals').innerText();
+  assert.match(goalsText, /HYROX Johannesburg Solo Male/i, `${label}: primary objective must render`);
+  assert.match(goalsText, /Compromised running/i, `${label}: canonical capability evidence must render`);
 
   await openPage(page, label, 'system');
-  await page.waitForSelector('#system .status-grid', { timeout: 10000 });
-  await page.waitForSelector('#system [data-materiality-observability]', { timeout: 10000 });
+  await page.waitForSelector('#system .fz-system-v1 .fz-system-hero', { timeout: 10000 });
+  await page.waitForSelector('#system [data-recommendation-shadow]', { timeout: 10000 });
   const systemText = await page.locator('#system').innerText();
   assert.match(systemText, /Operational truth[\s\S]*NEON/i, `${label}: SYSTEM must show Neon operational truth`);
-  assert.match(systemText, /Adaptive Intelligence/i, `${label}: SYSTEM must expose Tranche 4.1 materiality`);
-  assert.match(systemText, /4\.2/i, `${label}: SYSTEM must preserve the recomputation boundary`);
+  assert.match(systemText, /Adaptive Intelligence/i, `${label}: SYSTEM must expose adaptive intelligence observability`);
+  assert.match(systemText, /4\.2/i, `${label}: SYSTEM must preserve the recommendation shadow boundary`);
 
-  if (label === 'mobile') {
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    assert.ok(overflow <= 2, `mobile: page must not horizontally overflow (${overflow}px)`);
-    assert.ok(await page.locator('.bottom').isVisible(), 'mobile: bottom navigation must remain visible');
-  }
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(overflow <= 2, `${label}: page must not horizontally overflow (${overflow}px)`);
+  if (label === 'mobile') assert.ok(await page.locator('.bottom').isVisible(), 'mobile: bottom navigation must remain visible');
 }
 
 async function runViewport(browser, label, contextOptions, screenshotName) {
