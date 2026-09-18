@@ -1,11 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "enabled": true,
+  "enabled": false,
   "scope": "PINNED_RELEASE_ONLY",
   "release": "TRANCHE_5_1_GARMIN_CIQ_LIVE",
   "validatedCandidateSha": "04cbdaa52bc97c5762bcaf03e81a8e9b4708852a",
   "validatedCandidateTree": "85473f43914327d5e719ba2976865d9649de7c18",
   "releaseBranch": "release-garmin-ciq-live-pinned",
   "createdOn": "2026-09-18",
-  "purpose": "Permit one staged Production build and no-rebuild traffic promotion for the validated Garmin Connect IQ live physiology release while ordinary Git deployments remain disabled."
+  "closedOn": "2026-09-18",
+  "promotedDeploymentId": "dpl_3QEt4ApuYuyYeW9UVCU9bKGXJ63f",
+  "rollbackDeploymentId": "dpl_F2wiKmeXTj8zNxAKgCupEXo4X4Ui",
+  "purpose": "Closed one-time Garmin Connect IQ live physiology release gate after staged Production acceptance and no-rebuild promotion. Ordinary Git deployments remain locked."
 }
