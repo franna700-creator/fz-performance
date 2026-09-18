@@ -1,12 +1,11 @@
 {
   "schemaVersion": "1.0",
-  "enabled": false,
+  "enabled": true,
   "scope": "PINNED_RELEASE_ONLY",
-  "release": "TRANCHE_4_2_SHADOW",
-  "validatedCandidateSha": "9e07978432f156bc0c2b0ef9516fd49fa8dcf3cc",
-  "validatedCandidateTree": "199a2800b8486ad3cb0d3a2889e155421fb46134",
-  "releaseBranch": "release-4-2-pinned",
-  "createdOn": "2026-09-10",
-  "closedOn": "2026-09-10",
-  "purpose": "Closed one-time Tranche 4.2 release gate. Ordinary Git deployments remain locked."
+  "release": "TRANCHE_5_1_GARMIN_CIQ_LIVE",
+  "validatedCandidateSha": "04cbdaa52bc97c5762bcaf03e81a8e9b4708852a",
+  "validatedCandidateTree": "85473f43914327d5e719ba2976865d9649de7c18",
+  "releaseBranch": "release-garmin-ciq-live-pinned",
+  "createdOn": "2026-09-18",
+  "purpose": "Permit one staged Production build and no-rebuild traffic promotion for the validated Garmin Connect IQ live physiology release while ordinary Git deployments remain disabled."
 }
