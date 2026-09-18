@@ -116,7 +116,7 @@ async function systemStatus(req, res) {
       readIntelligenceCurrent({ now }).catch(() => null),
       runLiveSystemicReconciliationSweep({ now }).catch(error => ({ ok:false,errors:1,warnings:0,findings:[{code:'SYSTEMIC_SWEEP_UNAVAILABLE',severity:'ERROR',message:error instanceof Error?error.message:String(error)}] }))
     ]);
-    const intervalsStatus = publicIntervalsIcuStatus();
+    const intervalsStatus = await publicIntervalsIcuStatus();
     return res.status(200).json({
       ok:true,generatedAt:new Date().toISOString(),
       architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin via Intervals.icu','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',currentAthleteStateTruth:'Tranche 5 durable current-athlete-state projection',canonicalMutationTruth:'Tranche 5 persistence-boundary mutation outbox',convergenceTruth:'Tranche 5 canonical revision + convergence ledger',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
