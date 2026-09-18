@@ -140,12 +140,13 @@ async function boot(page, label) {
   const response = await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   assert.ok(response && response.ok(), `${label}: root document must load`);
 
-  const viewerEntry = page.getByRole('button', { name: /Continue in Viewer Mode/i });
-  if (await viewerEntry.isVisible().catch(() => false)) {
-    await viewerEntry.click();
-    await viewerEntry.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
-  }
   await page.waitForSelector('.fz2-top-shell', { timeout: 30000 });
+  const viewerEntry = page.getByRole('button', { name: /Continue in Viewer Mode/i });
+  await viewerEntry.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+  if (await viewerEntry.isVisible().catch(() => false)) await viewerEntry.click();
+  const modeOverlay = page.locator('[data-fz-mode-overlay]');
+  if (await modeOverlay.count()) await modeOverlay.waitFor({ state: 'hidden', timeout: 5000 });
+
   await page.waitForSelector('#today.fz-today-v2 .fz2-stage', { timeout: 30000 });
   await page.waitForSelector('#today .fz2-phys-summary', { timeout: 15000 });
   await page.waitForSelector('#today .fz2-training', { timeout: 15000 });
