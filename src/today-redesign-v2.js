@@ -17,12 +17,20 @@ const FZ_TODAY_V2_QUOTES=[
   ['PROCESS','Build the athlete you want to be by repeating the behaviours that athlete requires.']
 ];
 const v2Esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const v2Fmt=(value,decimals=0)=>Number.isFinite(Number(value))?Number(value).toLocaleString('en-ZA',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}):'—';
+const v2Num=value=>{
+  if(value===null||value===undefined||value==='')return null;
+  const n=Number(value);
+  return Number.isFinite(n)?n:null;
+};
+const v2Fmt=(value,decimals=0)=>{
+  const n=v2Num(value);
+  return n===null?'—':n.toLocaleString('en-ZA',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+};
 function v2Date(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Johannesburg',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 function v2DayOrdinal(){const [year,month,day]=v2Date().split('-').map(Number);return Math.floor(Date.UTC(year,month-1,day)/86400000)}
 function v2Quote(){return FZ_TODAY_V2_QUOTES[Math.abs(v2DayOrdinal())%FZ_TODAY_V2_QUOTES.length]}
 function v2Time(value){if(!value)return'—';const d=new Date(value);if(Number.isNaN(d.getTime()))return'—';return new Intl.DateTimeFormat('en-ZA',{timeZone:'Africa/Johannesburg',hour:'2-digit',minute:'2-digit',hour12:false}).format(d)}
-function v2SleepHours(value){const n=Number(value);if(!Number.isFinite(n))return'—';const total=Math.round(n*60);return`${Math.floor(total/60)}h ${String(total%60).padStart(2,'0')}m`}
+function v2SleepHours(value){const n=v2Num(value);if(n===null)return'—';const total=Math.round(n*60);return`${Math.floor(total/60)}h ${String(total%60).padStart(2,'0')}m`}
 function v2Icon(name){
   const common='viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
   const icons={
@@ -112,12 +120,12 @@ function v2PhysiologySummary(well){
   const source=v2Time(well?.sourceAsOf);
   const title=intraday?'Live Physiology':'Recovery Physiology';
   const bridge=intraday?'fēnix 8 live bridge':(well?.sources?.daily?.sourceKey==='intervals-icu'||well?.sourceKey==='intervals-icu'?'Garmin via Intervals.icu':'Garmin');
-  const hasBatteryCurrent=intraday&&Number.isFinite(Number(w.bodyBattery));
+  const hasBatteryCurrent=intraday&&v2Num(w.bodyBattery)!==null;
   const batteryValue=hasBatteryCurrent?w.bodyBattery:w.bodyBatteryHigh;
-  const batteryDetail=hasBatteryCurrent?'current':Number.isFinite(Number(w.bodyBatteryHigh))?'daily high':'not available';
+  const batteryDetail=hasBatteryCurrent?'current':v2Num(w.bodyBatteryHigh)!==null?'daily high':'not available';
   const stressValue=intraday?v2Fmt(w.stress):'—';
   const stressDetail=intraday?'current':'watch bridge not reporting';
-  return `<section class="fz2-phys-summary"><header><div><span class="fz2-phys-title"><i></i>${v2Esc(title)}</span><small>${v2Esc(freshness)} · ${v2Esc(bridge)} · ${v2Esc(source)}</small></div><button type="button" class="fz2-view-details" data-fz2-live-details aria-expanded="false">View details →</button></header><div class="fz2-summary-grid">${v2SummaryMetric('HRV',v2Fmt(w.hrv),'ms','overnight','pulse','green')}${v2SummaryMetric('Resting HR',v2Fmt(w.restingHeartRate),'bpm','morning anchor','heart','cyan')}${v2SummaryMetric('Sleep',v2SleepHours(w.sleepHours),'',Number.isFinite(Number(w.sleepScore))?`score ${v2Fmt(w.sleepScore)}`:'duration','moon','violet')}${v2SummaryMetric('Body Battery',v2Fmt(batteryValue),'',batteryDetail,'battery','green')}${v2SummaryMetric('Stress',stressValue,'',stressDetail,'bolt','yellow')}${v2SummaryMetric('Steps',v2Fmt(w.steps),'',Number.isFinite(Number(w.distanceKm))?`${v2Fmt(w.distanceKm,1)} km`:'today','steps','cyan')}</div></section>`;
+  return `<section class="fz2-phys-summary"><header><div><span class="fz2-phys-title"><i></i>${v2Esc(title)}</span><small>${v2Esc(freshness)} · ${v2Esc(bridge)} · ${v2Esc(source)}</small></div><button type="button" class="fz2-view-details" data-fz2-live-details aria-expanded="false">View details →</button></header><div class="fz2-summary-grid">${v2SummaryMetric('HRV',v2Fmt(w.hrv),'ms','overnight','pulse','green')}${v2SummaryMetric('Resting HR',v2Fmt(w.restingHeartRate),'bpm','morning anchor','heart','cyan')}${v2SummaryMetric('Sleep',v2SleepHours(w.sleepHours),'',v2Num(w.sleepScore)!==null?`score ${v2Fmt(w.sleepScore)}`:'not available','moon','violet')}${v2SummaryMetric('Body Battery',v2Fmt(batteryValue),'',batteryDetail,'battery','green')}${v2SummaryMetric('Stress',stressValue,'',stressDetail,'bolt','yellow')}${v2SummaryMetric('Steps',v2Fmt(w.steps),'',v2Num(w.distanceKm)!==null?`${v2Fmt(w.distanceKm,1)} km`:'today','steps','cyan')}</div></section>`;
 }
 function v2Training(focus){
   if(!focus)return `<section class="fz2-training"><div><span class="fz2-card-kicker"><i>${v2Icon('train')}</i> TRAINING</span><h3>No current canonical training session.</h3></div><button type="button" class="fz2-sync-workouts" data-training-sync-now aria-label="Sync workouts">${v2Icon('refresh')}</button></section>`;
