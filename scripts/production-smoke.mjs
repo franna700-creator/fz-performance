@@ -22,6 +22,42 @@ function finiteOrNull(value, label) {
   assert.ok(value === null || Number.isFinite(Number(value)), `${label} must be numeric or null`);
 }
 
+function sastDateOffset(daysAgo) {
+  const shifted = new Date(Date.now() - daysAgo * 86400000);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(shifted);
+}
+
+async function installReadOnlyWellnessRoute(context, currentWellness) {
+  let fixture = currentWellness;
+  if (!fixture?.wellness) {
+    for (let daysAgo = 1; daysAgo <= 7; daysAgo += 1) {
+      const candidate = (await getJson(context, `/api/wellness/today?date=${sastDateOffset(daysAgo)}&refresh=0`)).data;
+      if (candidate?.wellness) {
+        fixture = {
+          ...candidate,
+          syncStatus: 'STAGED_ACCEPTANCE_READ_ONLY_FIXTURE',
+          warning: 'Read-only staged browser acceptance is using the latest persisted wellness observation; no source sync is invoked.'
+        };
+        break;
+      }
+    }
+  }
+  assert.ok(fixture?.wellness, 'staged browser acceptance requires a persisted wellness observation without invoking source sync');
+
+  await context.route('**/api/wellness/today*', async route => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json; charset=utf-8',
+      headers: { 'cache-control': 'no-store', 'x-fz-acceptance-source': 'persisted-read-only' },
+      body: JSON.stringify(fixture)
+    });
+  });
+  return fixture;
+}
+
 async function assertContracts(context) {
   const runtime = await getJson(context, '/api/runtime-state');
   assert.equal(runtime.data.masterValidated, true, 'runtime state must be master validated');
@@ -31,8 +67,12 @@ async function assertContracts(context) {
 
   const wellness = (await getJson(context, '/api/wellness/today?refresh=0')).data;
   assert.equal(wellness.ok, true, 'persisted wellness contract must be healthy');
-  assert.ok(wellness.wellness, 'persisted wellness must be present');
-  assert.ok(wellness.wellness.ingestedAt, 'wellness persistence timestamp must be present');
+  assert.equal(wellness.source?.daily?.configured, true, 'Intervals daily recovery source must be configured');
+  assert.equal(wellness.source?.intraday?.configured, true, 'Connect IQ intraday source must be configured');
+  if (wellness.wellness) {
+    assert.ok(wellness.wellness.ingestedAt, 'wellness persistence timestamp must be present when a current-day observation exists');
+    assert.ok(['DAILY_RECOVERY','LIVE_INTRADAY'].includes(wellness.wellness.mode), 'wellness mode must expose daily versus genuine intraday capability');
+  }
 
   const training = (await getJson(context, '/api/training/memory?backDays=45&forwardDays=0')).data;
   assert.equal(training.ok, true, 'canonical training memory must be healthy');
@@ -78,7 +118,13 @@ async function assertContracts(context) {
   assert.equal(system.ok, true, 'system status must be healthy');
   assert.equal(system.architecture?.operationalTruth, 'Neon', 'SYSTEM operational truth must be Neon');
   assert.match(system.architecture?.driveRole || '', /flight recorder; not runtime engine/i, 'Drive role must remain audit-only');
-  assert.equal(system.garmin?.connection?.status, 'CONNECTED', 'Garmin / Fitness AI connection must be connected');
+  assert.equal(system.intervalsIcu?.configured, true, 'Garmin via Intervals.icu daily recovery transport must be configured');
+  assert.equal(system.garmin?.connection?.configured, true, 'Garmin daily recovery connection must be configured');
+  assert.equal(system.garmin?.transport, 'Intervals.icu', 'Garmin daily recovery transport must be Intervals.icu');
+  assert.equal(system.garmin?.liveBridge?.configured, true, 'fēnix 8 Connect IQ live bridge must be configured');
+  assert.equal(system.releaseEnvironment?.garminCiqConfigured, true, 'CIQ ingest secret must be present in the staged Production environment');
+  assert.equal(system.releaseEnvironment?.secretsExposed, false, 'release probes must remain secret-safe');
+  assert.equal(system.systemIntegrity?.ok, true, 'canonical graph integrity must remain green');
   assert.equal(system.tredict?.configured, true, 'Tredict must be configured');
   assert.equal(system.intelligence?.materiality?.engineVersion, '4.1.0', 'Tranche 4.1 engine version must remain visible');
   assert.ok(Array.isArray(system.intelligence?.materiality?.assessments), 'materiality assessments must be observable');
@@ -104,7 +150,8 @@ async function boot(page, label) {
   assert.match((await page.locator('#countdown').innerText()).trim(), /^\d{2}:\d{2}:\d{2}$/, `${label}: countdown must render`);
   assert.match(await page.locator('#nextSlot').innerText(), /(06|20):00 SAST/, `${label}: next scheduled intelligence slot must remain 06:00 or 20:00`);
   assert.equal(await page.locator('body').innerText().then(t => t.includes('Why this matters now')), false, `${label}: removed TODAY duplication must not return`);
-  assert.ok(await page.locator('[data-live-refresh]').isVisible(), `${label}: manual Garmin refresh must be visible`);
+  assert.ok(await page.locator('[data-live-refresh]').isVisible(), `${label}: manual wellness refresh control must be visible`);
+  assert.match(await page.locator('#today').innerText(), /Recovery Physiology|Live Physiology/i, `${label}: capability-aware physiology presentation must render`);
   assert.ok(await page.locator('[data-training-sync-now]').isVisible(), `${label}: manual workout sync must be visible`);
 
   return { pageErrors, consoleErrors };
@@ -148,7 +195,8 @@ async function assertSurfaces(page, label) {
 
 async function runViewport(browser, label, contextOptions, screenshotName) {
   const context = await browser.newContext(contextOptions);
-  await assertContracts(context);
+  const contracts = await assertContracts(context);
+  await installReadOnlyWellnessRoute(context, contracts.wellness);
   const page = await context.newPage();
   try {
     const errors = await boot(page, label);
