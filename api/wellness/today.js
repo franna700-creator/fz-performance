@@ -1,4 +1,4 @@
-import { publicSourceStatus } from '../../lib/source-connection-store.js';
+import { publicIntervalsIcuStatus } from '../../lib/intervals-icu-client.js';
 import { getWellnessToday, localDateSast } from '../../lib/wellness-store.js';
 import { syncWellnessToday } from '../../lib/wellness-sync.js';
 
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
 
   let source;
-  try { source = await publicSourceStatus(); } catch { source = { status: 'ERROR' }; }
+  try { source = publicIntervalsIcuStatus(); } catch { source = { status: 'ERROR' }; }
 
   return res.status(200).json({
     ok: true,
