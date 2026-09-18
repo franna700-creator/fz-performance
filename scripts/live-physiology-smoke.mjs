@@ -16,12 +16,12 @@ const checks = [
   ['automatic source cadence is five minutes', live.includes('autoRefreshMs: 300000') && live.includes('setInterval')],
   ['focus visibility and online wake checks exist', live.includes("window.addEventListener('focus'") && live.includes("document.addEventListener('visibilitychange'") && live.includes("window.addEventListener('online'")],
   ['wake source checks are throttled', live.includes('minWakeMs: 120000')],
-  ['manual Garmin refresh exists', live.includes("'/api/wellness/today?refresh=1'") && live.includes('Refresh Garmin')],
+  ['manual wellness refresh exists', live.includes("'/api/wellness/today?refresh=1'") && live.includes('Refresh wellness')],
   ['source persistence invalidates canonical views', live.includes("new Event('focus')") && live.includes("source: 'wellness'")],
   ['all four intraday scrub graphs restored', ['body_battery','stress','heart_rate','respiration'].every(key => live.includes(key)) && live.includes('fz-live-scrub-line') && live.includes('ArrowLeft') && live.includes('pointerdown')],
   ['respiration excludes zero placeholders', live.includes("respiration: { label: 'Respiration'") && live.includes('value > 0')],
   ['freshness is explicit', live.includes('freshnessClass') && live.includes('data-freshness') && css.includes('.fz-live-freshness.bad')],
-  ['source and persistence timestamps visible', live.includes('Garmin ${sourceTime}') && live.includes('FZ persisted ${persistedTime}')],
+  ['source and persistence timestamps visible', live.includes("Garmin via Intervals.icu") && live.includes('FZ persisted ${persistedTime}')],
   ['backend source refresh path retained', wellnessApi.includes('const dbOnly') && wellnessApi.includes('syncWellnessToday') && wellnessSync.includes('MIN_SYNC_INTERVAL_MS = 2 * 60 * 1000')],
   ['no extra serverless route added for UI correction', !fs.existsSync('api/wellness/live-physiology.js')]
 ];
