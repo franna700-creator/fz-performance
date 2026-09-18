@@ -9,21 +9,48 @@
   "requiredRuntimeEnvironment": [
     {
       "name": "database",
-      "alternatives": ["DATABASE_URL", "POSTGRES_URL"],
-      "targets": ["preview", "production"],
+      "alternatives": [
+        "DATABASE_URL",
+        "POSTGRES_URL"
+      ],
+      "targets": [
+        "preview",
+        "production"
+      ],
       "runtimeProbe": "releaseEnvironment.databaseConfigured"
     },
     {
       "name": "runtimeWriteProtection",
-      "alternatives": ["FZ_STATE_WRITE_TOKEN"],
-      "targets": ["preview", "production"],
+      "alternatives": [
+        "FZ_STATE_WRITE_TOKEN"
+      ],
+      "targets": [
+        "preview",
+        "production"
+      ],
       "runtimeProbe": "releaseEnvironment.writeTokenConfigured"
     },
     {
       "name": "athleteBootstrapProof",
-      "alternatives": ["FZ_ATHLETE_BOOTSTRAP_TOKEN"],
-      "targets": ["preview", "production"],
+      "alternatives": [
+        "FZ_ATHLETE_BOOTSTRAP_TOKEN"
+      ],
+      "targets": [
+        "preview",
+        "production"
+      ],
       "runtimeProbe": "releaseEnvironment.athleteBootstrapConfigured"
+    },
+    {
+      "name": "garminCiqIngest",
+      "alternatives": [
+        "FZ_CIQ_INGEST_TOKEN"
+      ],
+      "targets": [
+        "preview",
+        "production"
+      ],
+      "runtimeProbe": "releaseEnvironment.garminCiqConfigured"
     }
   ],
   "promotionPolicy": {
@@ -54,6 +81,7 @@
     "Preview environment-variable scope is audited separately for future preview workflows and must not be used as evidence that the staged Production candidate has Production configuration.",
     "Environment presence is validated by boolean runtime probes only; secret values must never be returned.",
     "FZ_ATHLETE_BOOTSTRAP_TOKEN is a one-time setup/recovery proof source. The proof itself is never returned by a runtime probe, browser source, canonical athlete record or ChatGPT response.",
+    "FZ_CIQ_INGEST_TOKEN authenticates private fēnix 8 Connect IQ physiology writes. The token value must never be returned by runtime probes, browser source, logs or documentation.",
     "Routine athlete-state evolution remains a runtime data operation and does not open this release process."
   ]
 }
