@@ -30,7 +30,7 @@ assert.match(athleteResponse,/materiality,/,'Athlete Voice propagation must carr
 assert.match(canonicalPropagation,/const recommendationAffected = closure\.includes\('recommendation\.shadow'\)/,'recommendation recomputation must be dependency-closure aware');
 assert.match(canonicalPropagation,/materiality\?\.shouldRecomputeRecommendation === true/,'canonical propagation must keep ordinary recommendation recomputation materiality-gated');
 assert.match(canonicalPropagation,/const readinessChanged = readiness\?\.changed === true/,'canonical readiness change must be an explicit versioned decision-input trigger');
-assert.match(canonicalPropagation,/forceRecommendationRecompute \|\| readinessChanged \|\| materiality\?\.shouldRecomputeRecommendation === true/s,'only explicit systemic convergence, a canonical readiness change, or recommendation-grade materiality may trigger recomputation');
+assert.match(canonicalPropagation,/forceRecommendationRecompute \|\| temporalInvalidation \|\| readinessChanged \|\| materiality\?\.shouldRecomputeRecommendation === true/s,'explicit systemic convergence, temporal invalidation, a canonical readiness change, or recommendation-grade materiality may trigger recomputation');
 assert.match(canonicalPropagation,/recomputeCurrentReadinessSafely/,'canonical propagation must compute readiness before the recommendation shadow');
 assert.ok(canonicalPropagation.indexOf('recomputeCurrentReadinessSafely') < canonicalPropagation.lastIndexOf('recomputeRecommendationShadowSafely'),'readiness must be recomputed upstream of the recommendation shadow');
 assert.match(canonicalPropagation,/recomputeRecommendationShadowSafely/,'canonical propagation must own immutable 4.2 shadow recomputation');

@@ -170,6 +170,8 @@ assert.match(propagation, /intelligence-current-v5\.js/, 'propagation must use g
 assert.match(propagation, /assertKnownChangedNodes/, 'propagation must fail closed on unknown nodes');
 assert.match(propagation, /PROVEN_UNAFFECTED/, 'propagation must account for intentionally unchanged intelligence');
 assert.match(propagation, /acknowledgeCoveredCanonicalMutations/, 'propagation must acknowledge covered persistence-boundary mutations');
+assert.match(propagation, /temporalInvalidation\s*=\s*trigger\?\.temporalInvalidation\s*===\s*true/, 'temporal invalidation must be explicit inside propagation');
+assert.match(propagation, /forceRecommendationRecompute\s*\|\|\s*temporalInvalidation/, 'temporal invalidation must refresh the recommendation shadow even when decision fingerprint is unchanged');
 
 const refresh = fs.readFileSync('lib/intelligence-refresh.js', 'utf8');
 assert.match(refresh, /source\.system\.reconciliation/, 'first convergence revision must bootstrap deterministically');
