@@ -1,6 +1,12 @@
 name: production-release-smoke
 
 on:
+  push:
+    branches:
+      - acceptance/garmin-ciq-staged-smoke
+    paths:
+      - 'scripts/production-smoke.mjs'
+      - '.github/workflows/production-smoke.yml'
   workflow_dispatch:
     inputs:
       target_url:
@@ -21,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
-      FZ_PROD_URL: ${{ inputs.target_url }}
+      FZ_PROD_URL: ${{ inputs.target_url || 'https://fz-performance-qq3ls6xqx-franna700-2546.vercel.app' }}
       FZ_ARTIFACT_DIR: artifacts
     steps:
       - uses: actions/checkout@v4
