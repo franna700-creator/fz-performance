@@ -10,6 +10,6 @@ export default async function handler(req, res) {
     ok: true,
     deprecated: true,
     legacySource: 'Fitness AI Connector custom-client OAuth',
-    replacement: publicIntervalsIcuStatus()
+    replacement: await publicIntervalsIcuStatus()
   });
 }
