@@ -104,7 +104,7 @@ All must be true before the single staged Production deployment is attempted:
 - controlled release metadata closed until explicit athlete authorization;
 - branch not behind `main`;
 - no unresolved schema migration requirement;
-- required Production environment-variable targets verified;
+- required Production environment-variable targets verified, including `FZ_CIQ_INGEST_TOKEN` for the live watch bridge;
 - Preview environment-variable scope separately audited and corrected for future Preview workflows;
 - current Production healthy enough to provide a trustworthy rollback baseline;
 - previous successful Production deployment identifiable and rollback-capable;
@@ -155,6 +155,7 @@ Preview is not the release vehicle for the single-build workflow, but its config
 Before release authorization, audit Vercel environment-variable scope and confirm at minimum:
 - `DATABASE_URL` or `POSTGRES_URL` includes Preview;
 - `FZ_STATE_WRITE_TOKEN` includes Preview;
+- `FZ_CIQ_INGEST_TOKEN` includes Preview;
 - branch-specific Preview overrides do not accidentally shadow the project-level values for the intended release/development branch;
 - sensitive values are not exposed in logs or API responses.
 
