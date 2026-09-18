@@ -1,4 +1,5 @@
 using Toybox.Application;
+using Toybox.Application.Storage;
 using Toybox.Background;
 using Toybox.System;
 using Toybox.Time;
@@ -35,6 +36,13 @@ class FzLiveBridgeApp extends Application.AppBase {
             }
         }
         Toybox.WatchUi.requestUpdate();
+    }
+
+    function onBackgroundData(data) {
+        if (data != null) {
+            Storage.setValue("lastBridgeResult", data);
+            Toybox.WatchUi.requestUpdate();
+        }
     }
 
     function onStop(state) {
