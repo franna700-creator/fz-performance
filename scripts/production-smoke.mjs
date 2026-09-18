@@ -139,6 +139,12 @@ async function boot(page, label) {
 
   const response = await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   assert.ok(response && response.ok(), `${label}: root document must load`);
+
+  const viewerEntry = page.getByRole('button', { name: /Continue in Viewer Mode/i });
+  if (await viewerEntry.isVisible().catch(() => false)) {
+    await viewerEntry.click();
+    await viewerEntry.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+  }
   await page.waitForSelector('#today .fz-clean-hero', { timeout: 30000 });
   await page.waitForSelector('#today [data-dynamic-source="physiology"]', { timeout: 15000 });
   await page.waitForSelector('#today [data-dynamic-source="training"]', { timeout: 15000 });
