@@ -25,9 +25,10 @@ The Connect IQ watch app contributes only fields it can genuinely observe on-dev
 
 - heart-rate history / latest heart rate
 - physiological stress history / current stress score
-- Body Battery history / latest Body Battery
+- Body Battery history / latest Body Battery, with the native Body Battery complication as a fallback
 - current respiration rate, sampled when the background task runs
 - current-day steps
+- sleep score from the native Garmin complication only as a fallback when the daily recovery source has not supplied today's sleep score
 
 The watch app registers a temporal background event at Garmin's five-minute minimum interval. Each run sends a bounded recent history payload to the authenticated FZ endpoint.
 
@@ -44,6 +45,8 @@ No database migration is required.
 
 - daily recovery fields come from Intervals.icu (or the legacy daily fallback);
 - intraday fields come from `garmin-ciq` when available;
+- current watch observations are timestamped on ingest so FZ can build live traces even when Garmin SensorHistory returns no historical samples;
+- a watch sleep score may fill a missing daily sleep-score field, but never overrides an Intervals.icu sleep score;
 - sparse watch packets cannot erase richer daily recovery evidence;
 - provenance is retained separately for daily and intraday sources.
 
