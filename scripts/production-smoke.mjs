@@ -101,17 +101,16 @@ async function assertContracts(context) {
   finiteOrNull(trends.load?.rolling7d?.value ?? null, 'rolling 7d load');
   finiteOrNull(trends.load?.rolling28d?.value ?? null, 'rolling 28d load');
 
-  // Historical regression anchors remain stable, while the live series may extend.
+  // Historical regression anchors inside the requested moving window remain stable, while the live series may extend.
   const sep8 = byDate.get('2026-09-08');
   assert.ok(sep8, '8 Sep historical load point must remain present');
   assert.ok(Math.abs(Number(sep8.value) - 66.32) < 0.01, '8 Sep NCL historical derivation must remain ~66.32');
 
   const matchedAet = trends.performance?.matchedAet || [];
-  const requiredHistorical = ['2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'];
+  const requiredHistorical = ['2026-08-17','2026-08-25','2026-08-31'];
   const matchedDates = matchedAet.map(x => x.date);
   for (const date of requiredHistorical) assert.ok(matchedDates.includes(date), `matched AET baseline must retain ${date}`);
   assert.equal(new Set(matchedDates).size, matchedDates.length, 'matched AET dates must be unique');
-  assert.equal(trends.performance?.matchedAet?.find(x => x.date === '2026-08-04')?.comparison, 'MATCHED_CAVEAT', '4 Aug AET caveat must remain');
   assert.equal(trends.performance?.excludedAet?.find(x => x.date === '2026-09-08')?.comparison, 'NON_COMPARABLE', '8 Sep GI-limited AET must remain non-comparable');
 
   const system = (await getJson(context, '/api/system/status?materialityLimit=20')).data;
