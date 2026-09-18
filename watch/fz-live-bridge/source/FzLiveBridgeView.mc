@@ -1,4 +1,5 @@
 using Toybox.Application;
+using Toybox.Application.Storage;
 using Toybox.Graphics;
 using Toybox.WatchUi;
 
@@ -14,6 +15,8 @@ class FzLiveBridgeView extends WatchUi.View {
 
         var token = Application.Properties.getValue("fzToken");
         var configured = token != null && token.toString().length() > 0;
+        var lastResult = Storage.getValue("lastBridgeResult");
+        var lastStatus = lastResult == null ? "No send result yet" : lastResult.toString();
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
 
@@ -21,5 +24,6 @@ class FzLiveBridgeView extends WatchUi.View {
         dc.drawText(cx, cy - 10, Graphics.FONT_SMALL, configured ? "Bridge configured" : "Setup required", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx, cy + 25, Graphics.FONT_XTINY, configured ? "Background sync: 5 min" : "Enter token in app settings", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(cx, cy + 48, Graphics.FONT_XTINY, "Intervals remains daily fallback", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, cy + 72, Graphics.FONT_XTINY, lastStatus, Graphics.TEXT_JUSTIFY_CENTER);
     }
 }
