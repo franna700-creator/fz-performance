@@ -2,9 +2,12 @@ using Toybox.ActivityMonitor;
 using Toybox.Application;
 using Toybox.Background;
 using Toybox.Communications;
+using Toybox.Complications;
 using Toybox.SensorHistory;
 using Toybox.System;
 using Toybox.Time;
+import Toybox.Lang;
+import Toybox.PersistedContent;
 
 (:background)
 class FzLiveBridgeService extends System.ServiceDelegate {
@@ -28,9 +31,30 @@ class FzLiveBridgeService extends System.ServiceDelegate {
         return rows;
     }
 
+    function collectActivityHeartRate(iterator, limit) {
+        var rows = [];
+
+        if (iterator == null) {
+            return rows;
+        }
+
+        var sample = iterator.next();
+
+        while (sample != null && rows.size() < limit) {
+            if (sample.when != null &&
+                sample.heartRate != ActivityMonitor.INVALID_HR_SAMPLE) {
+                rows.add([sample.when.value(), sample.heartRate]);
+            }
+
+            sample = iterator.next();
+        }
+
+        return rows;
+    }
+
     function history(methodName) {
         var options = {
-            :period => new Time.Duration(30 * 60),
+            :period => 40,
             :order => SensorHistory.ORDER_OLDEST_FIRST
         };
 
@@ -50,11 +74,37 @@ class FzLiveBridgeService extends System.ServiceDelegate {
         return [];
     }
 
+    function complicationValue(complicationType) {
+        try {
+            if (!(Toybox has :Complications) || !(Toybox.Complications has :getComplication)) {
+                return null;
+            }
+
+            var item = Complications.getComplication(new Complications.Id(complicationType));
+            if (item != null && item.value != null) {
+                return item.value;
+            }
+        } catch (e) {
+            System.println("FZ complication " + complicationType + ": " + e.getErrorMessage());
+        }
+        return null;
+    }
+
     function latest(rows) {
         if (rows == null || rows.size() == 0) {
             return null;
         }
         return rows[rows.size() - 1][1];
+    }
+
+    function appendCurrent(rows, observedAt, value) {
+        if (value == null) {
+            return;
+        }
+
+        if (rows.size() == 0 || rows[rows.size() - 1][0] != observedAt) {
+            rows.add([observedAt, value]);
+        }
     }
 
     function onTemporalEvent() {
@@ -68,13 +118,28 @@ class FzLiveBridgeService extends System.ServiceDelegate {
 
         var observedAt = Time.now().value();
         var hr = history("heart_rate");
+
+        if (hr.size() == 0 && (Toybox.ActivityMonitor has :getHeartRateHistory)) {
+            try {
+                hr = collectActivityHeartRate(
+                    ActivityMonitor.getHeartRateHistory(40, false),
+                    40
+                );
+            } catch (e) {
+                System.println("FZ activity HR fallback: " + e.getErrorMessage());
+            }
+        }
+
         var stress = history("stress");
         var battery = history("body_battery");
         var info = ActivityMonitor.getInfo();
 
+        var currentHeartRate = latest(hr);
         var currentStress = latest(stress);
+        var currentBodyBattery = latest(battery);
         var respiration = null;
         var steps = null;
+        var sleepScore = null;
 
         if (info != null) {
             if (info has :stressScore && info.stressScore != null) {
@@ -88,6 +153,26 @@ class FzLiveBridgeService extends System.ServiceDelegate {
             }
         }
 
+        if (currentHeartRate == null && (Toybox.Complications has :COMPLICATION_TYPE_HEART_RATE)) {
+            currentHeartRate = complicationValue(Complications.COMPLICATION_TYPE_HEART_RATE);
+        }
+        if (currentStress == null && (Toybox.Complications has :COMPLICATION_TYPE_STRESS)) {
+            currentStress = complicationValue(Complications.COMPLICATION_TYPE_STRESS);
+        }
+        if (currentBodyBattery == null && (Toybox.Complications has :COMPLICATION_TYPE_BODY_BATTERY)) {
+            currentBodyBattery = complicationValue(Complications.COMPLICATION_TYPE_BODY_BATTERY);
+        }
+        if (respiration == null && (Toybox.Complications has :COMPLICATION_TYPE_RESPIRATION_RATE)) {
+            respiration = complicationValue(Complications.COMPLICATION_TYPE_RESPIRATION_RATE);
+        }
+        if (Toybox.Complications has :COMPLICATION_TYPE_SLEEP_SCORE) {
+            sleepScore = complicationValue(Complications.COMPLICATION_TYPE_SLEEP_SCORE);
+        }
+
+        appendCurrent(hr, observedAt, currentHeartRate);
+        appendCurrent(stress, observedAt, currentStress);
+        appendCurrent(battery, observedAt, currentBodyBattery);
+
         var respirationSeries = [];
         if (respiration != null) {
             respirationSeries.add([observedAt, respiration]);
@@ -99,10 +184,11 @@ class FzLiveBridgeService extends System.ServiceDelegate {
             "device" => { "family" => "fenix8", "transport" => "connect-iq" },
             "current" => {
                 "steps" => steps,
-                "heartRate" => latest(hr),
+                "heartRate" => currentHeartRate,
                 "stress" => currentStress,
-                "bodyBattery" => latest(battery),
-                "respiration" => respiration
+                "bodyBattery" => currentBodyBattery,
+                "respiration" => respiration,
+                "sleepScore" => sleepScore
             },
             "series" => {
                 "heart_rate" => hr,
@@ -129,7 +215,7 @@ class FzLiveBridgeService extends System.ServiceDelegate {
         }
     }
 
-    function onResponse(responseCode, data) {
+    function onResponse(responseCode as Lang.Number, data as Null or Lang.Dictionary or Lang.String or PersistedContent.Iterator) as Void {
         Background.exit({
             "ok" => responseCode >= 200 && responseCode < 300,
             "responseCode" => responseCode
