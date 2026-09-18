@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
 
   let source;
-  try { source = publicIntervalsIcuStatus(); } catch { source = { status: 'ERROR' }; }
+  try { source = await publicIntervalsIcuStatus(); } catch { source = { status: 'ERROR' }; }
 
   return res.status(200).json({
     ok: true,
