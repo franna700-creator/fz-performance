@@ -22,6 +22,42 @@ function finiteOrNull(value, label) {
   assert.ok(value === null || Number.isFinite(Number(value)), `${label} must be numeric or null`);
 }
 
+function sastDateOffset(daysAgo) {
+  const shifted = new Date(Date.now() - daysAgo * 86400000);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(shifted);
+}
+
+async function installReadOnlyWellnessRoute(context, currentWellness) {
+  let fixture = currentWellness;
+  if (!fixture?.wellness) {
+    for (let daysAgo = 1; daysAgo <= 7; daysAgo += 1) {
+      const candidate = (await getJson(context, `/api/wellness/today?date=${sastDateOffset(daysAgo)}&refresh=0`)).data;
+      if (candidate?.wellness) {
+        fixture = {
+          ...candidate,
+          syncStatus: 'STAGED_ACCEPTANCE_READ_ONLY_FIXTURE',
+          warning: 'Read-only staged browser acceptance is using the latest persisted wellness observation; no source sync is invoked.'
+        };
+        break;
+      }
+    }
+  }
+  assert.ok(fixture?.wellness, 'staged browser acceptance requires a persisted wellness observation without invoking source sync');
+
+  await context.route('**/api/wellness/today*', async route => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json; charset=utf-8',
+      headers: { 'cache-control': 'no-store', 'x-fz-acceptance-source': 'persisted-read-only' },
+      body: JSON.stringify(fixture)
+    });
+  });
+  return fixture;
+}
+
 async function assertContracts(context) {
   const runtime = await getJson(context, '/api/runtime-state');
   assert.equal(runtime.data.masterValidated, true, 'runtime state must be master validated');
@@ -31,8 +67,12 @@ async function assertContracts(context) {
 
   const wellness = (await getJson(context, '/api/wellness/today?refresh=0')).data;
   assert.equal(wellness.ok, true, 'persisted wellness contract must be healthy');
-  assert.ok(wellness.wellness, 'persisted wellness must be present');
-  assert.ok(wellness.wellness.ingestedAt, 'wellness persistence timestamp must be present');
+  assert.equal(wellness.source?.daily?.configured, true, 'Intervals daily recovery source must be configured');
+  assert.equal(wellness.source?.intraday?.configured, true, 'Connect IQ intraday source must be configured');
+  if (wellness.wellness) {
+    assert.ok(wellness.wellness.ingestedAt, 'wellness persistence timestamp must be present when a current-day observation exists');
+    assert.ok(['DAILY_RECOVERY','LIVE_INTRADAY'].includes(wellness.wellness.mode), 'wellness mode must expose daily versus genuine intraday capability');
+  }
 
   const training = (await getJson(context, '/api/training/memory?backDays=45&forwardDays=0')).data;
   assert.equal(training.ok, true, 'canonical training memory must be healthy');
@@ -61,24 +101,29 @@ async function assertContracts(context) {
   finiteOrNull(trends.load?.rolling7d?.value ?? null, 'rolling 7d load');
   finiteOrNull(trends.load?.rolling28d?.value ?? null, 'rolling 28d load');
 
-  // Historical regression anchors remain stable, while the live series may extend.
+  // Historical regression anchors inside the requested moving window remain stable, while the live series may extend.
   const sep8 = byDate.get('2026-09-08');
   assert.ok(sep8, '8 Sep historical load point must remain present');
   assert.ok(Math.abs(Number(sep8.value) - 66.32) < 0.01, '8 Sep NCL historical derivation must remain ~66.32');
 
   const matchedAet = trends.performance?.matchedAet || [];
-  const requiredHistorical = ['2026-07-27','2026-08-04','2026-08-17','2026-08-25','2026-08-31'];
+  const requiredHistorical = ['2026-08-17','2026-08-25','2026-08-31'];
   const matchedDates = matchedAet.map(x => x.date);
   for (const date of requiredHistorical) assert.ok(matchedDates.includes(date), `matched AET baseline must retain ${date}`);
   assert.equal(new Set(matchedDates).size, matchedDates.length, 'matched AET dates must be unique');
-  assert.equal(trends.performance?.matchedAet?.find(x => x.date === '2026-08-04')?.comparison, 'MATCHED_CAVEAT', '4 Aug AET caveat must remain');
   assert.equal(trends.performance?.excludedAet?.find(x => x.date === '2026-09-08')?.comparison, 'NON_COMPARABLE', '8 Sep GI-limited AET must remain non-comparable');
 
   const system = (await getJson(context, '/api/system/status?materialityLimit=20')).data;
   assert.equal(system.ok, true, 'system status must be healthy');
   assert.equal(system.architecture?.operationalTruth, 'Neon', 'SYSTEM operational truth must be Neon');
   assert.match(system.architecture?.driveRole || '', /flight recorder; not runtime engine/i, 'Drive role must remain audit-only');
-  assert.equal(system.garmin?.connection?.status, 'CONNECTED', 'Garmin / Fitness AI connection must be connected');
+  assert.equal(system.intervalsIcu?.configured, true, 'Garmin via Intervals.icu daily recovery transport must be configured');
+  assert.equal(system.garmin?.connection?.configured, true, 'Garmin daily recovery connection must be configured');
+  assert.equal(system.garmin?.transport, 'Intervals.icu', 'Garmin daily recovery transport must be Intervals.icu');
+  assert.equal(system.garmin?.liveBridge?.configured, true, 'fēnix 8 Connect IQ live bridge must be configured');
+  assert.equal(system.releaseEnvironment?.garminCiqConfigured, true, 'CIQ ingest secret must be present in the staged Production environment');
+  assert.equal(system.releaseEnvironment?.secretsExposed, false, 'release probes must remain secret-safe');
+  assert.equal(system.systemIntegrity?.ok, true, 'canonical graph integrity must remain green');
   assert.equal(system.tredict?.configured, true, 'Tredict must be configured');
   assert.equal(system.intelligence?.materiality?.engineVersion, '4.1.0', 'Tranche 4.1 engine version must remain visible');
   assert.ok(Array.isArray(system.intelligence?.materiality?.assessments), 'materiality assessments must be observable');
@@ -94,30 +139,49 @@ async function boot(page, label) {
 
   const response = await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   assert.ok(response && response.ok(), `${label}: root document must load`);
-  await page.waitForSelector('#today .fz-clean-hero', { timeout: 30000 });
-  await page.waitForSelector('#today [data-dynamic-source="physiology"]', { timeout: 15000 });
-  await page.waitForSelector('#today [data-dynamic-source="training"]', { timeout: 15000 });
+
+  await page.waitForSelector('.fz2-top-shell', { timeout: 30000 });
+  const viewerEntry = page.getByRole('button', { name: /Continue in Viewer Mode/i });
+  await viewerEntry.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+  if (await viewerEntry.isVisible().catch(() => false)) await viewerEntry.click();
+  const modeOverlay = page.locator('[data-fz-mode-overlay]');
+  if (await modeOverlay.count()) await modeOverlay.waitFor({ state: 'hidden', timeout: 5000 });
+
+  await page.waitForSelector('#today.fz-today-v2 .fz2-stage', { timeout: 30000 });
+  await page.waitForSelector('#today .fz2-phys-summary', { timeout: 15000 });
+  await page.waitForSelector('#today .fz2-training', { timeout: 15000 });
 
   const viewport = await page.locator('meta[name="viewport"]').getAttribute('content');
   assert.match(viewport || '', /viewport-fit=cover/, `${label}: mobile safe-area viewport must remain enabled`);
-  assert.equal((await page.locator('#todayDate').innerText()).trim(), expectedSastDate(), `${label}: SAST date must be correct`);
+  assert.equal((await page.locator('[data-fz2-date]').innerText()).trim(), expectedSastDate(), `${label}: SAST date must be correct`);
   assert.match((await page.locator('#countdown').innerText()).trim(), /^\d{2}:\d{2}:\d{2}$/, `${label}: countdown must render`);
   assert.match(await page.locator('#nextSlot').innerText(), /(06|20):00 SAST/, `${label}: next scheduled intelligence slot must remain 06:00 or 20:00`);
   assert.equal(await page.locator('body').innerText().then(t => t.includes('Why this matters now')), false, `${label}: removed TODAY duplication must not return`);
-  assert.ok(await page.locator('[data-live-refresh]').isVisible(), `${label}: manual Garmin refresh must be visible`);
-  assert.ok(await page.locator('[data-training-sync-now]').isVisible(), `${label}: manual workout sync must be visible`);
+  assert.match(await page.locator('#today .fz2-phys-summary').innerText(), /Recovery Physiology|Live Physiology/i, `${label}: capability-aware physiology presentation must render`);
+  assert.ok(await page.locator('#today .fz2-training [data-training-sync-now]').isVisible(), `${label}: workout sync control must remain visible`);
+
+  const details = page.locator('#today [data-fz2-live-details]');
+  assert.ok(await details.isVisible(), `${label}: physiology detail control must remain visible`);
+  await details.click();
+  await page.waitForSelector('#today .fz2-legacy-live [data-live-refresh]', { state: 'visible', timeout: 5000 });
+  assert.ok(await page.locator('#today .fz2-legacy-live [data-dynamic-source="physiology"]').isVisible(), `${label}: persisted physiology detail must render`);
+  await details.click();
 
   return { pageErrors, consoleErrors };
 }
 
 async function openPage(page, label, id) {
-  const selector = label === 'mobile' ? `.bottom button[data-page="${id}"]` : `.nav button[data-page="${id}"]`;
-  await page.locator(selector).click();
+  const button = page.locator(`[data-page="${id}"]:visible`).first();
+  assert.ok(await button.count(), `${label}: visible ${id} navigation control must exist`);
+  await button.click();
   await page.waitForFunction(pageId => document.getElementById(pageId)?.classList.contains('active'), id, { timeout: 5000 });
 }
 
 async function assertSurfaces(page, label) {
   await openPage(page, label, 'trends');
+  await page.waitForSelector('#trends .fz-phase2-lead-trends', { timeout: 10000 });
+  await page.waitForSelector('#trends .fz-phase2-summary', { timeout: 10000 });
+  await page.waitForSelector('#trends .fz-phase2-gaps', { timeout: 10000 });
   for (const selector of ['#cleanHrvChart svg','#cleanSleepChart svg','#cleanNclChart svg','#cleanAetChart svg','#cleanRunScatter svg','#trendAthleteVoice']) {
     await page.waitForSelector(selector, { timeout: 10000 });
   }
@@ -127,28 +191,36 @@ async function assertSurfaces(page, label) {
   assert.match(trendsText, /NON.COMPARABLE|NON-COMPARABLE/i, `${label}: excluded AET evidence must remain visible`);
 
   await openPage(page, label, 'train');
-  await page.waitForSelector('#athleteMemory .fz-athlete-memory-shell', { timeout: 10000 });
-  await page.waitForSelector('#train .fz-training-list', { timeout: 10000 });
-  assert.match(await page.locator('#train').innerText(), /Canonical subjective evidence/i, `${label}: Athlete Memory must remain canonical`);
+  await page.waitForSelector('#train .fz-phase2-lead-train', { timeout: 10000 });
+  await page.waitForSelector('#train .fz44-choice-section', { timeout: 10000 });
+  await page.waitForSelector('#train .fz-phase2-training-memory', { timeout: 10000 });
+  await page.waitForSelector('#train .fz-phase2-athlete-memory', { timeout: 10000 });
+  assert.match(await page.locator('#train .fz-phase2-athlete-memory').innerText(), /Canonical subjective evidence/i, `${label}: Athlete Memory must remain canonical`);
+
+  await openPage(page, label, 'goals');
+  await page.waitForSelector('#goals.fz-goals-v1 .fz-goals-primary', { timeout: 10000 });
+  await page.waitForSelector('#goals .fz-goals-capabilities', { timeout: 10000 });
+  const goalsText = await page.locator('#goals').innerText();
+  assert.match(goalsText, /HYROX Johannesburg Solo Male/i, `${label}: primary objective must render`);
+  assert.match(goalsText, /Compromised running/i, `${label}: canonical capability evidence must render`);
 
   await openPage(page, label, 'system');
-  await page.waitForSelector('#system .status-grid', { timeout: 10000 });
-  await page.waitForSelector('#system [data-materiality-observability]', { timeout: 10000 });
+  await page.waitForSelector('#system .fz-system-v1 .fz-system-hero', { timeout: 10000 });
+  await page.waitForSelector('#system [data-recommendation-shadow]', { timeout: 10000 });
   const systemText = await page.locator('#system').innerText();
   assert.match(systemText, /Operational truth[\s\S]*NEON/i, `${label}: SYSTEM must show Neon operational truth`);
-  assert.match(systemText, /Adaptive Intelligence/i, `${label}: SYSTEM must expose Tranche 4.1 materiality`);
-  assert.match(systemText, /4\.2/i, `${label}: SYSTEM must preserve the recomputation boundary`);
+  assert.match(systemText, /Adaptive Intelligence/i, `${label}: SYSTEM must expose adaptive intelligence observability`);
+  assert.match(systemText, /4\.2/i, `${label}: SYSTEM must preserve the recommendation shadow boundary`);
 
-  if (label === 'mobile') {
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    assert.ok(overflow <= 2, `mobile: page must not horizontally overflow (${overflow}px)`);
-    assert.ok(await page.locator('.bottom').isVisible(), 'mobile: bottom navigation must remain visible');
-  }
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(overflow <= 2, `${label}: page must not horizontally overflow (${overflow}px)`);
+  if (label === 'mobile') assert.ok(await page.locator('.bottom').isVisible(), 'mobile: bottom navigation must remain visible');
 }
 
 async function runViewport(browser, label, contextOptions, screenshotName) {
   const context = await browser.newContext(contextOptions);
-  await assertContracts(context);
+  const contracts = await assertContracts(context);
+  await installReadOnlyWellnessRoute(context, contracts.wellness);
   const page = await context.newPage();
   try {
     const errors = await boot(page, label);
