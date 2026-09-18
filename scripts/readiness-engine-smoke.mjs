@@ -68,5 +68,7 @@ assert.match(readinessStore,/recordType: RECORD_TYPE/,'readiness persistence mus
 assert.match(readinessStore,/source_key IN \('intervals-icu','fitness-ai'\)/,'canonical readiness must only select daily recovery authorities for the current wellness row');
 assert.match(readinessStore,/WHEN 'intervals-icu' THEN 0/,'Intervals.icu must remain the preferred daily readiness source when available');
 assert.doesNotMatch(readinessStore,/source_key IN \('intervals-icu','fitness-ai','garmin-ciq'\)/,'Connect IQ intraday snapshots must not displace daily readiness anchors');
+assert.match(readinessStore,/ciqSleepScoreUsed = dailyCurrent\.sleepScore == null && ciqCurrent\.sleepScore != null/,'CIQ sleep score may only fill a genuinely missing daily sleep score');
+assert.match(readinessStore,/fields: \['sleepScore'\]/,'readiness provenance must identify the CIQ sleep-score fallback field');
 
 console.log('PASS canonical readiness engine calibration, local override, adaptive-context projection and deployed ledger compatibility');
