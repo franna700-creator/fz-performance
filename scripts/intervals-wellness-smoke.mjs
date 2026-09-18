@@ -10,8 +10,7 @@ const normalized = normalizeIntervalsWellnessRecord({
   sleepSecs: 23520,
   sleepScore: 78,
   steps: 385,
-  BodyBatteryMax: 89,
-  BodyBatteryMin: 25,
+  customFields: { BodyBatteryMax: 89, BodyBatteryMin: 25 },
   stress: 4
 });
 
