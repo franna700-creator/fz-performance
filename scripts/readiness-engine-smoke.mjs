@@ -65,5 +65,8 @@ assert.match(readinessStore,/const RECORD_TYPE = 'event_context'/,'canonical rea
 assert.match(readinessStore,/payload->>'contextType'=\$\{READINESS_STATE_CONTEXT\}/,'readiness reads must discriminate READINESS_STATE by canonical contextType');
 assert.doesNotMatch(readinessStore,/const RECORD_TYPE = 'readiness'/,'readiness must never invent an unsupported database record_type');
 assert.match(readinessStore,/recordType: RECORD_TYPE/,'readiness persistence must use the same supported record type as its read contract');
+assert.match(readinessStore,/source_key IN \('intervals-icu','fitness-ai'\)/,'canonical readiness must only select daily recovery authorities for the current wellness row');
+assert.match(readinessStore,/WHEN 'intervals-icu' THEN 0/,'Intervals.icu must remain the preferred daily readiness source when available');
+assert.doesNotMatch(readinessStore,/source_key IN \('intervals-icu','fitness-ai','garmin-ciq'\)/,'Connect IQ intraday snapshots must not displace daily readiness anchors');
 
 console.log('PASS canonical readiness engine calibration, local override, adaptive-context projection and deployed ledger compatibility');
