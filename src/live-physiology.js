@@ -93,7 +93,7 @@ function physiologyShell(payload) {
   const current = well.current || {};
   const series = well.series || {};
   const freshness = String(well.freshness || 'UNKNOWN').toUpperCase();
-  const bb = latestSeriesValue(series, 'body_battery', current.bodyBattery);
+  const bb = latestSeriesValue(series, 'body_battery', current.bodyBattery ?? current.bodyBatteryHigh);
   const stress = latestSeriesValue(series, 'stress', current.stress);
   const hr = latestSeriesValue(series, 'heart_rate', current.heartRate);
   const respiration = latestSeriesValue(series, 'respiration', current.respiration);
@@ -106,9 +106,9 @@ function physiologyShell(payload) {
       <div class="fz-live-toolbar">
         <div>
           <div class="fz-live-freshness ${freshnessClass(freshness)}"><i></i>${freshness}</div>
-          <p>Garmin ${sourceTime} · FZ persisted ${persistedTime} · source check 5 min · ${syncStatus}</p>
+          <p>${well.sourceKey==='intervals-icu'?'Garmin via Intervals.icu':'Garmin'} ${sourceTime} · FZ persisted ${persistedTime} · source check 5 min · ${syncStatus}</p>
         </div>
-        <button type="button" class="fz-live-refresh" data-live-refresh>Refresh Garmin</button>
+        <button type="button" class="fz-live-refresh" data-live-refresh>Refresh wellness</button>
       </div>
       <div class="fz-live-anchor-row">
         <div><small>Steps</small><b>${fmt(current.steps)}</b><span>${current.distanceKm == null ? 'today' : `${fmt(current.distanceKm, 2)} km`}</span></div>
@@ -122,7 +122,7 @@ function physiologyShell(payload) {
         ${chartShell('heart_rate', hr, current.restingHeartRate == null ? '' : `Resting ${fmt(current.restingHeartRate)} bpm`)}
         ${chartShell('respiration', respiration, 'Latest valid positive reading')}
       </div>
-      <div class="fz-live-footnote">Persisted physiology paints first. Garmin is checked on load, every 5 minutes while visible, and after focus/online wake-up. When fresher source evidence persists, the canonical PWA views are reread immediately; no shell deployment is involved.</div>
+      <div class="fz-live-footnote">Persisted physiology paints first. The wellness bridge is checked on load, every 5 minutes while visible, and after focus/online wake-up. When fresher source evidence persists, the canonical PWA views are reread immediately; no shell deployment is involved.</div>
     </div>`;
 }
 
@@ -268,7 +268,7 @@ async function refreshSource({ force = false, reason = 'background' } = {}) {
   } finally {
     FZ_LIVE_PHYSIOLOGY.refreshBusy = false;
     const next = document.querySelector('[data-live-refresh]');
-    if (force && next) { next.disabled = false; if (!next.textContent.includes('failed')) next.textContent = 'Refresh Garmin'; }
+    if (force && next) { next.disabled = false; if (!next.textContent.includes('failed')) next.textContent = 'Refresh wellness'; }
   }
 }
 
