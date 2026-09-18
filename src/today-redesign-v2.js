@@ -107,14 +107,17 @@ function v2Recommendation(r){
 function v2SummaryMetric(label,value,unit,detail,icon,tone){return `<article class="fz2-summary-metric tone-${tone}"><span class="fz2-summary-icon">${v2Icon(icon)}</span><small>${v2Esc(label)}</small><strong>${v2Esc(value)}${unit?`<em>${v2Esc(unit)}</em>`:''}</strong><p>${v2Esc(detail||'')}</p></article>`}
 function v2PhysiologySummary(well){
   const w=well?.current||{};
-  const freshness=String(well?.freshness||'UNKNOWN').toUpperCase();
+  const intraday=well?.capabilities?.intraday===true||well?.mode==='LIVE_INTRADAY';
+  const freshness=String(well?.freshness||(intraday?'UNKNOWN':'DAILY')).toUpperCase();
   const source=v2Time(well?.sourceAsOf);
-  const bridge=well?.sourceKey==='intervals-icu'?'Garmin via Intervals.icu':'Garmin';
-  const hasBatteryCurrent=Number.isFinite(Number(w.bodyBattery));
+  const title=intraday?'Live Physiology':'Recovery Physiology';
+  const bridge=intraday?'fēnix 8 live bridge':(well?.sources?.daily?.sourceKey==='intervals-icu'||well?.sourceKey==='intervals-icu'?'Garmin via Intervals.icu':'Garmin');
+  const hasBatteryCurrent=intraday&&Number.isFinite(Number(w.bodyBattery));
   const batteryValue=hasBatteryCurrent?w.bodyBattery:w.bodyBatteryHigh;
   const batteryDetail=hasBatteryCurrent?'current':Number.isFinite(Number(w.bodyBatteryHigh))?'daily high':'not available';
-  const stressDetail=Number.isFinite(Number(w.stressAvg))?`avg ${v2Fmt(w.stressAvg)}`:(well?.sourceKey==='intervals-icu'?'not provided by bridge':'current');
-  return `<section class="fz2-phys-summary"><header><div><span class="fz2-phys-title"><i></i>Live Physiology</span><small>${v2Esc(freshness)} · ${v2Esc(bridge)} · ${v2Esc(source)}</small></div><button type="button" class="fz2-view-details" data-fz2-live-details aria-expanded="false">View details →</button></header><div class="fz2-summary-grid">${v2SummaryMetric('HRV',v2Fmt(w.hrv),'ms','overnight','pulse','green')}${v2SummaryMetric('Resting HR',v2Fmt(w.restingHeartRate),'bpm','morning anchor','heart','cyan')}${v2SummaryMetric('Sleep',v2SleepHours(w.sleepHours),'',Number.isFinite(Number(w.sleepScore))?`score ${v2Fmt(w.sleepScore)}`:'duration','moon','violet')}${v2SummaryMetric('Body Battery',v2Fmt(batteryValue),'',batteryDetail,'battery','green')}${v2SummaryMetric('Stress',v2Fmt(w.stress),'',stressDetail,'bolt','yellow')}${v2SummaryMetric('Steps',v2Fmt(w.steps),'',Number.isFinite(Number(w.distanceKm))?`${v2Fmt(w.distanceKm,1)} km`:'today','steps','cyan')}</div></section>`;
+  const stressValue=intraday?v2Fmt(w.stress):'—';
+  const stressDetail=intraday?'current':'watch bridge not reporting';
+  return `<section class="fz2-phys-summary"><header><div><span class="fz2-phys-title"><i></i>${v2Esc(title)}</span><small>${v2Esc(freshness)} · ${v2Esc(bridge)} · ${v2Esc(source)}</small></div><button type="button" class="fz2-view-details" data-fz2-live-details aria-expanded="false">View details →</button></header><div class="fz2-summary-grid">${v2SummaryMetric('HRV',v2Fmt(w.hrv),'ms','overnight','pulse','green')}${v2SummaryMetric('Resting HR',v2Fmt(w.restingHeartRate),'bpm','morning anchor','heart','cyan')}${v2SummaryMetric('Sleep',v2SleepHours(w.sleepHours),'',Number.isFinite(Number(w.sleepScore))?`score ${v2Fmt(w.sleepScore)}`:'duration','moon','violet')}${v2SummaryMetric('Body Battery',v2Fmt(batteryValue),'',batteryDetail,'battery','green')}${v2SummaryMetric('Stress',stressValue,'',stressDetail,'bolt','yellow')}${v2SummaryMetric('Steps',v2Fmt(w.steps),'',Number.isFinite(Number(w.distanceKm))?`${v2Fmt(w.distanceKm,1)} km`:'today','steps','cyan')}</div></section>`;
 }
 function v2Training(focus){
   if(!focus)return `<section class="fz2-training"><div><span class="fz2-card-kicker"><i>${v2Icon('train')}</i> TRAINING</span><h3>No current canonical training session.</h3></div><button type="button" class="fz2-sync-workouts" data-training-sync-now aria-label="Sync workouts">${v2Icon('refresh')}</button></section>`;
@@ -145,9 +148,10 @@ function v2DecorateLive(root){
 function v2ClassifyLegacy(root){
   for(const section of root.querySelectorAll(':scope > .section')){
     const title=(section.querySelector('.section-head h2')?.textContent||'').trim();
-    section.classList.toggle('fz2-legacy-live',title==='Live Physiology');
+    const physiology=title==='Live Physiology'||title==='Recovery Physiology';
+    section.classList.toggle('fz2-legacy-live',physiology);
     section.classList.toggle('fz2-legacy-training',title==='Training State');
-    section.classList.toggle('fz2-legacy-hidden',title!=='Live Physiology'&&title!=='Training State');
+    section.classList.toggle('fz2-legacy-hidden',!physiology&&title!=='Training State');
   }
   const hero=root.querySelector(':scope > .fz-clean-hero');if(hero)hero.classList.add('fz2-legacy-hidden');
   v2DecorateLive(root);

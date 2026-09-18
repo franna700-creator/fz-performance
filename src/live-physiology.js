@@ -47,9 +47,10 @@ window.fetch = async function fzLivePhysiologyFetch(input, init) {
 function liveSection() {
   const today = document.getElementById('today');
   if (!today) return null;
-  return [...today.querySelectorAll(':scope > .section')].find(section =>
-    (section.querySelector('.section-head h2')?.textContent || '').trim() === 'Live Physiology'
-  ) || null;
+  return [...today.querySelectorAll(':scope > .section')].find(section => {
+    const title = (section.querySelector('.section-head h2')?.textContent || '').trim();
+    return title === 'Live Physiology' || title === 'Recovery Physiology';
+  }) || null;
 }
 
 function fmt(value, decimals = 0) {
@@ -69,7 +70,7 @@ function timeSast(value) {
 
 function freshnessClass(value) {
   const state = String(value || 'UNKNOWN').toUpperCase();
-  if (state === 'LIVE') return 'good';
+  if (state === 'LIVE' || state === 'DAILY') return 'good';
   if (state === 'DELAYED') return 'warn';
   return 'bad';
 }
@@ -92,27 +93,59 @@ function physiologyShell(payload) {
   const well = payload?.wellness || {};
   const current = well.current || {};
   const series = well.series || {};
-  const freshness = String(well.freshness || 'UNKNOWN').toUpperCase();
-  const bb = latestSeriesValue(series, 'body_battery', current.bodyBattery ?? current.bodyBatteryHigh);
+  const intraday = well.capabilities?.intraday === true || well.mode === 'LIVE_INTRADAY';
+  const freshness = String(well.freshness || (intraday ? 'UNKNOWN' : 'DAILY')).toUpperCase();
+  const bb = latestSeriesValue(series, 'body_battery', current.bodyBattery);
   const stress = latestSeriesValue(series, 'stress', current.stress);
   const hr = latestSeriesValue(series, 'heart_rate', current.heartRate);
   const respiration = latestSeriesValue(series, 'respiration', current.respiration);
   const sourceTime = timeSast(well.sourceAsOf);
   const persistedTime = timeSast(well.ingestedAt);
+  const dailySource = well.sources?.daily;
+  const liveSource = well.sources?.intraday;
   const syncStatus = String(payload?.syncStatus || 'UNKNOWN').replaceAll('_', ' ');
+  const sourceLine = intraday
+    ? `fēnix 8 bridge ${timeSast(liveSource?.sourceAsOf || well.sourceAsOf)} · daily anchors ${dailySource?.sourceKey === 'intervals-icu' ? 'Intervals.icu' : 'Garmin'} ${timeSast(dailySource?.sourceAsOf)} · FZ persisted ${persistedTime}`
+    : `${dailySource?.sourceKey === 'intervals-icu' || well.sourceKey === 'intervals-icu' ? 'Garmin via Intervals.icu' : 'Garmin'} ${timeSast(dailySource?.sourceAsOf || well.sourceAsOf)} · daily recovery anchors · FZ persisted ${persistedTime}`;
+
+  if (!intraday) {
+    return `
+      <div class="fz-live-physiology-v3" data-freshness="${freshness}" data-dynamic-source="physiology">
+        <div class="fz-live-toolbar">
+          <div>
+            <div class="fz-live-freshness ${freshnessClass(freshness)}"><i></i>DAILY RECOVERY</div>
+            <p>${sourceLine} · ${syncStatus}</p>
+          </div>
+          <button type="button" class="fz-live-refresh" data-live-refresh>Refresh wellness</button>
+        </div>
+        <div class="fz-live-anchor-row">
+          <div><small>HRV</small><b>${fmt(current.hrv)} ms</b><span>overnight</span></div>
+          <div><small>Resting HR</small><b>${fmt(current.restingHeartRate)} bpm</b><span>morning anchor</span></div>
+          <div><small>Sleep</small><b>${current.sleepHours == null ? '—' : fmt(current.sleepHours, 2) + ' h'}</b><span>${current.sleepScore == null ? 'duration' : 'score ' + fmt(current.sleepScore)}</span></div>
+          <div><small>Body Battery</small><b>${fmt(current.bodyBatteryHigh)}</b><span>${current.bodyBatteryLow == null ? 'daily high' : 'high · low ' + fmt(current.bodyBatteryLow)}</span></div>
+        </div>
+        <div class="fz-live-anchor-row">
+          <div><small>Steps</small><b>${fmt(current.steps)}</b><span>today</span></div>
+          <div><small>Current Body Battery</small><b>—</b><span>watch bridge not reporting</span></div>
+          <div><small>Physiological stress</small><b>—</b><span>watch bridge not reporting</span></div>
+          <div><small>Current HR / respiration</small><b>—</b><span>watch bridge not reporting</span></div>
+        </div>
+        <div class="fz-live-footnote">This is the accurate daily-recovery view. FZ keeps overnight HRV, resting HR, sleep and Body Battery high/low from Garmin via Intervals.icu, but does not fabricate intraday values. When the fēnix 8 bridge begins reporting, this panel automatically switches back to Live Physiology and restores the timestamped traces.</div>
+      </div>`;
+  }
 
   return `
     <div class="fz-live-physiology-v3" data-freshness="${freshness}" data-dynamic-source="physiology">
       <div class="fz-live-toolbar">
         <div>
           <div class="fz-live-freshness ${freshnessClass(freshness)}"><i></i>${freshness}</div>
-          <p>${well.sourceKey==='intervals-icu'?'Garmin via Intervals.icu':'Garmin'} ${sourceTime} · FZ persisted ${persistedTime} · source check 5 min · ${syncStatus}</p>
+          <p>${sourceLine} · source check 5 min</p>
         </div>
         <button type="button" class="fz-live-refresh" data-live-refresh>Refresh wellness</button>
       </div>
       <div class="fz-live-anchor-row">
         <div><small>Steps</small><b>${fmt(current.steps)}</b><span>${current.distanceKm == null ? 'today' : `${fmt(current.distanceKm, 2)} km`}</span></div>
-        <div><small>Active kcal</small><b>${fmt(current.activeCalories)}</b><span>${current.activeMinutes == null ? 'today' : `${fmt(current.activeMinutes, 1)} active min`}</span></div>
+        <div><small>Resting HR</small><b>${fmt(current.restingHeartRate)} bpm</b><span>daily anchor</span></div>
         <div><small>HRV</small><b>${fmt(current.hrv)} ms</b><span>overnight anchor</span></div>
         <div><small>Sleep</small><b>${fmt(current.sleepScore)}</b><span>${current.sleepHours == null ? 'score' : `${fmt(current.sleepHours, 2)} h`}</span></div>
       </div>
@@ -120,9 +153,9 @@ function physiologyShell(payload) {
         ${chartShell('body_battery', bb)}
         ${chartShell('stress', stress)}
         ${chartShell('heart_rate', hr, current.restingHeartRate == null ? '' : `Resting ${fmt(current.restingHeartRate)} bpm`)}
-        ${chartShell('respiration', respiration, 'Latest valid positive reading')}
+        ${chartShell('respiration', respiration, 'Current watch physiology')}
       </div>
-      <div class="fz-live-footnote">Persisted physiology paints first. The wellness bridge is checked on load, every 5 minutes while visible, and after focus/online wake-up. When fresher source evidence persists, the canonical PWA views are reread immediately; no shell deployment is involved.</div>
+      <div class="fz-live-footnote">Intraday physiology is supplied directly by the fēnix 8 Connect IQ bridge; overnight recovery anchors remain sourced from Garmin via Intervals.icu. FZ checks the canonical store on load and every five minutes while visible, so a watch upload becomes visible without a deployment.</div>
     </div>`;
 }
 
@@ -223,6 +256,9 @@ function renderLivePhysiology() {
   const payload = FZ_LIVE_PHYSIOLOGY.payload;
   const section = liveSection();
   if (!payload?.wellness || !section) return;
+  const intraday = payload.wellness.capabilities?.intraday === true || payload.wellness.mode === 'LIVE_INTRADAY';
+  const heading = section.querySelector('.section-head h2');
+  if (heading) heading.textContent = intraday ? 'Live Physiology' : 'Recovery Physiology';
   const legacyGrid = section.querySelector('.fz-live-grid');
   if (legacyGrid) legacyGrid.hidden = true;
   let mount = section.querySelector('.fz-live-physiology-v3');
@@ -230,8 +266,10 @@ function renderLivePhysiology() {
   if (mount) mount.outerHTML = html;
   else section.insertAdjacentHTML('beforeend', html);
   mount = section.querySelector('.fz-live-physiology-v3');
-  const series = payload.wellness.series || {};
-  Object.keys(LIVE_SERIES).forEach(key => mountSpark(mount.querySelector(`[data-live-key="${key}"]`), series[key], key));
+  if (intraday) {
+    const series = payload.wellness.series || {};
+    Object.keys(LIVE_SERIES).forEach(key => mountSpark(mount.querySelector(`[data-live-key="${key}"]`), series[key], key));
+  }
   FZ_LIVE_PHYSIOLOGY.mountedRoot = mount;
 }
 

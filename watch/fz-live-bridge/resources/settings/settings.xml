@@ -1,0 +1,8 @@
+<settings>
+  <setting propertyKey="@Properties.fzEndpoint" title="@Strings.EndpointTitle">
+    <settingConfig type="alphaNumeric" required="true" maxLength="255"/>
+  </setting>
+  <setting propertyKey="@Properties.fzToken" title="@Strings.TokenTitle">
+    <settingConfig type="alphaNumeric" required="true" maxLength="255"/>
+  </setting>
+</settings>

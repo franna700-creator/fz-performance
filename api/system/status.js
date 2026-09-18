@@ -2,6 +2,7 @@ import { getSql } from '../../lib/db.js';
 import { loadDatabaseRuntimeState, runtimeStoreMode } from '../../lib/runtime-store.js';
 import { tredictConfigured } from '../../lib/tredict-client.js';
 import { intervalsIcuConfigured, publicIntervalsIcuStatus } from '../../lib/intervals-icu-client.js';
+import { garminCiqConfigured, publicGarminCiqStatus } from '../../lib/garmin-ciq-client.js';
 import { readRecentMaterialityAssessments } from '../../lib/materiality-store.js';
 import { MATERIALITY_ENGINE_VERSION, MATERIALITY_LEVELS } from '../../lib/materiality-engine.js';
 import { readRecentRecommendationShadows } from '../../lib/recommendation-shadow-store.js';
@@ -116,15 +117,18 @@ async function systemStatus(req, res) {
       readIntelligenceCurrent({ now }).catch(() => null),
       runLiveSystemicReconciliationSweep({ now }).catch(error => ({ ok:false,errors:1,warnings:0,findings:[{code:'SYSTEMIC_SWEEP_UNAVAILABLE',severity:'ERROR',message:error instanceof Error?error.message:String(error)}] }))
     ]);
-    const intervalsStatus = await publicIntervalsIcuStatus();
+    const [intervalsStatus, ciqStatus] = await Promise.all([
+      publicIntervalsIcuStatus(),
+      publicGarminCiqStatus()
+    ]);
     return res.status(200).json({
       ok:true,generatedAt:new Date().toISOString(),
-      architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin via Intervals.icu','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',currentAthleteStateTruth:'Tranche 5 durable current-athlete-state projection',canonicalMutationTruth:'Tranche 5 persistence-boundary mutation outbox',convergenceTruth:'Tranche 5 canonical revision + convergence ledger',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
-      releaseEnvironment:{databaseConfigured:databaseConfigured(),writeTokenConfigured:Boolean(process.env.FZ_STATE_WRITE_TOKEN),athleteBootstrapConfigured:Boolean(process.env.FZ_ATHLETE_BOOTSTRAP_TOKEN),intervalsIcuConfigured:intervalsIcuConfigured(),previewMustPassBeforePromotion:true,secretsExposed:false},
+      architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin via Intervals.icu','Garmin fēnix 8 via Connect IQ','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',currentAthleteStateTruth:'Tranche 5 durable current-athlete-state projection',canonicalMutationTruth:'Tranche 5 persistence-boundary mutation outbox',convergenceTruth:'Tranche 5 canonical revision + convergence ledger',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
+      releaseEnvironment:{databaseConfigured:databaseConfigured(),writeTokenConfigured:Boolean(process.env.FZ_STATE_WRITE_TOKEN),athleteBootstrapConfigured:Boolean(process.env.FZ_ATHLETE_BOOTSTRAP_TOKEN),intervalsIcuConfigured:intervalsIcuConfigured(),garminCiqConfigured:garminCiqConfigured(),previewMustPassBeforePromotion:true,secretsExposed:false},
       runtime:runtime?{source:runtime.source,stateId:runtime.stateId,pointerVersion:runtime.pointerVersion,masterAsOf:runtime.state?.masterAsOf||null,generatedAt:runtime.state?.generatedAt||null,masterValidated:runtime.state?.masterValidated===true}:null,
       sources,tredict:{configured:tredictConfigured(),latestEvidence:evidence.filter(row=>row.source_key==='tredict')},
       intervalsIcu:{...intervalsStatus,latestWellness:wellness[0]||null},
-      garmin:{connection:{source_key:'intervals-icu',status:intervalsStatus.status,configured:intervalsStatus.configured,transport:'Intervals.icu'},transport:'Intervals.icu',latestWellness:wellness[0]||null,latestEvidence:evidence.filter(row=>row.source_key==='garmin')},
+      garmin:{connection:{source_key:'intervals-icu',status:intervalsStatus.status,configured:intervalsStatus.configured,transport:'Intervals.icu'},transport:'Intervals.icu',liveBridge:ciqStatus,latestWellness:wellness[0]||null,latestEvidence:evidence.filter(row=>row.source_key==='garmin')},
       trainingEvidence:evidence,athleteMemory:athlete[0]||{events:0,latest_event:null},
       systemIntegrity:systemicSweep,
       intelligence:{

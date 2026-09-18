@@ -41,7 +41,8 @@ assert.match(sync, /BASELINE_LOOKBACK_DAYS = 14/, 'wellness sync must backfill e
 assert.match(sync, /sourceOrigin: 'GARMIN'/, 'canonical propagation must retain Garmin as source origin');
 assert.match(sync, /transport: 'INTERVALS_ICU'/, 'canonical propagation must identify Intervals.icu as transport');
 assert.match(sync, /source\.garmin\.wellness/, 'existing Tranche 5 dependency node must remain the wellness origin node');
-assert.match(store, /SOURCE_PRIORITY = \[INTERVALS_ICU_SOURCE_KEY, FITNESS_AI_SOURCE_KEY\]/, 'Intervals.icu must become preferred canonical wellness source without deleting legacy history');
+assert.match(store, /SOURCE_PRIORITY = \[INTERVALS_ICU_SOURCE_KEY, GARMIN_CIQ_SOURCE_KEY, FITNESS_AI_SOURCE_KEY\]/, 'Intervals.icu must remain the preferred daily recovery source while allowing a distinct intraday bridge');
+assert.match(store, /mode: intradayAvailable \? 'LIVE_INTRADAY' : 'DAILY_RECOVERY'/, 'canonical wellness must expose whether intraday physiology is genuinely available');
 assert.match(system, /Garmin via Intervals\.icu/, 'SYSTEM provenance must expose the actual wellness bridge');
 assert.match(today, /Garmin via Intervals\.icu/, 'TODAY must expose the actual wellness bridge');
 assert.doesNotMatch(sync, /callFitnessAiTool/, 'runtime wellness sync must no longer depend on unsupported Fitness AI custom-client OAuth');
