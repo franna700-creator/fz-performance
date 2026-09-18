@@ -1,0 +1,4 @@
+<properties>
+  <property id="fzEndpoint" type="string">https://fz-performance-mvp.vercel.app/api/wellness/today?source=garmin-ciq</property>
+  <property id="fzToken" type="string"></property>
+</properties>

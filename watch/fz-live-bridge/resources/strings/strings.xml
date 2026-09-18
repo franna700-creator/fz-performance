@@ -1,0 +1,5 @@
+<strings>
+  <string id="AppName">FZ Live Bridge</string>
+  <string id="EndpointTitle" scope="settings">FZ endpoint</string>
+  <string id="TokenTitle" scope="settings">FZ bridge token</string>
+</strings>

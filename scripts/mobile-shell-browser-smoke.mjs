@@ -46,7 +46,7 @@ const wellness = {
   ok: true,
   source: { status: 'CONNECTED' },
   wellness: {
-    date: '2026-09-13', freshness: 'LIVE', sourceAsOf: '2026-09-13T18:00:00.000Z', ingestedAt: '2026-09-13T18:01:00.000Z',
+    date: '2026-09-13', mode: 'LIVE_INTRADAY', capabilities: { intraday: true, heartRateCurrent: true, stressCurrent: true, bodyBatteryCurrent: true, respirationCurrent: true, overnightRecovery: true }, sources: { daily: { sourceKey: 'intervals-icu', sourceAsOf: '2026-09-13T05:30:00.000Z' }, intraday: { sourceKey: 'garmin-ciq', sourceAsOf: '2026-09-13T18:00:00.000Z' } }, freshness: 'LIVE', sourceAsOf: '2026-09-13T18:00:00.000Z', ingestedAt: '2026-09-13T18:01:00.000Z',
     current: { steps: 12000, distanceKm: 8.4, bodyBattery: 5, bodyBatteryHigh: 24, bodyBatteryLow: 5, stress: 28, stressAvg: 46, heartRate: 78, restingHeartRate: 60, hrv: 41, sleepScore: 39, sleepHours: 5.81, activeCalories: 640, activeMinutes: 72, respiration: 14.1 },
     series: { body_battery: [], stress: [], heart_rate: [], respiration: [] }
   }
