@@ -2,7 +2,6 @@ using Toybox.ActivityMonitor;
 using Toybox.Application;
 using Toybox.Background;
 using Toybox.Communications;
-using Toybox.Complications;
 using Toybox.SensorHistory;
 using Toybox.System;
 using Toybox.Time;
@@ -74,22 +73,6 @@ class FzLiveBridgeService extends System.ServiceDelegate {
         return [];
     }
 
-    function complicationValue(complicationType) {
-        try {
-            if (!(Toybox has :Complications) || !(Toybox.Complications has :getComplication)) {
-                return null;
-            }
-
-            var item = Complications.getComplication(new Complications.Id(complicationType));
-            if (item != null && item.value != null) {
-                return item.value;
-            }
-        } catch (e) {
-            System.println("FZ complication " + complicationType + ": " + e.getErrorMessage());
-        }
-        return null;
-    }
-
     function latest(rows) {
         if (rows == null || rows.size() == 0) {
             return null;
@@ -139,7 +122,6 @@ class FzLiveBridgeService extends System.ServiceDelegate {
         var currentBodyBattery = latest(battery);
         var respiration = null;
         var steps = null;
-        var sleepScore = null;
 
         if (info != null) {
             if (info has :stressScore && info.stressScore != null) {
@@ -151,22 +133,6 @@ class FzLiveBridgeService extends System.ServiceDelegate {
             if (info has :steps && info.steps != null) {
                 steps = info.steps;
             }
-        }
-
-        if (currentHeartRate == null && (Toybox.Complications has :COMPLICATION_TYPE_HEART_RATE)) {
-            currentHeartRate = complicationValue(Complications.COMPLICATION_TYPE_HEART_RATE);
-        }
-        if (currentStress == null && (Toybox.Complications has :COMPLICATION_TYPE_STRESS)) {
-            currentStress = complicationValue(Complications.COMPLICATION_TYPE_STRESS);
-        }
-        if (currentBodyBattery == null && (Toybox.Complications has :COMPLICATION_TYPE_BODY_BATTERY)) {
-            currentBodyBattery = complicationValue(Complications.COMPLICATION_TYPE_BODY_BATTERY);
-        }
-        if (respiration == null && (Toybox.Complications has :COMPLICATION_TYPE_RESPIRATION_RATE)) {
-            respiration = complicationValue(Complications.COMPLICATION_TYPE_RESPIRATION_RATE);
-        }
-        if (Toybox.Complications has :COMPLICATION_TYPE_SLEEP_SCORE) {
-            sleepScore = complicationValue(Complications.COMPLICATION_TYPE_SLEEP_SCORE);
         }
 
         appendCurrent(hr, observedAt, currentHeartRate);
@@ -187,8 +153,7 @@ class FzLiveBridgeService extends System.ServiceDelegate {
                 "heartRate" => currentHeartRate,
                 "stress" => currentStress,
                 "bodyBattery" => currentBodyBattery,
-                "respiration" => respiration,
-                "sleepScore" => sleepScore
+                "respiration" => respiration
             },
             "series" => {
                 "heart_rate" => hr,
