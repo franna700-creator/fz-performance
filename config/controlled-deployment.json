@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "enabled": false,
+  "enabled": true,
   "scope": "PINNED_RELEASE_ONLY",
-  "release": "TRANCHE_5_1_GARMIN_CIQ_LIVE",
-  "validatedCandidateSha": "04cbdaa52bc97c5762bcaf03e81a8e9b4708852a",
-  "validatedCandidateTree": "85473f43914327d5e719ba2976865d9649de7c18",
-  "releaseBranch": "release-garmin-ciq-live-pinned",
-  "createdOn": "2026-09-18",
-  "closedOn": "2026-09-18",
-  "promotedDeploymentId": "dpl_3QEt4ApuYuyYeW9UVCU9bKGXJ63f",
-  "rollbackDeploymentId": "dpl_F2wiKmeXTj8zNxAKgCupEXo4X4Ui",
-  "purpose": "Closed one-time Garmin Connect IQ live physiology release gate after staged Production acceptance and no-rebuild promotion. Ordinary Git deployments remain locked."
+  "release": "TRANCHE_5_2_RECOVERY_HARDENING",
+  "validatedCandidateSha": "a2634f807e4ed10f2a7709a5340701b34184bec1",
+  "validatedCandidateTree": "1543443aaecde4b44abc9f4d052f0546971b3e64",
+  "releaseBranch": "release-recovery-2026-10-01-pinned",
+  "createdOn": "2026-10-01",
+  "closedOn": null,
+  "promotedDeploymentId": null,
+  "rollbackDeploymentId": "dpl_2UJdP6XCrYfVPGGEecyQAG8up1x6",
+  "purpose": "One-time controlled recovery release: promote the validated post-Neon-recovery code, daily-source readiness authority and supported Garmin Connect IQ device-app boundary. Git auto-deploy remains locked."
 }
