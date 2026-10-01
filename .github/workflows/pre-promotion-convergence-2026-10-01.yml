@@ -1,0 +1,57 @@
+name: one-time pre-promotion convergence
+
+on:
+  push:
+    branches:
+      - ops/converge-before-promotion-2026-10-01
+    paths:
+      - '.github/workflows/pre-promotion-convergence-2026-10-01.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  converge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Drain current production canonical mutations
+        shell: bash
+        run: |
+          node <<'NODE'
+          const base='https://fz-performance-mvp.vercel.app';
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+          async function postRefresh(){
+            const response=await fetch(base+'/api/intelligence/refresh',{
+              method:'POST',
+              headers:{'accept':'application/json','content-type':'application/json'},
+              body:JSON.stringify({sources:false})
+            });
+            const text=await response.text();
+            let body=null; try{body=JSON.parse(text)}catch{}
+            if(!response.ok&&response.status!==202) throw new Error('refresh HTTP '+response.status+' '+text.slice(0,800));
+            return body||{};
+          }
+
+          async function status(){
+            const response=await fetch(base+'/api/system/status',{headers:{accept:'application/json'},cache:'no-store'});
+            if(!response.ok) throw new Error('status HTTP '+response.status);
+            return response.json();
+          }
+
+          for(let attempt=1;attempt<=8;attempt+=1){
+            const refresh=await postRefresh();
+            await sleep(1200);
+            const current=await status();
+            const intelligence=current?.intelligence?.current||{};
+            const outbox=intelligence?.markers?.mutationOutbox||current?.systemIntegrity?.invariants?.mutationOutbox||{};
+            const pendingCount=Number(outbox.pendingCount??-1);
+            const pendingPropagation=intelligence.pendingPropagation===true;
+            const convergenceStatus=intelligence?.markers?.canonicalRevision?.status||current?.systemIntegrity?.invariants?.convergenceStatus||null;
+            console.log(JSON.stringify({attempt,revision:refresh?.afterRevision||null,pendingCount,pendingPropagation,convergenceStatus,integrity:current?.systemIntegrity?.ok===true}));
+            if(pendingCount===0 && pendingPropagation===false && convergenceStatus==='CONVERGED' && current?.systemIntegrity?.ok===true) process.exit(0);
+            await sleep(1200);
+          }
+          throw new Error('production canonical graph did not converge');
+          NODE
