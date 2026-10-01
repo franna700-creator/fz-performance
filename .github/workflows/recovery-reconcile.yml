@@ -100,3 +100,5 @@ jobs:
           }).slice(0, 12000));
           process.exit(1);
           NODE
+
+# recovery pass: athlete-voice backfill ingested; drain pending canonical mutations
