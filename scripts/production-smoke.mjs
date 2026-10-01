@@ -101,17 +101,30 @@ async function assertContracts(context) {
   finiteOrNull(trends.load?.rolling7d?.value ?? null, 'rolling 7d load');
   finiteOrNull(trends.load?.rolling28d?.value ?? null, 'rolling 28d load');
 
-  // Historical regression anchors inside the requested moving window remain stable, while the live series may extend.
-  const sep8 = byDate.get('2026-09-08');
-  assert.ok(sep8, '8 Sep historical load point must remain present');
-  assert.ok(Math.abs(Number(sep8.value) - 66.32) < 0.01, '8 Sep NCL historical derivation must remain ~66.32');
+  // Historical regression anchors remain mandatory only while they are inside the requested moving window.
+  // This keeps the acceptance gate strict without turning calendar progression into a false regression.
+  const rangeStart = trends.range?.startDate || null;
+  const rangeEnd = trends.range?.endDate || null;
+  const insideRange = date => (!rangeStart || date >= rangeStart) && (!rangeEnd || date <= rangeEnd);
+
+  const sep8Date = '2026-09-08';
+  if (insideRange(sep8Date)) {
+    const sep8 = byDate.get(sep8Date);
+    assert.ok(sep8, '8 Sep historical load point must remain present while inside the requested window');
+    assert.ok(Math.abs(Number(sep8.value) - 66.32) < 0.01, '8 Sep NCL historical derivation must remain ~66.32');
+  }
 
   const matchedAet = trends.performance?.matchedAet || [];
-  const requiredHistorical = ['2026-08-17','2026-08-25','2026-08-31'];
+  const historicalAetAnchors = ['2026-08-17','2026-08-25','2026-08-31'];
   const matchedDates = matchedAet.map(x => x.date);
-  for (const date of requiredHistorical) assert.ok(matchedDates.includes(date), `matched AET baseline must retain ${date}`);
+  for (const date of historicalAetAnchors.filter(insideRange)) {
+    assert.ok(matchedDates.includes(date), `matched AET baseline must retain in-window ${date}`);
+  }
+  for (const date of matchedDates) assert.ok(insideRange(date), `matched AET ${date} must respect the requested moving window`);
   assert.equal(new Set(matchedDates).size, matchedDates.length, 'matched AET dates must be unique');
-  assert.equal(trends.performance?.excludedAet?.find(x => x.date === '2026-09-08')?.comparison, 'NON_COMPARABLE', '8 Sep GI-limited AET must remain non-comparable');
+  if (insideRange(sep8Date)) {
+    assert.equal(trends.performance?.excludedAet?.find(x => x.date === sep8Date)?.comparison, 'NON_COMPARABLE', '8 Sep GI-limited AET must remain non-comparable while inside the requested window');
+  }
 
   const system = (await getJson(context, '/api/system/status?materialityLimit=20')).data;
   assert.equal(system.ok, true, 'system status must be healthy');
