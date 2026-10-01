@@ -1,0 +1,102 @@
+name: one-time FZ recovery reconciliation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/recovery-reconcile.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-one-time-recovery-reconcile
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    if: github.head_ref == 'ops/recovery-reconcile-2026-10-01'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Drain canonical propagation without source resync or deployment
+        shell: bash
+        run: |
+          node <<'NODE'
+          const base = 'https://fz-performance-mvp.vercel.app';
+          const refreshUrl = base + '/api/system/status?operation=intelligence-refresh';
+          const statusUrl = base + '/api/system/status';
+
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+          async function postRefresh() {
+            const response = await fetch(refreshUrl, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ sources: false })
+            });
+            const text = await response.text();
+            let body;
+            try { body = JSON.parse(text); }
+            catch { throw new Error('refresh returned non-JSON: ' + response.status + ' ' + text.slice(0, 500)); }
+            if (!response.ok && response.status !== 202) {
+              throw new Error('refresh failed: HTTP ' + response.status + ' ' + JSON.stringify(body).slice(0, 1000));
+            }
+            return { status: response.status, body };
+          }
+
+          async function readStatus() {
+            const response = await fetch(statusUrl, { headers: { accept: 'application/json' } });
+            if (!response.ok) throw new Error('status failed: HTTP ' + response.status);
+            return response.json();
+          }
+
+          let lastRefresh = null;
+          let lastStatus = null;
+
+          for (let attempt = 1; attempt <= 10; attempt += 1) {
+            lastRefresh = await postRefresh();
+            await sleep(1500);
+            lastStatus = await readStatus();
+
+            const current = lastStatus?.intelligence?.current || {};
+            const outbox = current?.mutationOutbox || {};
+            const integrity = lastStatus?.systemIntegrity || {};
+            const pendingCount = Number(outbox.pendingCount ?? integrity?.invariants?.mutationOutbox?.pendingCount ?? -1);
+            const pendingPropagation = current.pendingPropagation === true;
+            const convergenceStatus = current?.convergence?.status || integrity?.invariants?.convergenceStatus || null;
+
+            console.log(JSON.stringify({
+              attempt,
+              refreshHttp: lastRefresh.status,
+              refreshPending: lastRefresh.body?.pending || null,
+              refreshPendingPropagation: lastRefresh.body?.pendingPropagation ?? null,
+              statusPending: current.pending || null,
+              statusPendingPropagation: pendingPropagation,
+              pendingCount,
+              convergenceStatus,
+              systemIntegrityOk: integrity.ok
+            }));
+
+            if (!pendingPropagation && pendingCount === 0 && convergenceStatus === 'CONVERGED' && integrity.ok === true) {
+              process.exit(0);
+            }
+            await sleep(1500);
+          }
+
+          console.error('FZ recovery did not converge within retry window');
+          console.error(JSON.stringify({
+            lastRefresh: {
+              status: lastRefresh?.status,
+              pending: lastRefresh?.body?.pending,
+              pendingPropagation: lastRefresh?.body?.pendingPropagation,
+              convergence: lastRefresh?.body?.convergence,
+              warnings: lastRefresh?.body?.warnings
+            },
+            lastStatus: {
+              integrity: lastStatus?.systemIntegrity,
+              intelligence: lastStatus?.intelligence?.current
+            }
+          }).slice(0, 12000));
+          process.exit(1);
+          NODE
