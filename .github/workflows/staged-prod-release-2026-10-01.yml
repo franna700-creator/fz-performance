@@ -1,0 +1,72 @@
+name: one-time staged production release 2026-10-01
+
+on:
+  push:
+    branches:
+      - ops/staged-prod-release-2026-10-01
+    paths:
+      - '.github/workflows/staged-prod-release-2026-10-01.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-staged-prod-release-2026-10-01
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      RELEASE_SHA: 7faecff233369246a67b33f7ed29cab1979d7f7b
+    steps:
+      - name: Require Vercel release credential
+        shell: bash
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo "VERCEL_TOKEN secret is unavailable"; exit 2; }
+
+      - name: Checkout frozen release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 7faecff233369246a67b33f7ed29cab1979d7f7b
+          fetch-depth: 1
+
+      - name: Verify frozen identity and armed gate
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          node - <<'NODE'
+          const fs=require('fs');
+          const gate=JSON.parse(fs.readFileSync('config/controlled-deployment.json','utf8'));
+          if(gate.enabled!==true) throw new Error('release gate is not armed');
+          if(gate.validatedCandidateSha!=='a2634f807e4ed10f2a7709a5340701b34184bec1') throw new Error('validated candidate mismatch');
+          if(gate.releaseBranch!=='release-recovery-2026-10-01-pinned') throw new Error('release branch mismatch');
+          NODE
+
+      - name: Link exact Vercel project
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+
+      - name: Create staged Production deployment without assigning domains
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEPLOY_URL="$(npx --yes vercel@latest --prod --skip-domain --yes --token="$VERCEL_TOKEN" --scope=franna700-2546)"
+          echo "deployment_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+          echo "Staged deployment: $DEPLOY_URL"
+
+      - name: Record staged URL
+        shell: bash
+        run: |
+          echo "### FZ staged Production candidate" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Frozen release SHA: \`$RELEASE_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployment: ${{ steps.deploy.outputs.deployment_url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production domains were intentionally not assigned." >> "$GITHUB_STEP_SUMMARY"
