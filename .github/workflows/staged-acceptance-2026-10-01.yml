@@ -1,0 +1,46 @@
+name: one-time staged acceptance 2026-10-01
+
+on:
+  push:
+    branches:
+      - ops/staged-acceptance-2026-10-01
+    paths:
+      - '.github/workflows/staged-acceptance-2026-10-01.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-staged-acceptance-2026-10-01
+  cancel-in-progress: false
+
+jobs:
+  browser-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FZ_PROD_URL: https://fz-performance-gb7nu896l-franna700-2546.vercel.app
+      FZ_ARTIFACT_DIR: artifacts
+    steps:
+      - name: Checkout frozen release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 7faecff233369246a67b33f7ed29cab1979d7f7b
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Exercise immutable staged Production deployment
+        run: node scripts/production-smoke.mjs
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-staged-production-smoke-failure-2026-10-01
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
