@@ -22,7 +22,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
       VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
-      RELEASE_SHA: 7faecff233369246a67b33f7ed29cab1979d7f7b
+      RELEASE_SHA: 162234fe780acf339f4e9f655d2fd737717d5fef
     steps:
       - name: Require Vercel release credential
         shell: bash
@@ -32,7 +32,7 @@ jobs:
       - name: Checkout frozen release candidate
         uses: actions/checkout@v4
         with:
-          ref: 7faecff233369246a67b33f7ed29cab1979d7f7b
+          ref: 162234fe780acf339f4e9f655d2fd737717d5fef
           fetch-depth: 1
 
       - name: Verify frozen identity and armed gate
@@ -43,8 +43,8 @@ jobs:
           const fs=require('fs');
           const gate=JSON.parse(fs.readFileSync('config/controlled-deployment.json','utf8'));
           if(gate.enabled!==true) throw new Error('release gate is not armed');
-          if(gate.validatedCandidateSha!=='a2634f807e4ed10f2a7709a5340701b34184bec1') throw new Error('validated candidate mismatch');
-          if(gate.releaseBranch!=='release-recovery-2026-10-01-pinned') throw new Error('release branch mismatch');
+          if(gate.validatedCandidateSha!=='3f73172e2732002558d8ed225ff15d044e2daf75') throw new Error('validated candidate mismatch');
+          if(gate.releaseBranch!=='release-recovery-2026-10-01-pinned-v2') throw new Error('release branch mismatch');
           NODE
 
       - name: Link exact Vercel project
