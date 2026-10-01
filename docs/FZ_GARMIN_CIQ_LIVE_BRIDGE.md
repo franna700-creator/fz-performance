@@ -25,10 +25,9 @@ The Connect IQ watch app contributes only fields it can genuinely observe on-dev
 
 - heart-rate history / latest heart rate
 - physiological stress history / current stress score
-- Body Battery history / latest Body Battery, with the native Body Battery complication as a fallback
+- Body Battery history / latest Body Battery when Garmin SensorHistory exposes it to the watch app
 - current respiration rate, sampled when the background task runs
 - current-day steps
-- sleep score from the native Garmin complication only as a fallback when the daily recovery source has not supplied today's sleep score
 
 The watch app registers a temporal background event at Garmin's five-minute minimum interval. Each run sends a bounded recent history payload to the authenticated FZ endpoint.
 
@@ -46,7 +45,6 @@ No database migration is required.
 - daily recovery fields come from Intervals.icu (or the legacy daily fallback);
 - intraday fields come from `garmin-ciq` when available;
 - current watch observations are timestamped on ingest so FZ can build live traces even when Garmin SensorHistory returns no historical samples;
-- a watch sleep score may fill a missing daily sleep-score field, but never overrides an Intervals.icu sleep score;
 - sparse watch packets cannot erase richer daily recovery evidence;
 - provenance is retained separately for daily and intraday sources.
 
@@ -59,7 +57,7 @@ The resulting mode is:
 
 TODAY is source-capability aware.
 
-When Connect IQ intraday evidence is available, the panel is **Live Physiology** and may show timestamped Body Battery, stress, heart-rate and respiration traces.
+When Connect IQ intraday evidence is available, the panel is **Live Physiology** and may show timestamped stress, heart-rate and respiration traces. Body Battery is shown only when Garmin SensorHistory genuinely exposes it to the watch app; missing Body Battery remains missing.
 
 When the watch bridge is absent, delayed beyond the useful window, or not configured, the panel degrades to **Recovery Physiology**. It shows daily recovery anchors and explicitly leaves unsupported current physiology unknown. It does not fabricate traces or label Body Battery Max as a current value.
 
@@ -95,7 +93,9 @@ Payloads are constrained by:
 
 If the watch bridge stops reporting, FZ does not lose wellness. Intervals.icu remains available for daily recovery intelligence and TODAY automatically presents the honest daily-recovery view.
 
-If Intervals.icu is unavailable but the watch bridge is reporting, FZ may still show current intraday observations but will not manufacture missing sleep, HRV or resting-HR recovery anchors.
+If Intervals.icu is unavailable but the watch bridge is reporting, FZ may still show current intraday observations but will not manufacture missing sleep, HRV, resting-HR or Body Battery recovery anchors.
+
+The bundled bridge is a Connect IQ device app, not a watch face. Garmin's complications framework is therefore not used as a recovery-data source: the bridge stays within SensorHistory / ActivityMonitor capabilities and preserves unsupported values as unknown.
 
 ## Release boundary
 

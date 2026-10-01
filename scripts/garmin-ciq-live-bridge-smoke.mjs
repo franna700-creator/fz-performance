@@ -30,10 +30,10 @@ assert.ok(normalized.series.length >= 7, 'timestamped intraday evidence must be 
 const sparseCurrent = normalizeGarminCiqPayload({
   schemaVersion: '1.0',
   observedAt: Math.floor(now / 1000),
-  current: { heartRate: 71, stress: 23, bodyBattery: 64, respiration: 13.6, sleepScore: 82 },
+  current: { heartRate: 71, stress: 23, bodyBattery: 64, respiration: 13.6 },
   series: {}
 });
-assert.equal(sparseCurrent.snapshot.sleepScore, 82, 'watch sleep score may be retained as an explicit fallback anchor');
+assert.equal(sparseCurrent.snapshot.sleepScore, null, 'Connect IQ intraday transport must not manufacture daily sleep recovery');
 for (const name of ['heart_rate','stress','body_battery','respiration']) {
   assert.ok(sparseCurrent.series.some(row => row.series_name === name), `current ${name} must persist as a timestamped point even when SensorHistory is empty`);
 }
@@ -74,8 +74,7 @@ assert.match(app, /registerForTemporalEvent\(new Time\.Duration\(5 \* 60\)\)/, '
 assert.match(service, /getHeartRateHistory/, 'watch must collect intraday HR history');
 assert.match(service, /getStressHistory/, 'watch must collect physiological stress history');
 assert.match(service, /getBodyBatteryHistory/, 'watch must collect Body Battery history');
-assert.match(service, /COMPLICATION_TYPE_BODY_BATTERY/, 'watch must fall back to the native Body Battery complication when history is unavailable');
-assert.match(service, /COMPLICATION_TYPE_SLEEP_SCORE/, 'watch must read the native sleep score complication as a daily fallback');
+assert.doesNotMatch(service, /Toybox\.Complications|Complications\./, 'device-app bridge must not consume watch-face-only complication subscriptions');
 assert.match(service, /appendCurrent\(stress/, 'watch must timestamp current stress so FZ can build a five-minute trend even when stress history is unavailable');
 assert.match(service, /respirationRate/, 'watch must collect current respiration');
 assert.match(service, /HTTP_REQUEST_METHOD_POST/, 'watch must POST physiology to FZ');
