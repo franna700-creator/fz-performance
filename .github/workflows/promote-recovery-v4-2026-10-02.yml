@@ -1,4 +1,4 @@
-name: one-time promote recovery v4
+name: one-time promote recovery v5
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: fz-promote-recovery-v4-2026-10-02
+  group: fz-promote-recovery-v5-2026-10-02
   cancel-in-progress: false
 
 jobs:
@@ -22,8 +22,8 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
       VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
-      STAGED_URL: https://fz-performance-mq5k9zxdp-franna700-2546.vercel.app
-      STAGED_DEPLOYMENT_ID: dpl_23YgnHQrnYdQN1NghdidupSxa19Z
+      STAGED_URL: https://fz-performance-kx3pkxjn6-franna700-2546.vercel.app
+      STAGED_DEPLOYMENT_ID: dpl_7hMDsQHumddtJknU9bxEpGoh1yEf
     steps:
       - name: Require release credential
         shell: bash
