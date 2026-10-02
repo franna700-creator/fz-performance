@@ -38,4 +38,12 @@ ALTER TABLE fz_objectives
   ADD CONSTRAINT fz_objectives_unclassified_weight_check
   CHECK (role <> 'UNCLASSIFIED' OR strategic_weight = 0);
 
+-- Canonical source evidence uses source_ref as the idempotency identity supplied by
+-- the semantic ingestion layer. Production has no duplicate keys as of migration
+-- preparation, so enforce that invariant at persistence rather than relying only on
+-- application-side existence checks.
+CREATE UNIQUE INDEX IF NOT EXISTS fz_event_source_evidence_idempotency_idx
+  ON fz_event_source_evidence (objective_id, source_type, source_ref)
+  WHERE source_ref IS NOT NULL;
+
 COMMIT;
