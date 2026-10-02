@@ -1,0 +1,120 @@
+name: one-time stage2 promote v2
+
+on:
+  push:
+    branches:
+      - ops/stage2-release-2026-10-02
+    paths:
+      - '.github/workflows/stage2-promote-v2-2026-10-02.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-stage2-promote-v2-2026-10-02
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      STAGED_URL: https://fz-performance-jt266wc0k-franna700-2546.vercel.app
+      STAGED_DEPLOYMENT_ID: dpl_HV61cDmFSpJoaR7kXxSYdSCHvemQ
+      EXPECTED_RELEASE_SHA: af84ffb65d637b05362469ac212da374726614a0
+    steps:
+      - name: Require release credential
+        shell: bash
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo "VERCEL_TOKEN secret unavailable"; exit 2; }
+
+      - name: Link exact Vercel project
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+
+      - name: Verify immutable staged deployment
+        shell: bash
+        run: |
+          npx --yes vercel@latest inspect "$STAGED_URL" --token="$VERCEL_TOKEN" --scope=franna700-2546
+
+      - name: Promote exact staged deployment without rebuild
+        shell: bash
+        run: |
+          npx --yes vercel@latest promote "$STAGED_URL" --yes --timeout=5m --token="$VERCEL_TOKEN" --scope=franna700-2546
+
+      - name: Exercise Production source reconciliation and converge
+        shell: bash
+        run: |
+          node <<'NODE'
+          const base='https://fz-performance-mvp.vercel.app';
+          const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+          async function json(path, options={}){
+            const res=await fetch(base+path,{
+              ...options,
+              headers:{accept:'application/json',...(options.headers||{})},
+              cache:'no-store'
+            });
+            const text=await res.text();
+            let body=null; try{body=JSON.parse(text)}catch{}
+            if(!res.ok) throw new Error(path+' HTTP '+res.status+' '+text.slice(0,1000));
+            return body;
+          }
+
+          // Exercise the newly released autonomous activity transport once.
+          const training=await json('/api/training/memory?refresh=1&backDays=45&forwardDays=14');
+          console.log(JSON.stringify({phase:'training-source-refresh',sync:training.sync,warning:training.warning}));
+
+          let last=null;
+          for(let attempt=1;attempt<=12;attempt+=1){
+            const refresh=await json('/api/intelligence/refresh',{
+              method:'POST',
+              headers:{'content-type':'application/json'},
+              body:JSON.stringify({sources:false})
+            });
+            await sleep(1400);
+            const system=await json('/api/system/status');
+            const current=system?.intelligence?.current||{};
+            const readiness=current.currentReadiness||{};
+            const outbox=current?.markers?.mutationOutbox||system?.systemIntegrity?.invariants?.mutationOutbox||{};
+            last={
+              attempt,
+              refreshRevision:refresh?.afterRevision||null,
+              integrityOk:system?.systemIntegrity?.ok===true,
+              pendingCount:Number(outbox.pendingCount??-1),
+              pendingPropagation:current.pendingPropagation===true,
+              convergenceStatus:current?.markers?.canonicalRevision?.status||null,
+              readinessStatus:readiness.status||null,
+              readinessSource:readiness?.evidence?.wellnessSource?.sourceKey||null,
+              athleteStateEngine:current?.markers?.athleteState?.engineVersion||null,
+              tredictStatus:system?.tredict?.status||null
+            };
+            console.log(JSON.stringify({phase:'convergence',...last}));
+            if(
+              last.integrityOk &&
+              last.pendingCount===0 &&
+              last.pendingPropagation===false &&
+              last.convergenceStatus==='CONVERGED' &&
+              last.readinessStatus==='READY' &&
+              last.readinessSource==='intervals-icu' &&
+              last.athleteStateEngine==='5.0.0-athlete-state.3'
+            ) break;
+            if(attempt===12) throw new Error('Production did not converge after Stage 2 promotion: '+JSON.stringify(last));
+            await sleep(1200);
+          }
+
+          const trends=await json('/api/trends/current?days=45');
+          const sep8=(trends?.load?.series||[]).find(point=>point.date==='2026-09-08');
+          if(!sep8 || Math.abs(Number(sep8.value)-66.32)>=0.01){
+            throw new Error('8 Sep canonical NCL regression after Production source refresh: '+JSON.stringify(sep8));
+          }
+          if(trends?.performance?.excludedAet?.find(x=>x.date==='2026-09-08')?.comparison!=='NON_COMPARABLE'){
+            throw new Error('8 Sep GI-limited AET comparability regression');
+          }
+          console.log(JSON.stringify({phase:'post-promotion-trends',sep8,quality:trends.quality}));
+          NODE
