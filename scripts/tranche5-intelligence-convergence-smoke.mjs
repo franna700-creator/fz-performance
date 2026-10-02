@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { buildCurrentAthleteState } from '../lib/athlete-current-state.js';
 import { readinessModifierFromAthleteContext } from '../lib/readiness-engine.js';
 import { affectedNodes, assertKnownChangedNodes, unknownDependencyNodes, validateDependencyGraph } from '../lib/runtime-dependency-graph.js';
+import { CANONICAL_MUTATION_CONVERGENCE_SLA_MINUTES, canonicalMutationLagState } from '../lib/systemic-reconciliation-sweep.js';
 
 function materiality(reasonCodes = []) {
   return { materiality: { reasonCodes, level: 'RECORD_ONLY', shouldRecomputeRecommendation: false } };
@@ -131,6 +132,11 @@ assert.throws(() => assertKnownChangedNodes(['totally.unknown.node']), /unknown_
 const graphValidation = validateDependencyGraph();
 assert.deepEqual(graphValidation.errors, [], `dependency graph must remain registry-valid: ${graphValidation.errors.join(' | ')}`);
 assert.equal(graphValidation.ok, true, 'dependency graph must remain registry-valid');
+
+assert.equal(CANONICAL_MUTATION_CONVERGENCE_SLA_MINUTES,45,'live mutation convergence SLA must remain explicit');
+assert.equal(canonicalMutationLagState({pendingCount:0},{now:new Date('2026-10-02T06:30:00Z')}).state,'CLEAR','empty outbox must be clear');
+assert.equal(canonicalMutationLagState({pendingCount:1,oldestPendingAt:'2026-10-02T06:20:00Z'},{now:new Date('2026-10-02T06:30:00Z')}).state,'IN_FLIGHT','recent live writes must be visible as bounded in-flight propagation rather than systemic failure');
+assert.equal(canonicalMutationLagState({pendingCount:1,oldestPendingAt:'2026-10-02T05:40:00Z'},{now:new Date('2026-10-02T06:30:00Z')}).state,'OVERDUE','stuck propagation beyond the SLA must fail integrity');
 
 const athleteClosure = affectedNodes('source.athlete.feedback');
 for (const required of ['athlete.memory','athlete.state.current','readiness.current','adaptive.context','recommendation.shadow','ui.today','ui.train','ui.trends','ui.system']) {
