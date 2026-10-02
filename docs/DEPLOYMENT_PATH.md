@@ -45,9 +45,20 @@ No Git commit and no Vercel deployment is permitted for these routine updates.
 
 ## Intelligence/state refresh — zero deployments
 
-Scheduled intelligence runs remain 06:00 and 20:00 SAST, with verified database publication after reconciliation. Explicit athlete feedback may create a material intraday state update when warranted.
+Canonical intelligence refreshes reconcile persisted source evidence through the Neon mutation/revision/convergence graph. Explicit athlete feedback may create a material intraday state update when warranted, and the server-side convergence loop may settle new source writes while the PWA is closed.
 
-Normal state publication writes append-only validated state to Neon and atomically advances the current pointer. Production `/api/runtime-state` must report `X-FZ-State-Source: database`.
+Routine athlete-state evolution does **not** rebuild or advance the legacy complete-runtime pointer. Current athlete truth lives in Neon-native readiness, Current Athlete State, recommendation, training, trends, goals and source-health contracts.
+
+Production `/api/runtime-state` remains database-backed, but its persisted `stateId/masterAsOf` identifies a **validated base presentation envelope**, not the current athlete-state timestamp. The endpoint overlays current canonical intelligence onto that base and exposes the distinction explicitly through `renderContract.intelligence.runtimeBase`. A historical base must never be presented as current readiness or current recommendation truth.
+
+The PWA reads current domains separately:
+- `/api/wellness/today` for current recovery/physiology;
+- `/api/training/memory` for canonical execution and Athlete Memory;
+- `/api/trends/current` for current longitudinal derivations;
+- `/api/goals/current` for current objective/capability state;
+- `/api/system/status` and `/api/intelligence/current` for current system/intelligence truth.
+
+The persisted runtime pointer advances only when a genuinely new validated base envelope is published. That is not required for normal feedback, workouts, readiness changes or recommendation recomputation.
 
 The immutable `fz-performance-state` project is a fail-stale fallback, not the primary publication target.
 
@@ -64,12 +75,12 @@ A product release should be deliberately boring:
 1. Prepare and validate the candidate without Vercel.
 2. Batch related UI/reliability changes into one release candidate.
 3. Run deterministic build/static/schema/materiality/dynamic-runtime gates.
-4. Create **one deliberate pinned Preview** in `fz-performance-mvp`.
-5. Verify desktop + mobile + live runtime contracts.
-6. Promote/deploy that exact candidate to production once.
+4. Create exactly **one staged Production deployment without assigning Production traffic** in `fz-performance-mvp`.
+5. Verify the immutable deployment on desktop + mobile against read-only live runtime contracts.
+6. Promote that exact deployment ID to Production traffic without rebuilding it.
 7. Verify production runtime, source freshness, training memory, Trends, SYSTEM, materiality observability and rollback readiness.
 
-If the preview fails, fix the candidate off-Vercel before spending another deployment unless the defect can only be observed on Vercel.
+If staged acceptance fails, do not move Production traffic. Fix the candidate off-Vercel where possible and treat the next staged build as a new release attempt.
 
 ## Deployment-protection rule
 

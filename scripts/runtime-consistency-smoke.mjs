@@ -10,6 +10,9 @@ const reconcile = fs.readFileSync('lib/athlete-memory-reconcile.js','utf8');
 const presentation = fs.readFileSync('lib/training-presentation.js','utf8');
 const shell = fs.readFileSync('dist/index.html','utf8');
 const systemUi = fs.readFileSync('dist/assets/system-intelligence.js','utf8');
+const runtimeOverlay = fs.readFileSync('lib/runtime-current-overlay.js','utf8');
+const systemApi = fs.readFileSync('api/system/status.js','utf8');
+const app = fs.readFileSync('dist/assets/app-clean.js','utf8');
 
 assert.match(memory, /training-sync-runtime/, 'Training Memory source refresh must include late binding');
 assert.match(today, /training-sync-runtime/, 'Training Today source refresh must include late binding');
@@ -29,4 +32,11 @@ assert.ok(!shell.includes('/assets/release-polish.css'), 'superseded tactical re
 assert.ok(shell.indexOf('/assets/fz-design-system.css') > shell.indexOf('/assets/clean.css') && shell.indexOf('/assets/fz-design-system.css') > shell.indexOf('/assets/live-physiology.css') && shell.indexOf('/assets/fz-design-system.css') > shell.indexOf('/assets/training-auto-sync.css'), 'FZ design system must load after feature/layout styles');
 assert.match(systemUi, /Dynamic Runtime Integrity/, 'SYSTEM must expose broad dynamic integrity status');
 assert.match(systemUi, /MONOTONIC BEST AVAILABLE|evidencePolicy/, 'SYSTEM must expose Trends evidence policy');
+assert.match(runtimeOverlay, /role:'VALIDATED_BASE_ENVELOPE'/, 'runtime-state must explicitly classify the persisted payload as a validated base envelope');
+assert.match(runtimeOverlay, /currentTruthSource:'NEON_CANONICAL_INTELLIGENCE'/, 'runtime presentation must identify Neon canonical intelligence as current truth');
+assert.match(runtimeOverlay, /runtimeBase/, 'runtime-state overlay must expose base-versus-current presentation metadata');
+assert.match(systemApi, /runtimePresentationMetadata/, 'SYSTEM must derive runtime base/current semantics from the same presentation contract');
+assert.match(systemApi, /baseCurrent:/, 'SYSTEM must expose whether the validated runtime base matches the current canonical day');
+assert.match(app, /Runtime presentation/, 'SYSTEM UI must label the runtime contract as presentation rather than current athlete-state storage');
+assert.match(app, /base retained as fail-stale envelope/, 'SYSTEM UI must disclose a historical base without presenting it as stale canonical truth');
 console.log('PASS v0.7 RC7 systemic runtime consistency gate');

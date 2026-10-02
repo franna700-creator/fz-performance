@@ -64,6 +64,8 @@ async function assertContracts(context) {
   assert.ok(runtime.data.stateId, 'runtime stateId must be present');
   assert.ok(runtime.response.headers()['x-fz-state-sha256'], 'runtime checksum header must be present');
   assert.equal(runtime.response.headers()['x-fz-state-source'], 'database', 'production runtime must be database-backed');
+  assert.equal(runtime.data.renderContract?.intelligence?.runtimeBase?.role, 'VALIDATED_BASE_ENVELOPE', 'runtime-state must distinguish the validated base envelope from current canonical truth');
+  assert.equal(runtime.data.renderContract?.intelligence?.runtimeBase?.currentTruthSource, 'NEON_CANONICAL_INTELLIGENCE', 'runtime-state current presentation truth must be Neon canonical intelligence');
 
   const wellness = (await getJson(context, '/api/wellness/today?refresh=0')).data;
   assert.equal(wellness.ok, true, 'persisted wellness contract must be healthy');
@@ -129,6 +131,9 @@ async function assertContracts(context) {
   const system = (await getJson(context, '/api/system/status?materialityLimit=20')).data;
   assert.equal(system.ok, true, 'system status must be healthy');
   assert.equal(system.architecture?.operationalTruth, 'Neon', 'SYSTEM operational truth must be Neon');
+  assert.equal(system.runtime?.role, 'VALIDATED_BASE_ENVELOPE', 'SYSTEM must identify the persisted runtime as a validated base envelope');
+  assert.equal(system.runtime?.currentTruthSource, 'NEON_CANONICAL_INTELLIGENCE', 'SYSTEM must identify current athlete truth separately from the runtime base');
+  assert.ok(system.runtime?.currentLocalDate, 'SYSTEM must expose the current canonical local date');
   assert.match(system.architecture?.driveRole || '', /flight recorder; not runtime engine/i, 'Drive role must remain audit-only');
   assert.equal(system.intervalsIcu?.configured, true, 'Garmin via Intervals.icu daily recovery transport must be configured');
   assert.equal(system.garmin?.connection?.configured, true, 'Garmin daily recovery connection must be configured');
