@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "enabled": true,
+  "enabled": false,
   "scope": "PINNED_RELEASE_ONLY",
   "release": "TRANCHE_5_3_RECOVERY_CLOSEOUT_V5",
   "validatedCandidateSha": "90af36afea62d759e38ff58480631778ceb19fa0",
   "validatedCandidateTree": "27c5d576ce078a4652f81a7519b634a19122555b",
   "releaseBranch": "release-recovery-2026-10-02-pinned-v5",
   "createdOn": "2026-10-02",
-  "closedOn": null,
-  "promotedDeploymentId": null,
+  "closedOn": "2026-10-02",
+  "promotedDeploymentId": "dpl_7hMDsQHumddtJknU9bxEpGoh1yEf",
   "rollbackDeploymentId": "dpl_23YgnHQrnYdQN1NghdidupSxa19Z",
-  "purpose": "Controlled recovery closeout release: expose real Tredict source health and formalize validated runtime base versus current Neon truth. Production traffic remains on the v4 rollback deployment until staged acceptance passes."
+  "purpose": "Closed controlled recovery closeout v5 after staged read-only acceptance, no-rebuild promotion and clean Production canonical verification. Git auto-deploy remains locked."
 }
