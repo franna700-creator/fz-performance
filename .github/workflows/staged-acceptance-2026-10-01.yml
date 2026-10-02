@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      FZ_PROD_URL: https://fz-performance-mvp.vercel.app
+      FZ_PROD_URL: https://fz-performance-kx3pkxjn6-franna700-2546.vercel.app
       FZ_ARTIFACT_DIR: artifacts
     steps:
       - name: Checkout frozen release candidate
