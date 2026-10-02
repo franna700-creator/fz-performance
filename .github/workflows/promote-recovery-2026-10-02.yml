@@ -1,0 +1,52 @@
+name: one-time promote recovery v4
+
+on:
+  push:
+    branches:
+      - ops/promote-recovery-2026-10-02
+    paths:
+      - '.github/workflows/promote-recovery-2026-10-02.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-promote-recovery-2026-10-02
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      TARGET_DEPLOYMENT: https://fz-performance-mq5k9zxdp-franna700-2546.vercel.app
+      TARGET_DEPLOYMENT_ID: dpl_23YgnHQrnYdQN1NghdidupSxa19Z
+      ROLLBACK_DEPLOYMENT_ID: dpl_2UJdP6XCrYfVPGGEecyQAG8up1x6
+    steps:
+      - name: Require release credential
+        shell: bash
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo "VERCEL_TOKEN unavailable"; exit 2; }
+
+      - name: Link exact project
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+
+      - name: Promote accepted staged deployment without rebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@latest promote "$TARGET_DEPLOYMENT" --yes --timeout 5m --token="$VERCEL_TOKEN" --scope=franna700-2546
+
+      - name: Record promotion identity
+        shell: bash
+        run: |
+          echo "### FZ recovery promotion" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Promoted deployment: $TARGET_DEPLOYMENT_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Rollback deployment: $ROLLBACK_DEPLOYMENT_ID" >> "$GITHUB_STEP_SUMMARY"
