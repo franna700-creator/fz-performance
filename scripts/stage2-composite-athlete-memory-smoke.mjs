@@ -19,7 +19,10 @@ assert.match(ingest,/for \(const session of resolution\.compositeSessions\)/);
 assert.match(ingest,/relationship: 'EVIDENCE'/);
 assert.match(ingest,/linkedSessions: resolution\.compositeSessions/);
 
-const appendBlock=ingest.slice(ingest.indexOf('const inserted = await appendAthleteEvent'),ingest.indexOf('const sql = await getSql()'));
+const appendStart=ingest.indexOf('const inserted = await appendAthleteEvent');
+const appendEnd=ingest.indexOf('const sql = await getSql()',appendStart);
+const appendBlock=ingest.slice(appendStart,appendEnd);
+assert.ok(appendStart>=0&&appendEnd>appendStart,'athlete event append block must remain inspectable');
 assert.match(appendBlock,/sessionId: resolution\.session\?\.session_id \|\| null/,
   'composite Athlete Voice must remain a standalone event rather than choosing one fragment as event.session_id');
 
