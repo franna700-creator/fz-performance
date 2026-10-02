@@ -2,6 +2,11 @@ name: canonical-source-refresh
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - ops/source-refresh-rehearsal-2026-10-02
+    paths:
+      - '.github/workflows/canonical-source-refresh.yml'
   schedule:
     - cron: '0 4,18 * * *'
 
