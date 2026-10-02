@@ -1,11 +1,15 @@
 {
   "schemaVersion": "1.0",
-  "enabled": true,
+  "enabled": false,
   "scope": "PINNED_RELEASE_ONLY",
   "release": "TRANCHE_5_2_STAGE_2_INGESTION",
   "validatedCandidateSha": "bf137b594b0ddf997a846c43b1888f4ea4fa78a8",
   "validatedCandidateTree": "33e31d278f71006c91a79a20484a72556f0f1dfb",
   "releaseBranch": "release-stage2-ingestion-pinned",
   "createdOn": "2026-10-02",
-  "purpose": "One-time pinned Stage 2 ingestion/reconciliation release gate. Candidate is the deterministic 14/14 regression-accepted main build; Git auto-deploy remains disabled and promotion must use the exact accepted staged Production deployment without rebuild."
+  "purpose": "Closed without promotion. First Stage 2 staged acceptance exposed Intervals backstop duplicate-session reconciliation and staged-browser write leakage; corrected in v2 before Production traffic moved.",
+  "closedOn": "2026-10-02",
+  "promotedDeploymentId": null,
+  "rollbackDeploymentId": "dpl_7hMDsQHumddtJknU9bxEpGoh1yEf",
+  "outcome": "SUPERSEDED_AFTER_STAGED_ACCEPTANCE_FAILURE"
 }
