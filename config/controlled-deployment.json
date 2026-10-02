@@ -10,5 +10,5 @@
   "closedOn": "2026-10-02",
   "promotedDeploymentId": "dpl_23YgnHQrnYdQN1NghdidupSxa19Z",
   "rollbackDeploymentId": "dpl_2UJdP6XCrYfVPGGEecyQAG8up1x6",
-  "purpose": "Closed controlled post-Neon recovery release after staged read-only browser acceptance, no-rebuild promotion of the exact accepted deployment, post-promotion canonical convergence and read-only Production verification."
+  "purpose": "Closed controlled post-Neon recovery release after staged and post-promotion read-only acceptance. Git auto-deploy remains locked."
 }
