@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "enabled": true,
+  "enabled": false,
   "scope": "PINNED_RELEASE_ONLY",
   "release": "TRANCHE_5_2_RECOVERY_HARDENING_V4",
   "validatedCandidateSha": "13e8ebd5da83802253617cb5a3c928fa1628590b",
   "validatedCandidateTree": "8f474aac8d092ba17d108c363581fe306fae2dba",
   "releaseBranch": "release-recovery-2026-10-02-pinned-v4",
   "createdOn": "2026-10-02",
-  "closedOn": null,
-  "promotedDeploymentId": null,
+  "closedOn": "2026-10-02",
+  "promotedDeploymentId": "dpl_23YgnHQrnYdQN1NghdidupSxa19Z",
   "rollbackDeploymentId": "dpl_2UJdP6XCrYfVPGGEecyQAG8up1x6",
-  "purpose": "Controlled post-Neon recovery release including bounded live propagation semantics and monotonic derived-readiness ordering. Production traffic remains on the rollback deployment until staged acceptance passes."
+  "purpose": "Closed controlled post-Neon recovery release after staged read-only browser acceptance, no-rebuild promotion of the exact accepted deployment, post-promotion canonical convergence and read-only Production verification."
 }
