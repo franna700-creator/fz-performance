@@ -34,6 +34,71 @@ jobs:
         run: npm install --no-save playwright@1.56.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Converge staged candidate through staged code
+        shell: bash
+        run: |
+          node <<'NODE'
+          const base = process.env.FZ_PROD_URL.replace(/\/$/, '');
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+          async function postRefresh() {
+            const response = await fetch(base + '/api/intelligence/refresh', {
+              method: 'POST',
+              headers: { 'accept': 'application/json', 'content-type': 'application/json' },
+              body: JSON.stringify({ sources: false })
+            });
+            const text = await response.text();
+            if (!response.ok && response.status !== 202) {
+              throw new Error('staged intelligence refresh failed: HTTP ' + response.status + ' ' + text.slice(0, 1000));
+            }
+          }
+
+          async function readStatus() {
+            const response = await fetch(base + '/api/system/status', {
+              headers: { accept: 'application/json' },
+              cache: 'no-store'
+            });
+            if (!response.ok) throw new Error('staged status failed: HTTP ' + response.status);
+            return response.json();
+          }
+
+          let last = null;
+          for (let attempt = 1; attempt <= 8; attempt += 1) {
+            await postRefresh();
+            await sleep(1200);
+            const status = await readStatus();
+            const current = status?.intelligence?.current || {};
+            const readiness = current?.currentReadiness || {};
+            const sourceKey = readiness?.evidence?.wellnessSource?.sourceKey || null;
+
+            last = {
+              attempt,
+              integrityOk: status?.systemIntegrity?.ok === true,
+              integrityErrors: status?.systemIntegrity?.errors ?? null,
+              pendingReadiness: current?.pending?.readiness ?? null,
+              pendingPropagation: current?.pendingPropagation ?? null,
+              readinessStatus: readiness?.status || null,
+              readinessScore: readiness?.score ?? null,
+              wellnessSource: sourceKey
+            };
+            console.log(JSON.stringify(last));
+
+            if (
+              last.integrityOk &&
+              last.pendingReadiness === false &&
+              sourceKey === 'intervals-icu' &&
+              readiness?.status === 'READY'
+            ) {
+              process.exit(0);
+            }
+            await sleep(1200);
+          }
+
+          console.error('staged candidate did not establish current daily-source readiness');
+          console.error(JSON.stringify(last));
+          process.exit(1);
+          NODE
+
       - name: Exercise immutable staged Production deployment
         run: node scripts/production-smoke.mjs
       - name: Upload failure screenshots
