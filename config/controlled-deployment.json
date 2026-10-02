@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "enabled": false,
+  "enabled": true,
   "scope": "PINNED_RELEASE_ONLY",
-  "release": "TRANCHE_5_1_GARMIN_CIQ_LIVE",
-  "validatedCandidateSha": "04cbdaa52bc97c5762bcaf03e81a8e9b4708852a",
-  "validatedCandidateTree": "85473f43914327d5e719ba2976865d9649de7c18",
-  "releaseBranch": "release-garmin-ciq-live-pinned",
-  "createdOn": "2026-09-18",
-  "closedOn": "2026-09-18",
-  "promotedDeploymentId": "dpl_3QEt4ApuYuyYeW9UVCU9bKGXJ63f",
-  "rollbackDeploymentId": "dpl_F2wiKmeXTj8zNxAKgCupEXo4X4Ui",
-  "purpose": "Closed one-time Garmin Connect IQ live physiology release gate after staged Production acceptance and no-rebuild promotion. Ordinary Git deployments remain locked."
+  "release": "TRANCHE_5_3_RECOVERY_CLOSEOUT_V5",
+  "validatedCandidateSha": "90af36afea62d759e38ff58480631778ceb19fa0",
+  "validatedCandidateTree": "27c5d576ce078a4652f81a7519b634a19122555b",
+  "releaseBranch": "release-recovery-2026-10-02-pinned-v5",
+  "createdOn": "2026-10-02",
+  "closedOn": null,
+  "promotedDeploymentId": null,
+  "rollbackDeploymentId": "dpl_23YgnHQrnYdQN1NghdidupSxa19Z",
+  "purpose": "Controlled recovery closeout release: expose real Tredict source health and formalize validated runtime base versus current Neon truth. Production traffic remains on the v4 rollback deployment until staged acceptance passes."
 }
