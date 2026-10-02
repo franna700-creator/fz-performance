@@ -112,6 +112,7 @@ migration, release acceptance and runtime convergence remain separate exit gates
 - No decision-driving consumer silently falls back to legacy runtime data when canonical data exists.
 - Late evidence can revise historical relationships and propagate the change forward.
 - Production reconciliation evaluates live runtime contracts.
+- `pendingPropagation: false` remains an exact claim that the full graph is current. A recent persistence-boundary mutation may be reported as bounded `IN_FLIGHT` propagation while `pendingPropagation: true`; it becomes an integrity error only when it exceeds the explicit convergence SLA or propagation fails.
 - A release cannot be green with code/schema/runtime parity drift.
 - Every derivation exposes provenance sufficient to trace it to canonical evidence and revision.
 
@@ -121,7 +122,7 @@ Golden end-to-end mutation scenarios must prove:
 
 `canonical input → canonical revision → relationship reconciliation → current athlete state → materiality → readiness → measurement → adaptive context → recommendation → dependent surfaces → CONVERGED`
 
-The tranche closes only when Production-like acceptance shows no known contradictory canonical state, no unregistered mutation node, no unsupported persisted contract, no unresolved convergence revision, no decision-driving runtime fallback and no presentation-layer truth reconciliation.
+The tranche closes only when Production-like acceptance shows no known contradictory canonical state, no unregistered mutation node, no unsupported persisted contract, no overdue/failed convergence work, no decision-driving runtime fallback and no presentation-layer truth reconciliation. Continuous live-source ingestion may create short-lived `pendingPropagation: true` intervals; those remain visible and are acceptable only while bounded by the declared convergence SLA.
 
 ## Explicitly out of scope
 
