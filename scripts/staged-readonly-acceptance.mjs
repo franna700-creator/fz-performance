@@ -36,7 +36,11 @@ try {
     assert.equal(system.runtime?.currentTruthSource, 'NEON_CANONICAL_INTELLIGENCE', 'SYSTEM must expose current Neon truth separately from the base');
     assert.ok(system.runtime?.currentLocalDate, 'SYSTEM must expose current canonical local date');
     assert.equal(system.systemIntegrity?.ok, true, 'SYSTEM integrity must be green for staged acceptance');
-    assert.equal(intelligence.pendingPropagation, false, 'staged acceptance requires converged current intelligence');
+    if (intelligence.pendingPropagation === true) {
+      assert.equal(system.systemIntegrity?.invariants?.mutationOutboxState?.state, 'IN_FLIGHT', 'pending propagation is acceptable only as bounded in-flight live-source work');
+      assert.ok(Number(system.systemIntegrity?.invariants?.mutationOutboxState?.ageMinutes) <= Number(system.systemIntegrity?.invariants?.mutationOutboxState?.slaMinutes), 'in-flight canonical mutations must remain inside the declared convergence SLA');
+      assert.equal(system.systemIntegrity?.invariants?.convergenceStatus, 'CONVERGED', 'completed canonical revision graph must remain converged while newer live writes are in flight');
+    }
     assert.equal(intelligence.currentReadiness?.status, 'READY', 'canonical readiness must be READY');
     assert.equal(intelligence.currentReadiness?.evidence?.wellnessSource?.sourceKey, 'intervals-icu', 'readiness must remain anchored to Intervals.icu');
     assert.equal(training.ok, true, 'training memory must be healthy');
