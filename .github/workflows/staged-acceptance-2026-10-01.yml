@@ -25,7 +25,7 @@ jobs:
       - name: Checkout frozen release candidate
         uses: actions/checkout@v4
         with:
-          ref: 787d91d0990415fe2f415e2e2e63fd1c1a73b4a1
+          ref: ops/staged-acceptance-2026-10-01
           fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
