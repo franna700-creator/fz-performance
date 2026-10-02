@@ -18,11 +18,32 @@ try {
       return response.json();
     }
 
-    const [wellness, training, intelligence] = await Promise.all([
+    const [runtime, wellness, training, trends, goals, system, intelligence] = await Promise.all([
+      read('/api/runtime-state'),
       read('/api/wellness/today?refresh=0'),
       read('/api/training/memory?backDays=45&forwardDays=0'),
+      read('/api/trends/current?days=45'),
+      read('/api/goals/current'),
+      read('/api/system/status'),
       read('/api/intelligence/current')
     ]);
+
+    assert.equal(runtime.masterValidated, true, 'runtime base must remain validated');
+    assert.equal(runtime.renderContract?.intelligence?.runtimeBase?.role, 'VALIDATED_BASE_ENVELOPE', 'runtime must expose validated-base semantics');
+    assert.equal(runtime.renderContract?.intelligence?.runtimeBase?.currentTruthSource, 'NEON_CANONICAL_INTELLIGENCE', 'runtime current truth must be Neon canonical intelligence');
+    assert.equal(system.architecture?.operationalTruth, 'Neon', 'SYSTEM operational truth must remain Neon');
+    assert.equal(system.runtime?.role, 'VALIDATED_BASE_ENVELOPE', 'SYSTEM must expose the runtime base role');
+    assert.equal(system.runtime?.currentTruthSource, 'NEON_CANONICAL_INTELLIGENCE', 'SYSTEM must expose current Neon truth separately from the base');
+    assert.ok(system.runtime?.currentLocalDate, 'SYSTEM must expose current canonical local date');
+    assert.equal(system.systemIntegrity?.ok, true, 'SYSTEM integrity must be green for staged acceptance');
+    assert.equal(intelligence.pendingPropagation, false, 'staged acceptance requires converged current intelligence');
+    assert.equal(intelligence.currentReadiness?.status, 'READY', 'canonical readiness must be READY');
+    assert.equal(intelligence.currentReadiness?.evidence?.wellnessSource?.sourceKey, 'intervals-icu', 'readiness must remain anchored to Intervals.icu');
+    assert.equal(training.ok, true, 'training memory must be healthy');
+    assert.equal(trends.ok, true, 'trends must be healthy');
+    assert.equal(goals.ok, true, 'goals must be healthy');
+    assert.equal(system.tredict?.configured, true, 'Tredict credential must remain configured even when upstream health is ERROR');
+    assert.ok(['CONNECTED','ERROR','CONFIGURED'].includes(system.tredict?.status), 'Tredict source health must be explicit rather than inferred from configuration');
 
     await context.route('**/api/wellness/today*', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify(wellness)
