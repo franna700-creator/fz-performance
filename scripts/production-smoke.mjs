@@ -58,6 +58,36 @@ async function installReadOnlyWellnessRoute(context, currentWellness) {
   return fixture;
 }
 
+async function installReadOnlyTrainingRoute(context, training) {
+  assert.ok(training?.ok && Array.isArray(training.sessions), 'staged browser acceptance requires persisted canonical training memory');
+  await context.route('**/api/training/memory*', async route => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json; charset=utf-8',
+      headers: { 'cache-control': 'no-store', 'x-fz-acceptance-source': 'persisted-read-only' },
+      body: JSON.stringify({
+        ...training,
+        sync: null,
+        warning: null,
+        acceptanceMode: 'STAGED_ACCEPTANCE_READ_ONLY_FIXTURE'
+      })
+    });
+  });
+}
+
+async function installReadOnlyMutationGuards(context) {
+  await context.route('**/api/intelligence/refresh', async route => {
+    if (route.request().method() === 'GET') return route.continue();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json; charset=utf-8',
+      headers: { 'cache-control': 'no-store', 'x-fz-acceptance-source': 'read-only-noop' },
+      body: JSON.stringify({ ok: true, acceptanceMode: 'STAGED_ACCEPTANCE_READ_ONLY_NOOP' })
+    });
+  });
+}
+
 async function assertContracts(context) {
   const runtime = await getJson(context, '/api/runtime-state');
   assert.equal(runtime.data.masterValidated, true, 'runtime state must be master validated');
@@ -239,6 +269,8 @@ async function runViewport(browser, label, contextOptions, screenshotName) {
   const context = await browser.newContext(contextOptions);
   const contracts = await assertContracts(context);
   await installReadOnlyWellnessRoute(context, contracts.wellness);
+  await installReadOnlyTrainingRoute(context, contracts.training);
+  await installReadOnlyMutationGuards(context);
   const page = await context.newPage();
   try {
     const errors = await boot(page, label);
