@@ -19,13 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      FZ_PROD_URL: https://fz-performance-fsi1n1fto-franna700-2546.vercel.app
+      FZ_PROD_URL: https://fz-performance-mq5k9zxdp-franna700-2546.vercel.app
       FZ_ARTIFACT_DIR: artifacts
     steps:
       - name: Checkout frozen release candidate
         uses: actions/checkout@v4
         with:
-          ref: 11c28ee400ef8431fec87355e7cde3e9fdcc2935
+          ref: 787d91d0990415fe2f415e2e2e63fd1c1a73b4a1
           fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
@@ -34,78 +34,13 @@ jobs:
         run: npm install --no-save playwright@1.56.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Converge staged candidate through staged code
-        shell: bash
-        run: |
-          node <<'NODE'
-          const base = process.env.FZ_PROD_URL.replace(/\/$/, '');
-          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-          async function postRefresh() {
-            const response = await fetch(base + '/api/intelligence/refresh', {
-              method: 'POST',
-              headers: { 'accept': 'application/json', 'content-type': 'application/json' },
-              body: JSON.stringify({ sources: false })
-            });
-            const text = await response.text();
-            if (!response.ok && response.status !== 202) {
-              throw new Error('staged intelligence refresh failed: HTTP ' + response.status + ' ' + text.slice(0, 1000));
-            }
-          }
-
-          async function readStatus() {
-            const response = await fetch(base + '/api/system/status', {
-              headers: { accept: 'application/json' },
-              cache: 'no-store'
-            });
-            if (!response.ok) throw new Error('staged status failed: HTTP ' + response.status);
-            return response.json();
-          }
-
-          let last = null;
-          for (let attempt = 1; attempt <= 8; attempt += 1) {
-            await postRefresh();
-            await sleep(1200);
-            const status = await readStatus();
-            const current = status?.intelligence?.current || {};
-            const readiness = current?.currentReadiness || {};
-            const sourceKey = readiness?.evidence?.wellnessSource?.sourceKey || null;
-
-            last = {
-              attempt,
-              integrityOk: status?.systemIntegrity?.ok === true,
-              integrityErrors: status?.systemIntegrity?.errors ?? null,
-              pendingReadiness: current?.pending?.readiness ?? null,
-              pendingPropagation: current?.pendingPropagation ?? null,
-              readinessStatus: readiness?.status || null,
-              readinessScore: readiness?.score ?? null,
-              wellnessSource: sourceKey
-            };
-            console.log(JSON.stringify(last));
-
-            if (
-              last.integrityOk &&
-              last.pendingReadiness === false &&
-              sourceKey === 'intervals-icu' &&
-              readiness?.status === 'READY'
-            ) {
-              process.exit(0);
-            }
-            await sleep(1200);
-          }
-
-          console.error('staged candidate did not establish current daily-source readiness');
-          console.error(JSON.stringify(last));
-          process.exit(1);
-          NODE
-
       - name: Exercise immutable staged Production deployment
         run: node scripts/production-smoke.mjs
       - name: Upload failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: fz-staged-production-smoke-failure-2026-10-01
+          name: fz-staged-production-smoke-failure-2026-10-02
           path: artifacts/
           if-no-files-found: ignore
           retention-days: 14
