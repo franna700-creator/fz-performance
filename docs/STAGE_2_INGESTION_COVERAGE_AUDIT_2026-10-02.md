@@ -140,6 +140,16 @@ The canonical training schema can hold planned sessions. `recordAthleteChoice()`
 
 The existing tables should be reused; the missing piece is a safe canonical operation and reconciliation contract.
 
+### G6 — event-intake contract is richer than objective persistence
+
+**Classification: `SCHEMA_OR_RELATIONSHIP_GAP`.**
+
+The event-intake schema correctly allows `role: UNCLASSIFIED` and `knowledgeStatus: ATHLETE_STRUCTURE_REQUIRED`. Production `fz_objectives` does not currently accept either value.
+
+Without correction, FZ would have to invent a strategic role for a newly considered event or collapse “I need the athlete to describe the structure” into the broader research-required state. Both would lose canonical meaning.
+
+Stage 2 migration 010 therefore extends the existing objective constraints, keeps `UNCLASSIFIED` at strategic weight zero, and adds a source-evidence idempotency index. The migration has been prepared and verified on a temporary Neon branch; Production has not been changed pending migration approval.
+
 ## Coverage already protected by deterministic regression
 
 The current suite already protects:
@@ -163,7 +173,7 @@ The deployed architecture has a strong ingestion spine. Natural athlete feedback
 
 Stage 2 should **not** begin by replacing that architecture. The next work is to close the smallest confirmed gaps in order:
 
-1. add generic event/objective mutation orchestration and deterministic trace coverage;
+1. align event-intake/objective persistence semantics, then add generic event/objective mutation orchestration and deterministic trace coverage;
 2. add a generic planned-intent mutation path for athlete-described intended sessions;
 3. extend durable Current Athlete Context for travel/equipment/scheduling/fuelling/preferences without duplicating Athlete Memory;
 4. extend the local-tissue subject taxonomy for FOREARM;
