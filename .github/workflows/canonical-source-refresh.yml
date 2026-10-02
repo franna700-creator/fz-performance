@@ -1,0 +1,89 @@
+name: canonical-source-refresh
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4,18 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-canonical-source-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Refresh upstream evidence and converge canonical intelligence
+        shell: bash
+        run: |
+          node <<'NODE'
+          const base='https://fz-performance-mvp.vercel.app';
+          const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+          async function postRefresh(sources){
+            const response=await fetch(base+'/api/intelligence/refresh',{
+              method:'POST',
+              headers:{accept:'application/json','content-type':'application/json'},
+              body:JSON.stringify({sources})
+            });
+            const text=await response.text();
+            let body=null;
+            try{body=JSON.parse(text)}catch{}
+            if(!response.ok&&response.status!==202){
+              throw new Error('intelligence refresh failed: HTTP '+response.status+' '+text.slice(0,1000));
+            }
+            return body||{};
+          }
+
+          async function readStatus(){
+            const response=await fetch(base+'/api/system/status',{headers:{accept:'application/json'},cache:'no-store'});
+            if(!response.ok)throw new Error('system status failed: HTTP '+response.status);
+            return response.json();
+          }
+
+          const sourceRefresh=await postRefresh(true);
+          console.log(JSON.stringify({
+            phase:'source-refresh',
+            training:sourceRefresh?.steps?.sourceSync?.training||null,
+            wellness:sourceRefresh?.steps?.sourceSync?.wellness||null,
+            warnings:sourceRefresh?.warnings||[]
+          }));
+
+          let last=null;
+          for(let attempt=1;attempt<=8;attempt+=1){
+            if(attempt>1)await postRefresh(false);
+            await sleep(1200);
+            const status=await readStatus();
+            const intelligence=status?.intelligence?.current||{};
+            const outbox=intelligence?.markers?.mutationOutbox||status?.systemIntegrity?.invariants?.mutationOutbox||{};
+            last={
+              attempt,
+              integrityOk:status?.systemIntegrity?.ok===true,
+              pendingCount:Number(outbox.pendingCount??-1),
+              pendingPropagation:intelligence.pendingPropagation===true,
+              convergenceStatus:intelligence?.markers?.canonicalRevision?.status||status?.systemIntegrity?.invariants?.convergenceStatus||null,
+              intervalsStatus:status?.intervalsIcu?.status||null,
+              intervalsLastSyncAt:status?.intervalsIcu?.lastSyncAt||null,
+              tredictStatus:status?.tredict?.status||null,
+              tredictLastError:status?.tredict?.lastError||null
+            };
+            console.log(JSON.stringify({phase:'convergence',...last}));
+            if(
+              last.integrityOk &&
+              last.pendingCount===0 &&
+              last.pendingPropagation===false &&
+              last.convergenceStatus==='CONVERGED' &&
+              status?.intervalsIcu?.configured===true &&
+              status?.intervalsIcu?.status==='CONNECTED'
+            ) process.exit(0);
+            await sleep(1200);
+          }
+
+          console.error('scheduled source refresh did not reach a clean canonical state');
+          console.error(JSON.stringify(last));
+          process.exit(1);
+          NODE

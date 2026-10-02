@@ -43,6 +43,8 @@ While the PWA is open:
 
 No Git commit and no Vercel deployment is permitted for these routine updates.
 
+When the PWA is closed, GitHub Actions provides the server-side source cadence at 06:00 and 20:00 SAST. The `canonical-source-refresh` workflow calls the already-deployed Neon-native intelligence refresh with `sources:true`, then drains canonical propagation without rebuilding or deploying the application. Intervals.icu is required to finish CONNECTED; Tredict health is recorded independently so a Tredict credential failure remains visible without suppressing valid Garmin recovery ingestion.
+
 ## Intelligence/state refresh — zero deployments
 
 Canonical intelligence refreshes reconcile persisted source evidence through the Neon mutation/revision/convergence graph. Explicit athlete feedback may create a material intraday state update when warranted, and the server-side convergence loop may settle new source writes while the PWA is closed.
