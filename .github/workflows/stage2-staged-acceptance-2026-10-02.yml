@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      FZ_PROD_URL: https://fz-performance-o3yxlbnzs-franna700-2546.vercel.app
+      FZ_PROD_URL: https://fz-performance-jt266wc0k-franna700-2546.vercel.app
       FZ_ARTIFACT_DIR: artifacts
-      RELEASE_SHA: 09891d1f392976ae485ddcf56ab9f11d16dfdf54
+      RELEASE_SHA: af84ffb65d637b05362469ac212da374726614a0
     steps:
       - name: Checkout frozen release candidate
         uses: actions/checkout@v4
