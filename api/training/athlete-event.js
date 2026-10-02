@@ -8,6 +8,7 @@ import {
 } from '../../lib/athlete-response-capture.js';
 import { recordAthleteChoice } from '../../lib/athlete-choice-store.js';
 import { recordObjectiveMutation } from '../../lib/objective-mutation.js';
+import { recordAthletePlannedIntent } from '../../lib/athlete-planned-intent.js';
 import { SESSION_OPTION_COMPOSER_VERSION } from '../../lib/session-option-composer.js';
 import { SESSION_PRESCRIPTION_COMPOSER_VERSION } from '../../lib/session-prescription-resolver.js';
 import { MATERIALITY_ENGINE_VERSION, MATERIALITY_LEVELS } from '../../lib/materiality-engine.js';
@@ -34,7 +35,7 @@ function contract(){return {
   speakerResolutions:SPEAKER_RESOLUTIONS,memoryCategories:MEMORY_CATEGORIES,eventTypes:ATHLETE_EVENT_TYPES,
   materialityEngineVersion:MATERIALITY_ENGINE_VERSION,materialityLevels:MATERIALITY_LEVELS,sessionOptionComposerVersion:SESSION_OPTION_COMPOSER_VERSION,
   sessionPrescriptionComposerVersion:SESSION_PRESCRIPTION_COMPOSER_VERSION,athleteAuthVersion:ATHLETE_AUTH_VERSION,
-  acceptedKinds:['ATHLETE_RESPONSE','ADAPTIVE_CHOICE','OBJECTIVE_MUTATION','ATHLETE_AUTH'],requiredCaptureFields:['projectScope','athleteId','speakerResolution'],
+  acceptedKinds:['ATHLETE_RESPONSE','ADAPTIVE_CHOICE','OBJECTIVE_MUTATION','ATHLETE_PLANNED_INTENT','ATHLETE_AUTH'],requiredCaptureFields:['projectScope','athleteId','speakerResolution'],
   behavior:{chatIsPrimaryInput:true,projectWideAcrossChats:true,interpretedSummaryPrimary:true,rawTextRetainedAsProvenanceWhenAvailable:true,preservesReportedAt:true,preservesOccurredAt:true,supportsOccurrencePrecision:true,supportsStandaloneContext:true,linksWhenConfident:true,ambiguousSpeakerRequiresConfirmation:true,idempotentEventKey:true,evaluatesMaterialitySameTurn:true,propagatesCanonicalDependenciesSameTurn:true,materialityCanRecomputeRecommendation:true,activeRecommendationCanProjectWithoutDeployment:true,adaptiveChoiceCanonical:true,plannedIntentCanonical:true,executionReconciliation:true,browserMutationEnabled:true,browserMutationScope:'AUTHENTICATED_ADAPTIVE_CHOICE_ONLY',authenticatedRuntimeMutation:true,athletePinNeverStoredInCanonicalRecords:true,routineAthleteStateRequiresDeployment:false}
 };}
 function setSecurityHeaders(res){
@@ -95,6 +96,11 @@ export default async function handler(req,res){
       const objectiveMutation=await recordObjectiveMutation(body);
       return res.status(objectiveMutation?.propagation?.pendingPropagation?202:200).json({ok:true,contract:contract(),objectiveMutation});
     }
+    if(kind==='ATHLETE_PLANNED_INTENT'){
+      if(!runtimeAuthorized)return res.status(401).json({ok:false,error:'unauthorized'});
+      const plannedIntent=await recordAthletePlannedIntent(body);
+      return res.status(plannedIntent?.propagation?.pendingPropagation?202:200).json({ok:true,contract:contract(),plannedIntent});
+    }
     if(kind!=='ATHLETE_RESPONSE')return res.status(400).json({ok:false,error:'unsupported_athlete_event_kind'});
     if(!runtimeAuthorized)return res.status(401).json({ok:false,error:'unauthorized'});
     const memory=await recordExerciseAthleteResponse(body);return res.status(200).json({ok:true,contract:contract(),memory});
@@ -103,7 +109,7 @@ export default async function handler(req,res){
     const authFailure=publicAuthFailure(error);
     if(authFailure){if(authFailure.retryAfter)res.setHeader('Retry-After',String(authFailure.retryAfter));return res.status(authFailure.status).json({ok:false,error:authFailure.error,detail:authFailure.detail});}
     const detail=error instanceof Error?error.message:String(error);
-    const badInput=/^(summary_required|summary_too_long|raw_text_too_long|invalid_|unknown_session|unknown_source_record|memory_category|required|invalid_event_type|exercise_project_scope_required|francois_speaker_required|speaker_resolution_required|materiality_|active_recommendation_|stale_recommendation|choice_option|choice_prescription|safety_override|objective_|unclassified_|strategic_weight_|active_objective_|evergreen_|unsupported_athlete_auth_action)/.test(detail);
+    const badInput=/^(summary_required|summary_too_long|raw_text_too_long|invalid_|unknown_session|unknown_source_record|memory_category|required|invalid_event_type|exercise_project_scope_required|francois_speaker_required|speaker_resolution_required|materiality_|active_recommendation_|stale_recommendation|choice_option|choice_prescription|safety_override|objective_|unclassified_|strategic_weight_|active_objective_|evergreen_|planned_intent_|planned_start_|unsupported_athlete_auth_action)/.test(detail);
     console.error('FZ athlete event ingest failed',detail);
     return res.status(badInput?400:500).json({ok:false,error:badInput?'athlete_event_contract_failure':'athlete_event_ingest_failed',detail:badInput?detail:undefined});
   }
