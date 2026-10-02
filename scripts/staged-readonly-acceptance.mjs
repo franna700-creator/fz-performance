@@ -55,7 +55,8 @@ try {
     await page.waitForSelector('.fz2-top-shell', { timeout: 30000 });
 
     const viewer = page.getByRole('button', { name: /Continue in Viewer Mode/i });
-    if (await viewer.isVisible().catch(() => false)) await viewer.click();
+    await viewer.waitFor({ state: 'visible', timeout: 5000 });
+    await viewer.click();
     const overlay = page.locator('[data-fz-mode-overlay]');
     if (await overlay.count()) await overlay.waitFor({ state: 'hidden', timeout: 5000 });
 
