@@ -1,0 +1,70 @@
+name: one-time promote recovery v4
+
+on:
+  push:
+    branches:
+      - ops/staged-prod-release-2026-10-01
+    paths:
+      - '.github/workflows/promote-recovery-v4-2026-10-02.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-promote-recovery-v4-2026-10-02
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
+      VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
+      STAGED_URL: https://fz-performance-mq5k9zxdp-franna700-2546.vercel.app
+      STAGED_DEPLOYMENT_ID: dpl_23YgnHQrnYdQN1NghdidupSxa19Z
+    steps:
+      - name: Require release credential
+        shell: bash
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo "VERCEL_TOKEN secret unavailable"; exit 2; }
+
+      - name: Link exact Vercel project
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+
+      - name: Verify staged deployment before promotion
+        shell: bash
+        run: |
+          npx --yes vercel@latest inspect "$STAGED_URL" --token="$VERCEL_TOKEN" --scope=franna700-2546
+
+      - name: Promote exact staged deployment without rebuild
+        shell: bash
+        run: |
+          npx --yes vercel@latest promote "$STAGED_URL" --yes --timeout=5m --token="$VERCEL_TOKEN" --scope=franna700-2546
+
+      - name: Verify promotion status
+        shell: bash
+        run: |
+          npx --yes vercel@latest promote status --token="$VERCEL_TOKEN" --scope=franna700-2546 || true
+          node <<'NODE'
+          const base='https://fz-performance-mvp.vercel.app';
+          const paths=['/api/system/status','/api/intelligence/current','/api/runtime-state','/api/wellness/today?refresh=0','/api/training/memory?backDays=14&forwardDays=0','/api/trends/current?days=45','/api/goals/current'];
+          for (const path of paths) {
+            const res=await fetch(base+path,{headers:{accept:'application/json'},cache:'no-store'});
+            if(!res.ok) throw new Error(path+' returned HTTP '+res.status);
+          }
+          const status=await (await fetch(base+'/api/system/status',{headers:{accept:'application/json'},cache:'no-store'})).json();
+          if(status?.systemIntegrity?.ok!==true) throw new Error('production system integrity is not green');
+          const readiness=status?.intelligence?.current?.currentReadiness||{};
+          if(readiness?.status!=='READY') throw new Error('production readiness is not READY');
+          if(readiness?.evidence?.wellnessSource?.sourceKey!=='intervals-icu') throw new Error('production readiness is not anchored to Intervals.icu');
+          console.log(JSON.stringify({
+            integrity:status.systemIntegrity,
+            readiness:{status:readiness.status,score:readiness.score,wellnessSource:readiness.evidence?.wellnessSource},
+            pendingPropagation:status?.intelligence?.current?.pendingPropagation
+          }));
+          NODE
