@@ -44,3 +44,5 @@ jobs:
           path: artifacts/
           if-no-files-found: ignore
           retention-days: 14
+
+# retry read-only acceptance after Viewer Mode synchronization
