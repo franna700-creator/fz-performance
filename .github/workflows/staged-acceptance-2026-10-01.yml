@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      FZ_PROD_URL: https://fz-performance-mq5k9zxdp-franna700-2546.vercel.app
+      FZ_PROD_URL: https://fz-performance-mvp.vercel.app
       FZ_ARTIFACT_DIR: artifacts
     steps:
       - name: Checkout frozen release candidate
@@ -45,4 +45,4 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-# retry read-only acceptance after Viewer Mode synchronization
+# post-promotion read-only production verification
