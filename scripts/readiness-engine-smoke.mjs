@@ -69,5 +69,7 @@ assert.match(readinessStore,/source_key IN \('intervals-icu','fitness-ai'\)/,'ca
 assert.match(readinessStore,/WHEN 'intervals-icu' THEN 0/,'Intervals.icu must remain the preferred daily readiness source when available');
 assert.doesNotMatch(readinessStore,/source_key IN \('intervals-icu','fitness-ai','garmin-ciq'\)/,'Connect IQ intraday snapshots must not displace daily readiness anchors');
 assert.doesNotMatch(readinessStore,/ciqSleepScoreUsed|ciqFallbackRow|wellnessFallback/,'readiness must not consume unsupported Connect IQ recovery fallbacks');
+assert.match(readinessStore,/sourceUpdatedAt:\s*now\.toISOString\(\)/,'derived readiness ordering must advance on recomputation even when authoritative upstream evidence is older');
+assert.doesNotMatch(readinessStore,/sourceUpdatedAt:\s*inputs\.sourceAsOf/,'derived readiness must not inherit upstream evidence time as its ledger ordering timestamp');
 
 console.log('PASS canonical readiness engine calibration, local override, adaptive-context projection and deployed ledger compatibility');
