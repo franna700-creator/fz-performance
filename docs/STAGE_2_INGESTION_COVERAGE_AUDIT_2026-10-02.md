@@ -119,7 +119,7 @@ Stage 2 must define a generic, bounded current-context projection before treatin
 
 ### G4 — event/objective runtime mutations are representable but not encapsulated
 
-**Classification: `TEST_COVERAGE_GAP` + runtime orchestration gap.**
+**Classification: `RUNTIME_RECONCILIATION_DEFECT` + `TEST_COVERAGE_GAP`.**
 
 The schema, revision ledger, source evidence, outbox triggers and dependency graph support dynamic event/objective data. What is missing is a typed canonical mutator that atomically applies:
 
@@ -134,7 +134,7 @@ Direct SQL orchestration can perform this correctly, so ordinary event data rema
 
 ### G5 — arbitrary natural-language training intent is not a first-class planned-intent write
 
-**Classification: `SCHEMA_OR_RELATIONSHIP_GAP` at the operation boundary, not the storage schema.**
+**Classification: `RUNTIME_RECONCILIATION_DEFECT`.**
 
 The canonical training schema can hold planned sessions. `recordAthleteChoice()` writes an exact planned intent only when the athlete selects from the active FZ recommendation. A natural statement such as “I’m doing an easy run tomorrow morning” has no equivalent generic typed mutation path.
 
