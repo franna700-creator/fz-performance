@@ -17,6 +17,6 @@ const checks=[
   ['SYSTEM backend exposes materiality, immutable 4.2 shadow and active 4.3 state',systemApi.includes('readRecentMaterialityAssessments')&&systemApi.includes('readRecentRecommendationShadows')&&systemApi.includes('readIntelligenceCurrent')&&systemApi.includes('activeRecommendationWrite:true')&&systemApi.includes('todayActivation:true')],
   ['SYSTEM exposes secret-safe release environment probes',systemApi.includes('releaseEnvironment:{databaseConfigured:databaseConfigured()')&&systemApi.includes('secretsExposed:false')],
   ['materiality engine remains 4.1',materiality.includes("MATERIALITY_ENGINE_VERSION = '4.1.0'")],
-  ['recommendation engine remains isolated 4.2 shadow audit',shadow.includes("RECOMMENDATION_ENGINE_VERSION = '4.2.0-shadow.1'")&&shadow.includes("RECOMMENDATION_ENGINE_MODE = 'SHADOW'")&&shadow.includes('mayNotAlterToday:true')],
+  ['recommendation engine remains isolated 4.2 shadow audit',shadow.includes("RECOMMENDATION_ENGINE_VERSION = '4.2.0-shadow.2'")&&shadow.includes("RECOMMENDATION_ENGINE_MODE = 'SHADOW'")&&shadow.includes('mayNotAlterToday:true')],
   ['all four materiality states remain visible',['RECORD_ONLY','UPDATE_STATE','RECOMPUTE_RECOMMENDATION','SAFETY_OVERRIDE'].every(x=>materiality.includes(x))]
 ];let bad=0;for(const [name,ok] of checks){console.log(ok?'PASS':'FAIL',name);if(!ok)bad++;}if(bad)process.exit(1);console.log('PASS Phase 4 SYSTEM rationalisation + materiality/shadow observability contract');
