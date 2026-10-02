@@ -1,0 +1,56 @@
+name: one-time stage2 staged acceptance
+
+on:
+  push:
+    branches:
+      - ops/stage2-release-2026-10-02
+    paths:
+      - '.github/workflows/stage2-staged-acceptance-2026-10-02.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fz-stage2-staged-acceptance-2026-10-02
+  cancel-in-progress: false
+
+jobs:
+  accept:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FZ_PROD_URL: https://fz-performance-o3yxlbnzs-franna700-2546.vercel.app
+      FZ_ARTIFACT_DIR: artifacts
+      RELEASE_SHA: 09891d1f392976ae485ddcf56ab9f11d16dfdf54
+    steps:
+      - name: Checkout frozen release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          fetch-depth: 1
+
+      - name: Verify frozen identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install pinned Playwright
+        run: npm install --no-save playwright@1.56.1
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Exercise immutable staged Production deployment
+        run: node scripts/production-smoke.mjs
+
+      - name: Upload acceptance screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fz-stage2-staged-acceptance-2026-10-02
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
