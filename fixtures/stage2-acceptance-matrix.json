@@ -1,0 +1,124 @@
+{
+  "version": "1.0",
+  "purpose": "Deterministic Stage 2 acceptance coverage map. Production live acceptance remains a separate lane.",
+  "scenarios": [
+    {
+      "id": "S2-01",
+      "name": "Natural current-state feedback without save instruction",
+      "regressions": [
+        "scripts/stage2-ingestion-coverage-smoke.mjs",
+        "scripts/architecture-golden-thread-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-02",
+      "name": "Post-session feedback after execution exists",
+      "regressions": [
+        "scripts/tranche4-choice-outcome-smoke.mjs",
+        "scripts/architecture-golden-thread-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-03",
+      "name": "Feedback before execution source sync then late-bind",
+      "regressions": [
+        "scripts/athlete-memory-reconcile-smoke.mjs",
+        "scripts/golden-athlete-scenarios-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-04",
+      "name": "Stopped, aborted or skipped prescribed session",
+      "regressions": [
+        "scripts/tranche4-materiality-smoke.mjs",
+        "scripts/tranche3-athlete-ingest-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-05",
+      "name": "Materially modified or contaminated execution",
+      "regressions": [
+        "scripts/training-evidence-smoke.mjs",
+        "scripts/measurement-evidence-smoke.mjs",
+        "scripts/tranche4-materiality-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-06",
+      "name": "New local pain/tissue/function constraint",
+      "regressions": [
+        "scripts/stage2-current-athlete-context-smoke.mjs",
+        "scripts/readiness-engine-smoke.mjs",
+        "scripts/tranche5-intelligence-convergence-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-07",
+      "name": "Natural new event intake",
+      "regressions": [
+        "scripts/stage2-objective-mutation-smoke.mjs",
+        "scripts/event-intelligence-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-08",
+      "name": "Event date/target/status/objective-role change",
+      "regressions": [
+        "scripts/stage2-objective-mutation-smoke.mjs",
+        "scripts/event-runtime-variability-smoke.mjs",
+        "scripts/recommendation-trigger-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-09",
+      "name": "Athlete overrides FZ lane/session",
+      "regressions": [
+        "scripts/stage2-ingestion-coverage-smoke.mjs",
+        "scripts/tranche4-choice-outcome-smoke.mjs",
+        "scripts/tranche4-6-athlete-auth-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-10",
+      "name": "Later richer source evidence enriches monotonically",
+      "regressions": [
+        "scripts/training-evidence-smoke.mjs",
+        "scripts/tredict-ncl-fallback-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-11",
+      "name": "Composite multi-fragment Athlete Voice",
+      "regressions": [
+        "scripts/stage2-composite-athlete-memory-smoke.mjs",
+        "scripts/athlete-memory-reconcile-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-12",
+      "name": "Non-material athlete/source information",
+      "regressions": [
+        "scripts/tranche4-materiality-smoke.mjs",
+        "scripts/tranche4-systemic-propagation-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-13",
+      "name": "Material response recomputes recommendation",
+      "regressions": [
+        "scripts/tranche4-materiality-smoke.mjs",
+        "scripts/recommendation-trigger-smoke.mjs",
+        "scripts/tranche4-systemic-propagation-smoke.mjs"
+      ]
+    },
+    {
+      "id": "S2-14",
+      "name": "Safety-relevant athlete state overrides lower-priority plan",
+      "regressions": [
+        "scripts/tranche4-materiality-smoke.mjs",
+        "scripts/tranche4-recommendation-shadow-smoke.mjs",
+        "scripts/stage2-ingestion-coverage-smoke.mjs"
+      ]
+    }
+  ]
+}
