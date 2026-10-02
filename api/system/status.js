@@ -1,5 +1,6 @@
 import { getSql } from '../../lib/db.js';
 import { loadDatabaseRuntimeState, runtimeStoreMode } from '../../lib/runtime-store.js';
+import { runtimePresentationMetadata } from '../../lib/runtime-current-overlay.js';
 import { publicTredictStatus } from '../../lib/tredict-client.js';
 import { intervalsIcuConfigured, publicIntervalsIcuStatus } from '../../lib/intervals-icu-client.js';
 import { garminCiqConfigured, publicGarminCiqStatus } from '../../lib/garmin-ciq-client.js';
@@ -122,11 +123,29 @@ async function systemStatus(req, res) {
       publicGarminCiqStatus(),
       publicTredictStatus()
     ]);
+    const runtimePresentation=runtime?.state?runtimePresentationMetadata(runtime.state,intelligenceCurrentState):null;
     return res.status(200).json({
       ok:true,generatedAt:new Date().toISOString(),
       architecture:{operationalTruth:'Neon',sourceEvidence:['Garmin via Intervals.icu','Garmin fēnix 8 via Connect IQ','Tredict','Athlete Memory'],recommendationTruth:'Versioned FZ runtime/intelligence state',shadowRecommendationTruth:'Tranche 4.2 append-only FZ intelligence ledger',activeRecommendationTruth:'Tranche 4.3 controlled projection of immutable shadow',currentAthleteStateTruth:'Tranche 5 durable current-athlete-state projection',canonicalMutationTruth:'Tranche 5 persistence-boundary mutation outbox',convergenceTruth:'Tranche 5 canonical revision + convergence ledger',auditRepresentation:'Google Drive',driveRole:'human-owned audit / flight recorder; not runtime engine',runtimeStoreMode:runtimeStoreMode()},
       releaseEnvironment:{databaseConfigured:databaseConfigured(),writeTokenConfigured:Boolean(process.env.FZ_STATE_WRITE_TOKEN),athleteBootstrapConfigured:Boolean(process.env.FZ_ATHLETE_BOOTSTRAP_TOKEN),intervalsIcuConfigured:intervalsIcuConfigured(),garminCiqConfigured:garminCiqConfigured(),previewMustPassBeforePromotion:true,secretsExposed:false},
-      runtime:runtime?{source:runtime.source,stateId:runtime.stateId,pointerVersion:runtime.pointerVersion,masterAsOf:runtime.state?.masterAsOf||null,generatedAt:runtime.state?.generatedAt||null,masterValidated:runtime.state?.masterValidated===true}:null,
+      runtime:runtime?{
+        source:runtime.source,
+        role:runtimePresentation?.role||'VALIDATED_BASE_ENVELOPE',
+        stateId:runtime.stateId,
+        baseStateId:runtimePresentation?.baseStateId||runtime.stateId,
+        pointerVersion:runtime.pointerVersion,
+        masterAsOf:runtime.state?.masterAsOf||null,
+        baseMasterAsOf:runtimePresentation?.baseMasterAsOf||runtime.state?.masterAsOf||null,
+        generatedAt:runtime.state?.generatedAt||null,
+        masterValidated:runtime.state?.masterValidated===true,
+        baseCurrent:runtimePresentation?.baseCurrent??null,
+        currentTruthSource:runtimePresentation?.currentTruthSource||null,
+        currentLocalDate:runtimePresentation?.currentLocalDate||null,
+        currentEvidenceAt:runtimePresentation?.currentEvidenceAt||null,
+        canonicalRevisionId:runtimePresentation?.canonicalRevisionId||null,
+        convergenceStatus:runtimePresentation?.convergenceStatus||null,
+        pendingPropagation:runtimePresentation?.pendingPropagation===true
+      }:null,
       sources,tredict:{...tredictStatus,latestEvidence:evidence.filter(row=>row.source_key==='tredict')},
       intervalsIcu:{...intervalsStatus,latestWellness:wellness[0]||null},
       garmin:{connection:{source_key:'intervals-icu',status:intervalsStatus.status,configured:intervalsStatus.configured,transport:'Intervals.icu'},transport:'Intervals.icu',liveBridge:ciqStatus,latestWellness:wellness[0]||null,latestEvidence:evidence.filter(row=>row.source_key==='garmin')},
