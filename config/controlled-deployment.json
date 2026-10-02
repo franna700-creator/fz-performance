@@ -1,11 +1,15 @@
 {
   "schemaVersion": "1.0",
-  "enabled": true,
+  "enabled": false,
   "scope": "PINNED_RELEASE_ONLY",
   "release": "TRANCHE_5_2_STAGE_2_INGESTION_V2",
   "validatedCandidateSha": "2dfb67e36f5fb6f8306c93b74954c349009eae88",
   "validatedCandidateTree": "c4ec622592338fcb59a0fb659cd6cc43be45d04e",
   "releaseBranch": "release-stage2-ingestion-pinned-v2",
   "createdOn": "2026-10-02",
-  "purpose": "Second Stage 2 staged release attempt after fixing Intervals backstop duplicate reconciliation and staged acceptance write leakage. Git auto-deploy remains disabled; use one Production-configured staged build with no domain assignment, read-only acceptance, then no-rebuild promotion."
+  "purpose": "Closed Stage 2 ingestion v2 release after green staged read-only browser acceptance, exact no-rebuild promotion, Production source reconciliation, canonical convergence and green post-promotion browser acceptance. Git auto-deploy remains disabled.",
+  "closedOn": "2026-10-02",
+  "promotedDeploymentId": "dpl_HV61cDmFSpJoaR7kXxSYdSCHvemQ",
+  "rollbackDeploymentId": "dpl_7hMDsQHumddtJknU9bxEpGoh1yEf",
+  "outcome": "PROMOTED_ACCEPTED"
 }
