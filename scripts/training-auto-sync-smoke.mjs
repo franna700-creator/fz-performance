@@ -6,6 +6,9 @@ const css=fs.readFileSync('dist/assets/training-auto-sync.css','utf8');
 const api=fs.readFileSync('api/training/memory.js','utf8');
 const runtimeSync=fs.readFileSync('lib/training-sync-runtime.js','utf8');
 const app=fs.readFileSync('dist/assets/app-clean.js','utf8');
+const trainingSource=fs.readFileSync('lib/training-sync.js','utf8');
+const tredictClient=fs.readFileSync('lib/tredict-client.js','utf8');
+const systemApi=fs.readFileSync('api/system/status.js','utf8');
 
 const checks=[
   ['training auto-sync asset wired before clean app',html.includes('/assets/training-auto-sync.js')&&html.indexOf('/assets/training-auto-sync.js')<html.indexOf('/assets/app-clean.js')],
@@ -20,6 +23,10 @@ const checks=[
   ['canonical UI reread follows successful persistence',sync.includes("window.dispatchEvent(new Event('focus'))")&&sync.includes("source: 'training'")],
   ['training source sync remains server-side',api.includes('syncTrainingSources')&&api.includes("String(req.query.refresh || '') === '1'")],
   ['successful source sync triggers late Athlete Memory binding',api.includes('training-sync-runtime')&&runtimeSync.includes('reconcileUnlinkedAthleteEvents')],
+  ['Tredict sync persists source health',trainingSource.includes('markTredictSourceSynced')&&trainingSource.includes('markTredictSourceError')],
+  ['Tredict public health is persisted and secret-safe',tredictClient.includes('publicTredictStatus')&&tredictClient.includes("WHERE source_key='tredict'")&&!tredictClient.includes('TREDICT_API_TOKEN:')],
+  ['SYSTEM exposes Tredict connection health rather than configuration alone',systemApi.includes('publicTredictStatus')&&systemApi.includes('...tredictStatus')&&!systemApi.includes('tredict:{configured:tredictConfigured()')],
+  ['SYSTEM UI renders actual Tredict status',app.includes('statusTone(t.status)')&&app.includes("t.lastError")&&!app.includes("t.configured?'CONNECTED':'NOT CONFIGURED'")],
   ['no direct source calls from browser',!sync.includes('tredict.com')&&!sync.includes('fitness-ai')&&!sync.includes('garmin.com')],
   ['no additional serverless route added',!fs.existsSync('api/training/auto-sync.js')]
 ];
