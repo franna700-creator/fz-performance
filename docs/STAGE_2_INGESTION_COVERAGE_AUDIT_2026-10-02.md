@@ -98,14 +98,14 @@ The 22 Sep Athlete Voice was correctly preserved without forcing forearm inflamm
 
 **Classification: `RUNTIME_RECONCILIATION_DEFECT` plus source-integration software debt.**
 
-The canonical training store and reconciliation path are sound. Upstream autonomous acquisition is not:
+The canonical training store and reconciliation path are sound. Upstream autonomous acquisition has two independent concerns:
 
-- Production Tredict Personal API credential is configured but rejected upstream with HTTP 401.
-- The Tredict ChatGPT integration works and 2 Oct execution was recoverable/persistable, proving the source record itself exists.
-- The production Garmin activity path still calls the deprecated/disconnected Fitness AI custom OAuth source.
-- Intervals.icu is healthy for daily recovery, but FZ does not yet use its activity API as an execution backstop.
+- Production Tredict Personal API credential is configured but rejected upstream with HTTP 401. Credential replacement/reauthorisation remains an operational dependency.
+- The legacy Garmin activity path calls the deprecated/disconnected Fitness AI custom OAuth source.
 
-This is not a schema problem. Credential repair can restore Tredict without software release. Replacing the deprecated Garmin activity transport or adding an Intervals.icu activity backstop is a controlled software integration change.
+Stage 2 adds an Intervals.icu activity transport using the already-configured Intervals API credentials. Activity summaries are ingested as `intervals-icu` execution evidence, retain their original upstream source provenance, reconcile to Tredict when available, and fall back to Fitness AI only when Intervals activity retrieval itself is unavailable. Intervals HR-zone arrays are retained but are **not** silently translated into the existing Tredict three-bucket NCL model.
+
+This closes autonomous activity continuity at the transport layer once released, while Tredict-specific richer execution detail remains degraded until its Production credential is repaired.
 
 ### G3 — generic durable current context is narrower than ingestion
 
