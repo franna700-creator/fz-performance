@@ -22,7 +22,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_xdfma3BySvP5iRuZ0WDK9S2k
       VERCEL_PROJECT_ID: prj_Y5AbwT02Hc5O74bAnmUzNlZSY2yq
-      RELEASE_SHA: 09891d1f392976ae485ddcf56ab9f11d16dfdf54
+      RELEASE_SHA: af84ffb65d637b05362469ac212da374726614a0
     steps:
       - name: Require release credential
         shell: bash
@@ -43,9 +43,9 @@ jobs:
           const fs=require('fs');
           const gate=JSON.parse(fs.readFileSync('config/controlled-deployment.json','utf8'));
           if(gate.enabled!==true) throw new Error('release gate not armed');
-          if(gate.release!=='TRANCHE_5_2_STAGE_2_INGESTION') throw new Error('wrong release');
-          if(gate.validatedCandidateSha!=='bf137b594b0ddf997a846c43b1888f4ea4fa78a8') throw new Error('validated candidate mismatch');
-          if(gate.validatedCandidateTree!=='33e31d278f71006c91a79a20484a72556f0f1dfb') throw new Error('validated tree mismatch');
+          if(gate.release!=='TRANCHE_5_2_STAGE_2_INGESTION_V2') throw new Error('wrong release');
+          if(gate.validatedCandidateSha!=='2dfb67e36f5fb6f8306c93b74954c349009eae88') throw new Error('validated candidate mismatch');
+          if(gate.validatedCandidateTree!=='c4ec622592338fcb59a0fb659cd6cc43be45d04e') throw new Error('validated tree mismatch');
           NODE
 
       - name: Link exact Vercel project
