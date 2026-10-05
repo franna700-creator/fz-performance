@@ -67,14 +67,14 @@ async function capture(viewport,isMobile){
   for(const status of ['UNMEASURED','UNAVAILABLE'])assert.equal(await page.locator('#goals .fz-goals-capability .pill.warn').filter({hasText:status}).count(),1,`${status} must not have the measured/positive colour`);
   await assertNoOverflow(page,`${suffix} Goals`);
   await page.screenshot({path:path.join(out,`goals-${suffix}-v1.png`),fullPage:true});
-  // A canonical reread must update already-mounted GOALS via the focus event
-  // dispatched by intelligence-refresh, without reviving the TRENDS snapshot.
+  // Canonical intelligence reconciliation must update already-mounted GOALS
+  // without requiring a foreground/focus poll or reviving the TRENDS snapshot.
   await page.route('**/api/goals/current',route=>route.fulfill({json:{...goals,progress:{...goals.progress,capabilities:[]}}}));
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.evaluate(()=>document.dispatchEvent(new CustomEvent('fz:intelligence-reconciled')));
   await page.waitForFunction(()=>document.querySelector('#goals')?.textContent.includes('Capability evidence is not currently available.'));
   assert.equal(await page.locator('#goals .fz-goals-capability').count(),0);
   await page.unroute('**/api/goals/current');
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.evaluate(()=>document.dispatchEvent(new CustomEvent('fz:intelligence-reconciled')));
   await page.waitForSelector('#goals .fz-goals-capabilities');
   assert.equal(await page.locator('#goals .fz-goals-capability').count(),4);
   if(errors.length)throw new Error(`${suffix} page errors: ${errors.join(' | ')}`);
