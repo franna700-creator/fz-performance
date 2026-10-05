@@ -43,7 +43,7 @@ While the PWA is open:
 
 No Git commit and no Vercel deployment is permitted for these routine updates.
 
-When the PWA is closed, GitHub Actions provides the server-side source cadence at 06:00 and 20:00 SAST. The `canonical-source-refresh` workflow calls the already-deployed Neon-native intelligence refresh with `sources:true`, then drains canonical propagation without rebuilding or deploying the application. Intervals.icu is required to finish CONNECTED; Tredict health is recorded independently so a Tredict credential failure remains visible without suppressing valid Garmin recovery ingestion.
+When the PWA is closed, GitHub Actions provides the server-side source cadence at 06:00 and 20:00 SAST. Background convergence runs every 30 minutes rather than every 15 minutes to reduce database churn on the free Neon tier. Convergence and source-refresh workflows make at most two bounded attempts; if Neon explicitly returns a quota-exhaustion 402, they stop immediately without retrying. Production health remains independently scheduled so a database outage is still visible rather than silently declared healthy. The `canonical-source-refresh` workflow calls the already-deployed Neon-native intelligence refresh with `sources:true`, then drains canonical propagation without rebuilding or deploying the application. Intervals.icu is required to finish CONNECTED; Tredict health is recorded independently so a Tredict credential failure remains visible without suppressing valid Garmin recovery ingestion.
 
 ## Intelligence/state refresh — zero deployments
 
