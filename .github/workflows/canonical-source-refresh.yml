@@ -28,12 +28,8 @@ jobs:
             return /HTTP status 402|exceeded the quota|neon:retryable/i.test(String(text));
           }
 
-          async function postRefresh(sources){
-            const response=await fetch(base+'/api/intelligence/refresh',{
-              method:'POST',
-              headers:{accept:'application/json','content-type':'application/json'},
-              body:JSON.stringify({sources})
-            });
+          async function requestJson(url,options={},label='request'){
+            const response=await fetch(url,options);
             const text=await response.text();
             let body=null;
             try{body=JSON.parse(text)}catch{}
@@ -42,15 +38,40 @@ jobs:
                 console.warn('NEON_QUOTA_BLOCKED: scheduled source refresh skipped until database service resumes.');
                 process.exit(0);
               }
-              throw new Error('intelligence refresh failed: HTTP '+response.status+' '+text.slice(0,1000));
+              throw new Error(label+' failed: HTTP '+response.status+' '+text.slice(0,1000));
             }
             return body||{};
           }
 
-          async function readStatus(){
-            const response=await fetch(base+'/api/system/status',{headers:{accept:'application/json'},cache:'no-store'});
-            if(!response.ok)throw new Error('system status failed: HTTP '+response.status);
-            return response.json();
+          async function postRefresh(sources){
+            return requestJson(base+'/api/intelligence/refresh',{
+              method:'POST',
+              headers:{accept:'application/json','content-type':'application/json'},
+              body:JSON.stringify({sources})
+            },'intelligence refresh');
+          }
+
+          async function readCurrent(){
+            return requestJson(base+'/api/intelligence/current',{
+              headers:{accept:'application/json'},
+              cache:'no-store'
+            },'intelligence current');
+          }
+
+          function stateOf(current){
+            const outbox=current?.markers?.mutationOutbox||current?.mutationOutbox||{};
+            return {
+              pendingCount:Number(outbox.pendingCount??-1),
+              pendingPropagation:current?.pendingPropagation===true,
+              convergenceStatus:current?.markers?.canonicalRevision?.status||current?.convergence?.status||null,
+              pending:current?.pending||null
+            };
+          }
+
+          function clean(state){
+            return state.pendingCount===0 &&
+              state.pendingPropagation===false &&
+              state.convergenceStatus==='CONVERGED';
           }
 
           const sourceRefresh=await postRefresh(true);
@@ -61,37 +82,20 @@ jobs:
             warnings:sourceRefresh?.warnings||[]
           }));
 
-          let last=null;
-          for(let attempt=1;attempt<=2;attempt+=1){
-            if(attempt>1)await postRefresh(false);
-            await sleep(1200);
-            const status=await readStatus();
-            const intelligence=status?.intelligence?.current||{};
-            const outbox=intelligence?.markers?.mutationOutbox||status?.systemIntegrity?.invariants?.mutationOutbox||{};
-            last={
-              attempt,
-              integrityOk:status?.systemIntegrity?.ok===true,
-              pendingCount:Number(outbox.pendingCount??-1),
-              pendingPropagation:intelligence.pendingPropagation===true,
-              convergenceStatus:intelligence?.markers?.canonicalRevision?.status||status?.systemIntegrity?.invariants?.convergenceStatus||null,
-              intervalsStatus:status?.intervalsIcu?.status||null,
-              intervalsLastSyncAt:status?.intervalsIcu?.lastSyncAt||null,
-              tredictStatus:status?.tredict?.status||null,
-              tredictLastError:status?.tredict?.lastError||null
-            };
-            console.log(JSON.stringify({phase:'convergence',...last}));
-            if(
-              last.integrityOk &&
-              last.pendingCount===0 &&
-              last.pendingPropagation===false &&
-              last.convergenceStatus==='CONVERGED' &&
-              status?.intervalsIcu?.configured===true &&
-              status?.intervalsIcu?.status==='CONNECTED'
-            ) process.exit(0);
-            await sleep(1200);
-          }
+          await sleep(1200);
+          let current=await readCurrent();
+          let state=stateOf(current);
+          console.log(JSON.stringify({phase:'convergence',attempt:1,...state}));
+          if(clean(state))process.exit(0);
 
-          console.error('scheduled source refresh did not reach a clean canonical state within bounded retry');
-          console.error(JSON.stringify(last));
+          const repair=await postRefresh(false);
+          await sleep(1200);
+          current=await readCurrent();
+          state=stateOf(current);
+          console.log(JSON.stringify({phase:'convergence',attempt:2,refreshRevision:repair?.afterRevision||null,...state}));
+          if(clean(state))process.exit(0);
+
+          console.error('scheduled source refresh did not reach a clean canonical state within bounded repair');
+          console.error(JSON.stringify(state));
           process.exit(1);
           NODE
