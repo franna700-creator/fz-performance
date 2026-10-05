@@ -1,7 +1,8 @@
 /* FZ Performance — Goals & Progress v1
    Canonical objective + measurement presentation. No athlete truth is stored here. */
 
-const FZ_GOALS_V1={goals:null,busy:false,mounted:false};
+const FZ_GOALS_V1={goals:null,busy:false,mounted:false,lastLoadAt:0};
+const FZ_GOALS_WAKE_MS=30*60*1000;
 const gpEsc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gpNum=value=>Number.isFinite(Number(value))?Number(value):null;
 const gpWords=value=>String(value||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
@@ -61,7 +62,7 @@ function gpRender(){
   FZ_GOALS_V1.mounted=true;
 }
 async function gpLoad(){
-  if(FZ_GOALS_V1.busy)return;FZ_GOALS_V1.busy=true;
+  if(FZ_GOALS_V1.busy)return;FZ_GOALS_V1.busy=true;FZ_GOALS_V1.lastLoadAt=Date.now();
   try{
     const [goals]=await Promise.allSettled([gpJson('/api/goals/current')]);
     if(goals.status==='fulfilled')FZ_GOALS_V1.goals=goals.value;
@@ -70,8 +71,11 @@ async function gpLoad(){
 }
 
 function gpSchedule(){queueMicrotask(()=>{if(document.querySelector('.page.active')?.id==='goals'&&!FZ_GOALS_V1.busy&&!FZ_GOALS_V1.mounted)gpLoad();})}
+function gpRefreshIfStale(){if(Date.now()-FZ_GOALS_V1.lastLoadAt>=FZ_GOALS_WAKE_MS){FZ_GOALS_V1.mounted=false;gpSchedule();}}
 new MutationObserver(gpSchedule).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
 document.addEventListener('click',event=>{if(event.target.closest('[data-page],[data-open-page]'))setTimeout(gpSchedule,0)});
 window.addEventListener('fz:intelligence-updated',()=>{FZ_GOALS_V1.mounted=false;gpLoad()});
-window.addEventListener('focus',()=>{FZ_GOALS_V1.mounted=false;gpSchedule()});
+document.addEventListener('fz:intelligence-reconciled',()=>{FZ_GOALS_V1.mounted=false;gpLoad()});
+document.addEventListener('fz:source-persisted',()=>{FZ_GOALS_V1.mounted=false;gpLoad()});
+window.addEventListener('focus',gpRefreshIfStale);
 gpLoad();

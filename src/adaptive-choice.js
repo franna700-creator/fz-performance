@@ -1,4 +1,5 @@
-const FZ_CHOICE={current:null,loading:false,renderScheduled:false,rendering:false,auth:{available:null,configured:false,authenticated:false,mode:'VIEWER',csrfToken:null,expiresAt:null},authBusy:false,landingDismissed:false,authDialogMode:null};
+const FZ_CHOICE={current:null,loading:false,renderScheduled:false,rendering:false,lastRefreshAt:0,auth:{available:null,configured:false,authenticated:false,mode:'VIEWER',csrfToken:null,expiresAt:null},authBusy:false,landingDismissed:false,authDialogMode:null};
+const FZ_CHOICE_WAKE_MS=30*60*1000;
 const esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const words=value=>String(value||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 async function readCurrent(){const response=await fetch('/api/intelligence/current',{cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`${response.status}`);return response.json();}
@@ -172,7 +173,8 @@ function scheduleRender(){
   FZ_CHOICE.renderScheduled=true;
   setTimeout(()=>{FZ_CHOICE.renderScheduled=false;render();},0);
 }
-async function refresh(){if(FZ_CHOICE.loading)return;FZ_CHOICE.loading=true;try{const payload=await readCurrent();if(payload?.ok){FZ_CHOICE.current=payload;scheduleRender();}}catch{}finally{FZ_CHOICE.loading=false;}}
+async function refresh(){if(FZ_CHOICE.loading)return;FZ_CHOICE.loading=true;FZ_CHOICE.lastRefreshAt=Date.now();try{const payload=await readCurrent();if(payload?.ok){FZ_CHOICE.current=payload;scheduleRender();}}catch{}finally{FZ_CHOICE.loading=false;}}
+function refreshIfStale(){if(Date.now()-FZ_CHOICE.lastRefreshAt>=FZ_CHOICE_WAKE_MS)refresh();}
 async function boot(){await readAuthStatus();await refresh();scheduleRender();}
 
 document.addEventListener('click',event=>{
@@ -186,4 +188,4 @@ document.addEventListener('click',event=>{
 document.addEventListener('submit',event=>{const form=event.target.closest('[data-athlete-auth-form]');if(!form)return;event.preventDefault();submitAuth(form);});
 const observerRoot=document.querySelector('.main')||document.documentElement;
 const observer=new MutationObserver(scheduleRender);observer.observe(observerRoot,{childList:true,subtree:true});
-setTimeout(boot,0);window.addEventListener('focus',()=>{refresh();});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh();});setInterval(()=>{if(document.visibilityState==='visible')refresh();},60000);
+setTimeout(boot,0);document.addEventListener('fz:intelligence-reconciled',refresh);document.addEventListener('fz:source-persisted',refresh);window.addEventListener('focus',refreshIfStale);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshIfStale();});

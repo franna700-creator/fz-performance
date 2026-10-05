@@ -1,9 +1,6 @@
 const FZ_TRAINING_AUTO_SYNC = {
   busy: false,
   lastSourceSyncAt: 0,
-  timer: null,
-  pollMs: 300000,
-  minWakeMs: 120000,
   originalFetch: window.fetch.bind(window),
   lastResult: null,
   lastError: null
@@ -31,14 +28,14 @@ function trainingSection() {
 
 function trainingSyncSummary() {
   if (FZ_TRAINING_AUTO_SYNC.busy) return 'Workout sources · syncing…';
-  if (FZ_TRAINING_AUTO_SYNC.lastError) return 'Workout sources · last sync failed · auto-sync 5 min';
-  if (!FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt) return 'Workout sources · auto-sync every 5 min';
+  if (FZ_TRAINING_AUTO_SYNC.lastError) return 'Workout sources · last manual sync failed · scheduled refresh remains active';
+  if (!FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt) return 'Workout sources · scheduled 06:00 / 20:00 SAST · manual sync available';
   const sync = FZ_TRAINING_AUTO_SYNC.lastResult?.sync;
   const tredict = Number(sync?.tredict?.activities || 0);
   const garmin = Number(sync?.garmin?.activities || 0);
   const matched = Number(sync?.garmin?.matched || 0);
   const detail = (tredict || garmin || matched) ? ` · Tredict ${tredict} · Garmin ${garmin} · matched ${matched}` : '';
-  return `Workout sources · synced ${trainingTime(FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt)} · auto-sync 5 min${detail}`;
+  return `Workout sources · synced ${trainingTime(FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt)} · manual refresh${detail}`;
 }
 
 function mountTrainingSyncToolbar() {
@@ -68,14 +65,11 @@ function mountTrainingSyncToolbar() {
 
 function canonicalReread(reason) {
   document.dispatchEvent(new CustomEvent('fz:source-persisted', { detail: { source: 'training', reason } }));
-  queueMicrotask(() => window.dispatchEvent(new Event('focus')));
 }
 
 async function sourceSyncTraining({ force = false, reason = 'background' } = {}) {
   const now = Date.now();
   if (FZ_TRAINING_AUTO_SYNC.busy) return false;
-  if (!force && FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt && now - FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt < FZ_TRAINING_AUTO_SYNC.minWakeMs) return false;
-  if (document.visibilityState !== 'visible' && reason === 'interval') return false;
 
   FZ_TRAINING_AUTO_SYNC.busy = true;
   FZ_TRAINING_AUTO_SYNC.lastError = null;
@@ -84,7 +78,7 @@ async function sourceSyncTraining({ force = false, reason = 'background' } = {})
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 30000);
   try {
-    const response = await FZ_TRAINING_AUTO_SYNC.originalFetch('/api/training/memory?backDays=45&forwardDays=0&refresh=1', {
+    const response = await FZ_TRAINING_AUTO_SYNC.originalFetch('/api/training/memory?backDays=14&forwardDays=14&refresh=1', {
       cache: 'no-store',
       headers: { accept: 'application/json' },
       signal: ctrl.signal
@@ -109,24 +103,6 @@ async function sourceSyncTraining({ force = false, reason = 'background' } = {})
 
 function startTrainingAutoSync() {
   mountTrainingSyncToolbar();
-  setTimeout(() => sourceSyncTraining({ reason: 'initial' }), 250);
-
-  if (FZ_TRAINING_AUTO_SYNC.timer) clearInterval(FZ_TRAINING_AUTO_SYNC.timer);
-  FZ_TRAINING_AUTO_SYNC.timer = setInterval(() => {
-    if (document.visibilityState === 'visible') sourceSyncTraining({ reason: 'interval' });
-  }, FZ_TRAINING_AUTO_SYNC.pollMs);
-
-  window.addEventListener('focus', () => {
-    if (Date.now() - FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt > FZ_TRAINING_AUTO_SYNC.minWakeMs) {
-      sourceSyncTraining({ reason: 'focus' });
-    }
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && Date.now() - FZ_TRAINING_AUTO_SYNC.lastSourceSyncAt > FZ_TRAINING_AUTO_SYNC.minWakeMs) {
-      sourceSyncTraining({ reason: 'visibility' });
-    }
-  });
-  window.addEventListener('online', () => sourceSyncTraining({ reason: 'online' }));
   document.addEventListener('click', event => {
     if (event.target.closest('[data-training-sync-now]')) sourceSyncTraining({ force: true, reason: 'manual' });
   });

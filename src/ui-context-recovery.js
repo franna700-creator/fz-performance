@@ -1,10 +1,12 @@
 /* FZ cross-surface rationalisation v3 — mutation-stable freshness + longitudinal evidence only. */
 const api={runtime:'/api/runtime-state',wellness:'/api/wellness/today?refresh=0',trends:'/api/trends/current?days=45'};
-let snapshot={runtime:null,wellness:null,trends:null},enhancing=false,refreshTimer=null;
+let snapshot={runtime:null,wellness:null,trends:null},enhancing=false,refreshTimer=null,lastSnapshotRefreshAt=0;
+const CONTEXT_RECOVERY_WAKE_MS=30*60*1000;
 const esc=value=>String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const setText=(node,value)=>{const next=String(value??'');if(node&&node.textContent!==next)node.textContent=next;};
 async function getJson(url){const response=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`${response.status}`);return response.json();}
-async function refreshSnapshot(){const entries=await Promise.allSettled(Object.entries(api).map(async([key,url])=>[key,await getJson(url)]));for(const item of entries){if(item.status!=='fulfilled')continue;const[key,value]=item.value;snapshot[key]=value;}enhance();}
+async function refreshSnapshot(){lastSnapshotRefreshAt=Date.now();const entries=await Promise.allSettled(Object.entries(api).map(async([key,url])=>[key,await getJson(url)]));for(const item of entries){if(item.status!=='fulfilled')continue;const[key,value]=item.value;snapshot[key]=value;}enhance();}
+function refreshSnapshotIfStale(){if(Date.now()-lastSnapshotRefreshAt>=CONTEXT_RECOVERY_WAKE_MS)refreshSnapshot();}
 function runtimeReadiness(){return snapshot.runtime?.renderContract?.readiness||null;}
 function runtimeAnchorDate(){return String(snapshot.runtime?.stateId||snapshot.runtime?.masterAsOf||runtimeReadiness()?.runtimeReadinessDate||'').slice(0,10)||null;}
 function wellnessDate(){return snapshot.wellness?.date||snapshot.wellness?.wellness?.date||null;}
@@ -41,4 +43,4 @@ function enhance(){if(enhancing)return;enhancing=true;try{removeLegacyContextSec
 function scheduleEnhance(){clearTimeout(refreshTimer);refreshTimer=setTimeout(enhance,40);}
 const observerRoot=document.querySelector('.main')||document.documentElement;
 const observer=new MutationObserver(scheduleEnhance);observer.observe(observerRoot,{childList:true,subtree:true});
-window.addEventListener('focus',refreshSnapshot);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSnapshot();});document.addEventListener('fz:source-persisted',refreshSnapshot);setTimeout(refreshSnapshot,0);setInterval(()=>{if(document.visibilityState==='visible')refreshSnapshot();},60000);
+window.addEventListener('focus',refreshSnapshotIfStale);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSnapshotIfStale();});window.addEventListener('online',refreshSnapshotIfStale);document.addEventListener('fz:source-persisted',refreshSnapshot);document.addEventListener('fz:intelligence-reconciled',refreshSnapshot);setTimeout(refreshSnapshot,0);
