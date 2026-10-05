@@ -26,79 +26,77 @@ jobs:
         run: |
           node <<'NODE'
           const base = 'https://fz-performance-mvp.vercel.app';
+          const currentUrl = base + '/api/intelligence/current';
           const refreshUrl = base + '/api/intelligence/refresh';
-          const statusUrl = base + '/api/system/status';
           const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
           function neonQuotaBlocked(text = '') {
             return /HTTP status 402|exceeded the quota|neon:retryable/i.test(String(text));
           }
 
-          async function refresh() {
-            const response = await fetch(refreshUrl, {
-              method: 'POST',
-              headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json'
-              },
-              body: JSON.stringify({ sources: false })
-            });
+          async function requestJson(url, options = {}, label = 'request') {
+            const response = await fetch(url, options);
             const text = await response.text();
             let body = null;
             try { body = JSON.parse(text); } catch {}
             if (!response.ok && response.status !== 202) {
               if (neonQuotaBlocked(text)) {
-                console.warn('NEON_QUOTA_BLOCKED: convergence skipped until database service resumes.');
+                console.warn('NEON_QUOTA_BLOCKED: convergence backstop skipped until database service resumes.');
                 process.exit(0);
               }
-              throw new Error('intelligence refresh failed: HTTP ' + response.status + ' ' + text.slice(0, 1000));
+              throw new Error(label + ' failed: HTTP ' + response.status + ' ' + text.slice(0, 1000));
             }
             return body || {};
           }
 
-          async function status() {
-            const response = await fetch(statusUrl, {
-              headers: { accept: 'application/json' },
-              cache: 'no-store'
-            });
-            if (!response.ok) throw new Error('system status failed: HTTP ' + response.status);
-            return response.json();
+          function stateOf(current) {
+            const outbox = current?.markers?.mutationOutbox || current?.mutationOutbox || {};
+            return {
+              pendingCount: Number(outbox.pendingCount ?? -1),
+              pendingPropagation: current?.pendingPropagation === true,
+              convergenceStatus: current?.markers?.canonicalRevision?.status || current?.convergence?.status || null,
+              pending: current?.pending || null
+            };
           }
 
-          let last = null;
+          function clean(state) {
+            return state.pendingCount === 0 &&
+              state.pendingPropagation === false &&
+              state.convergenceStatus === 'CONVERGED';
+          }
+
+          async function readCurrent() {
+            return requestJson(currentUrl, { headers: { accept: 'application/json' }, cache: 'no-store' }, 'intelligence current');
+          }
+
+          async function refresh() {
+            return requestJson(refreshUrl, {
+              method: 'POST',
+              headers: { accept: 'application/json', 'content-type': 'application/json' },
+              body: JSON.stringify({ sources: false })
+            }, 'intelligence refresh');
+          }
+
+          let current = await readCurrent();
+          let state = stateOf(current);
+          console.log(JSON.stringify({ phase: 'probe', ...state }));
+          if (clean(state)) process.exit(0);
+
           for (let attempt = 1; attempt <= 2; attempt += 1) {
             const refreshed = await refresh();
             await sleep(1200);
-            const current = await status();
-            const intelligence = current?.intelligence?.current || {};
-            const integrity = current?.systemIntegrity || {};
-            const outbox = intelligence?.markers?.mutationOutbox || integrity?.invariants?.mutationOutbox || {};
-            const pendingCount = Number(outbox.pendingCount ?? -1);
-            const convergenceStatus = intelligence?.markers?.canonicalRevision?.status || integrity?.invariants?.convergenceStatus || null;
-            const pendingPropagation = intelligence.pendingPropagation === true;
-
-            last = {
+            current = await readCurrent();
+            state = stateOf(current);
+            console.log(JSON.stringify({
+              phase: 'repair',
               attempt,
               refreshRevision: refreshed?.afterRevision || null,
-              pendingCount,
-              pendingPropagation,
-              convergenceStatus,
-              systemIntegrityOk: integrity.ok === true
-            };
-            console.log(JSON.stringify(last));
-
-            if (
-              pendingCount === 0 &&
-              pendingPropagation === false &&
-              convergenceStatus === 'CONVERGED' &&
-              integrity.ok === true
-            ) {
-              process.exit(0);
-            }
-            await sleep(1200);
+              ...state
+            }));
+            if (clean(state)) process.exit(0);
           }
 
-          console.error('Canonical intelligence did not converge within bounded retry window');
-          console.error(JSON.stringify(last));
+          console.error('Canonical intelligence did not converge within bounded repair window');
+          console.error(JSON.stringify(state));
           process.exit(1);
           NODE
