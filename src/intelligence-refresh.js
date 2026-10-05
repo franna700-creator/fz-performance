@@ -8,6 +8,8 @@ let converging = false;
 let refreshButtonBusy = false;
 let initialIntelligenceApplied = false;
 let intelligenceError = false;
+let lastIntelligencePollAt = 0;
+const FZ_INTELLIGENCE_WAKE_MS = 30 * 60 * 1000;
 
 function requestUrl(input) {
   try { return new URL(typeof input === 'string' ? input : input.url, window.location.href); }
@@ -78,7 +80,7 @@ async function nativeJson(url, { timeoutMs = 20000, method = 'GET', payload = nu
   } finally { clearTimeout(timer); }
 }
 
-function dispatchCanonicalReread(){window.dispatchEvent(new Event('focus'));}
+function dispatchCanonicalReread(){document.dispatchEvent(new CustomEvent('fz:intelligence-reconciled'));}
 
 async function converge({sources=false}={}){
   if(converging)return null;
@@ -102,6 +104,7 @@ async function converge({sources=false}={}){
 }
 
 async function pollIntelligence(){
+  lastIntelligencePollAt=Date.now();
   try{
     const next=await nativeJson('/api/intelligence/current',{timeoutMs:12000});
     intelligenceError=false;
@@ -150,7 +153,11 @@ async function manualRefresh(){
 document.addEventListener('click',event=>{if(event.target.closest('[data-refresh-fz]')){event.preventDefault();manualRefresh();}});
 const observer=new MutationObserver(()=>queueMicrotask(decorateRecommendation));
 observer.observe(document.documentElement,{childList:true,subtree:true});
+function pollIfStale(){
+  if(Date.now()-lastIntelligencePollAt>=FZ_INTELLIGENCE_WAKE_MS)pollIntelligence();
+}
 setTimeout(pollIntelligence,0);
-setInterval(()=>{if(document.visibilityState==='visible')pollIntelligence();},60000);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollIntelligence();});
-window.addEventListener('online',pollIntelligence);
+document.addEventListener('fz:source-persisted',pollIntelligence);
+window.addEventListener('focus',pollIfStale);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollIfStale();});
+window.addEventListener('online',pollIfStale);
