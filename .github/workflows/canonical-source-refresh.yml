@@ -24,6 +24,10 @@ jobs:
           const base='https://fz-performance-mvp.vercel.app';
           const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
+          function neonQuotaBlocked(text=''){
+            return /HTTP status 402|exceeded the quota|neon:retryable/i.test(String(text));
+          }
+
           async function postRefresh(sources){
             const response=await fetch(base+'/api/intelligence/refresh',{
               method:'POST',
@@ -34,6 +38,10 @@ jobs:
             let body=null;
             try{body=JSON.parse(text)}catch{}
             if(!response.ok&&response.status!==202){
+              if(neonQuotaBlocked(text)){
+                console.warn('NEON_QUOTA_BLOCKED: scheduled source refresh skipped until database service resumes.');
+                process.exit(0);
+              }
               throw new Error('intelligence refresh failed: HTTP '+response.status+' '+text.slice(0,1000));
             }
             return body||{};
@@ -54,7 +62,7 @@ jobs:
           }));
 
           let last=null;
-          for(let attempt=1;attempt<=8;attempt+=1){
+          for(let attempt=1;attempt<=2;attempt+=1){
             if(attempt>1)await postRefresh(false);
             await sleep(1200);
             const status=await readStatus();
@@ -83,7 +91,7 @@ jobs:
             await sleep(1200);
           }
 
-          console.error('scheduled source refresh did not reach a clean canonical state');
+          console.error('scheduled source refresh did not reach a clean canonical state within bounded retry');
           console.error(JSON.stringify(last));
           process.exit(1);
           NODE
