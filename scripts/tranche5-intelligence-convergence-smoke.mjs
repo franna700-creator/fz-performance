@@ -183,7 +183,10 @@ const refresh = fs.readFileSync('lib/intelligence-refresh.js', 'utf8');
 assert.match(refresh, /source\.system\.reconciliation/, 'first convergence revision must bootstrap deterministically');
 assert.match(refresh, /clock\.local_day/, 'local-day temporal invalidation must be explicit');
 assert.match(refresh, /clock\.decision_window/, 'decision-window temporal invalidation must be explicit');
-assert.match(refresh, /addDays\(date, -45\)/, 'late evidence reconciliation must refresh the full 45-day history');
+assert.match(refresh, /sourceBackDays = 14/, 'routine source reconciliation must use a bounded incremental backfill window');
+assert.match(refresh, /boundedDays\(sourceBackDays, 14\)/, 'routine source reconciliation must bound the requested backfill window');
+assert.match(refresh, /startDate:\s*addDays\(date, -backDays\)/, 'source reconciliation must derive its start date from the bounded backfill window');
+assert.doesNotMatch(refresh, /startDate:\s*addDays\(date, -45\)/, 'routine intelligence convergence must not rescan the full 45-day history');
 assert.match(refresh, /readPendingCanonicalMutations/, 'refresh must drain direct canonical DB mutations');
 
 const readiness = fs.readFileSync('lib/readiness-store.js', 'utf8');

@@ -11,6 +11,10 @@ const materiality = fs.readFileSync('lib/source-materiality.js', 'utf8');
 const wellness = fs.readFileSync('lib/wellness-sync.js', 'utf8');
 
 assert.match(orchestrator, /syncTrainingSources\(\{[\s\S]*recomputeRecommendation:\s*false/, 'central refresh must prevent nested training recommendation recomputation');
+assert.match(orchestrator, /sourceBackDays = 14/, 'routine source refresh must use a bounded incremental backfill window');
+assert.match(orchestrator, /sourceForwardDays = 14/, 'routine source refresh must retain a forward plan window');
+assert.match(orchestrator, /boundedDays\(sourceBackDays, 14\)/, 'source backfill window must be bounded before training sync');
+assert.doesNotMatch(orchestrator, /startDate:\s*addDays\(date,\s*-45\)/, 'routine intelligence refresh must not rescan 45 days of activity history on every source refresh');
 const materialityRepairAt=orchestrator.indexOf('steps.athleteMaterialityRepair = await repairUnassessedAthleteMateriality');
 const shadowPendingAt=orchestrator.indexOf('current.pending?.shadowRecommendation');
 const activePendingAt=orchestrator.indexOf('current.pending?.activeRecommendation');
@@ -35,6 +39,8 @@ assert.match(api, /operation === 'intelligence-current'/, 'consolidated SYSTEM f
 assert.match(api, /operation === 'intelligence-refresh'/, 'consolidated SYSTEM function must dispatch intelligence convergence');
 assert.match(api, /req\.method !== 'POST'/, 'state-changing intelligence convergence must be POST-only');
 assert.match(api, /input\.sources === true/, 'external source refresh must be explicit in the POST contract rather than automatic on intelligence polling');
+assert.match(api, /sourceBackDays:\s*input\.sourceBackDays/, 'explicit source backfill depth must flow through the refresh contract');
+assert.match(api, /sourceForwardDays:\s*input\.sourceForwardDays/, 'explicit forward source horizon must flow through the refresh contract');
 assert.match(api, /forceWellness:\s*false/, 'public refresh may not bypass the Garmin wellness throttle');
 assert.match(api, /cross_site_refresh_forbidden/, 'cross-site browser refresh requests must be rejected');
 assert.match(api, /X-Content-Type-Options/, 'refresh response must retain basic browser hardening');
