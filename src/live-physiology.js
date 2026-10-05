@@ -3,8 +3,8 @@ const FZ_LIVE_PHYSIOLOGY = {
   refreshBusy: false,
   mountedRoot: null,
   originalFetch: window.fetch.bind(window),
-  autoRefreshMs: 300000,
-  minWakeMs: 120000,
+  autoRefreshMs: 1800000,
+  minWakeMs: 1800000,
   timer: null,
   lastSourceCheckAt: 0,
   lastReason: null
@@ -139,7 +139,7 @@ function physiologyShell(payload) {
       <div class="fz-live-toolbar">
         <div>
           <div class="fz-live-freshness ${freshnessClass(freshness)}"><i></i>${freshness}</div>
-          <p>${sourceLine} · source check 5 min</p>
+          <p>${sourceLine} · source check 30 min</p>
         </div>
         <button type="button" class="fz-live-refresh" data-live-refresh>Refresh wellness</button>
       </div>
@@ -155,7 +155,7 @@ function physiologyShell(payload) {
         ${chartShell('heart_rate', hr, current.restingHeartRate == null ? '' : `Resting ${fmt(current.restingHeartRate)} bpm`)}
         ${chartShell('respiration', respiration, 'Current watch physiology')}
       </div>
-      <div class="fz-live-footnote">Intraday physiology is supplied directly by the fēnix 8 Connect IQ bridge; overnight recovery anchors remain sourced from Garmin via Intervals.icu. FZ checks the canonical store on load and every five minutes while visible, so a watch upload becomes visible without a deployment.</div>
+      <div class="fz-live-footnote">Intraday physiology is supplied directly by the fēnix 8 Connect IQ bridge; overnight recovery anchors remain sourced from Garmin via Intervals.icu. FZ checks the canonical store on load and every 30 minutes while visible, with manual refresh available at any time.</div>
     </div>`;
 }
 
@@ -275,8 +275,6 @@ function renderLivePhysiology() {
 
 function canonicalReread(reason) {
   document.dispatchEvent(new CustomEvent('fz:source-persisted', { detail: { source: 'wellness', reason } }));
-  // Compatibility bridge for the current clean shell: focus is its canonical reread trigger.
-  queueMicrotask(() => window.dispatchEvent(new Event('focus')));
 }
 
 async function refreshSource({ force = false, reason = 'background' } = {}) {
