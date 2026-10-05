@@ -1,7 +1,8 @@
 /* FZ Performance — TODAY redesign v2
    New presentation composition. Existing runtime contracts remain authoritative. */
 
-const FZ_TODAY_V2={runtime:null,wellness:null,training:null,busy:false,mounted:false,shellMounted:false};
+const FZ_TODAY_V2={runtime:null,wellness:null,training:null,busy:false,mounted:false,shellMounted:false,lastLoadAt:0};
+const FZ_TODAY_V2_WAKE_MS=30*60*1000;
 const FZ_TODAY_V2_QUOTES=[
   ['EXECUTION','Consistency is not loud. It is simply there again tomorrow.'],
   ['DISCIPLINE','Do the work that makes the next session possible.'],
@@ -90,6 +91,7 @@ async function v2Json(url){const response=await fetch(url,{cache:'no-store',head
 async function v2Load(){
   if(FZ_TODAY_V2.busy)return;
   FZ_TODAY_V2.busy=true;
+  FZ_TODAY_V2.lastLoadAt=Date.now();
   try{
     const [runtime,wellness,training]=await Promise.allSettled([
       v2Json('/api/runtime-state'),v2Json('/api/wellness/today?refresh=0'),v2Json('/api/training/memory?backDays=45&forwardDays=0')
@@ -181,6 +183,7 @@ function v2Mount(){
   FZ_TODAY_V2.mounted=true;
 }
 function scheduleV2Load(delay=80){clearTimeout(scheduleV2Load.timer);scheduleV2Load.timer=setTimeout(v2Load,delay)}
+function scheduleV2LoadIfStale(delay=80){if(Date.now()-FZ_TODAY_V2.lastLoadAt>=FZ_TODAY_V2_WAKE_MS)scheduleV2Load(delay)}
 let v2ClassifyQueued=false;
 const v2Observer=new MutationObserver(()=>{
   if(v2ClassifyQueued)return;v2ClassifyQueued=true;
@@ -189,7 +192,8 @@ const v2Observer=new MutationObserver(()=>{
 v2Observer.observe(document.documentElement,{childList:true,subtree:true});
 document.addEventListener('click',event=>{if(event.target.closest('[data-fz2-live-details]')){v2ToggleLiveDetails();return}if(event.target.closest('[data-page],[data-open-page]'))queueMicrotask(v2SyncTopShell)});
 document.addEventListener('fz:source-persisted',()=>scheduleV2Load(80));
-window.addEventListener('online',()=>scheduleV2Load(80));
-window.addEventListener('focus',()=>scheduleV2Load(140));
+document.addEventListener('fz:intelligence-reconciled',()=>scheduleV2Load(80));
+window.addEventListener('online',()=>scheduleV2LoadIfStale(80));
+window.addEventListener('focus',()=>scheduleV2LoadIfStale(140));
 v2MountTopShell();
 setTimeout(v2Load,160);
