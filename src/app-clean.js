@@ -1,6 +1,7 @@
 const FZ={runtime:null,wellness:null,training:null,trends:null,system:null,page:'today',athleteCategory:'ALL',athleteRelationship:'ALL',trainingLens:'RESPONSE',trainingLimit:12,athleteLimit:12};
 let lastCanonicalLoadAt=0;
 let canonicalLoadPromise=null;
+let canonicalReloadQueued=false;
 const FZ_CANONICAL_WAKE_MS=30*60*1000;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -16,7 +17,7 @@ function statusTone(v=''){const s=String(v).toUpperCase();if(/PASS|STRONG|REAL P
 async function getJson(url,timeout=15000){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:'no-store',signal:ctrl.signal});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return await r.json();}finally{clearTimeout(t)}}
 function result(v){return v.status==='fulfilled'?v.value:null}
 async function loadAll(){
-  if(canonicalLoadPromise)return canonicalLoadPromise;
+  if(canonicalLoadPromise){canonicalReloadQueued=true;return canonicalLoadPromise;}
   canonicalLoadPromise=(async()=>{
     setShellState('SYNCING CANONICAL STATE');
     const [runtime,wellness,training,trends,system]=await Promise.allSettled([
@@ -31,7 +32,7 @@ async function loadAll(){
     lastCanonicalLoadAt=Date.now();
     setShellState('CANONICAL RUNTIME · LIVE WELLNESS · TRAINING MEMORY');
   })();
-  try{return await canonicalLoadPromise;}finally{canonicalLoadPromise=null;}
+  try{return await canonicalLoadPromise;}finally{canonicalLoadPromise=null;if(canonicalReloadQueued){canonicalReloadQueued=false;queueMicrotask(loadAll);}}
 }
 function maybeLoadAll(){
   if(Date.now()-lastCanonicalLoadAt>=FZ_CANONICAL_WAKE_MS)loadAll();
