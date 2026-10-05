@@ -59,7 +59,13 @@ async function intelligenceRefresh(req, res) {
   const input = requestBody(req);
   if (input === null) return res.status(400).json({ ok: false, error: 'invalid_json' });
   try {
-    const result = await refreshIntelligence({ refreshSources: input.sources === true, forceWellness: false, now: new Date() });
+    const result = await refreshIntelligence({
+      refreshSources: input.sources === true,
+      forceWellness: false,
+      sourceBackDays: input.sourceBackDays,
+      sourceForwardDays: input.sourceForwardDays,
+      now: new Date()
+    });
     return res.status(result.pendingPropagation ? 202 : 200).json(result);
   } catch (error) {
     return res.status(503).json({ ok: false, error: 'intelligence_refresh_unavailable', detail: error instanceof Error ? error.message : String(error) });
