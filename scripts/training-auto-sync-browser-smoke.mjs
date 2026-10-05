@@ -71,11 +71,16 @@ function assert(condition,message){if(!condition)throw new Error(message);consol
 try{
   await page.goto(`http://127.0.0.1:${port}/`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('[data-training-auto-sync]'));
+  await page.waitForTimeout(350);
+  assert(trainingSequence[0]==='db','persisted canonical training renders before any source refresh');
+  assert(sourceSyncRequests===0,'opening the PWA does not automatically rescan workout sources');
+  assert((await page.locator('[data-training-sync-status]').textContent()).includes('scheduled 06:00 / 20:00 SAST'),'training toolbar explains the scheduled/manual source model');
+
+  await page.locator('.fz2-sync-workouts:visible').click();
   await page.waitForFunction(()=>document.getElementById('today')?.textContent?.includes('Evening Zone 2'),null,{timeout:5000});
-  assert(trainingSequence[0]==='db','persisted canonical training renders before source sync');
-  assert(sourceSyncRequests===1,'initial background workout source sync runs once');
+  assert(sourceSyncRequests===1,'manual Sync workouts performs the first source refresh');
   assert((await page.locator('[data-training-sync-status]').textContent()).includes('synced'),'training sync status becomes visible after source persistence');
-  assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after meaningful background source reconciliation');
+  assert((await page.locator('#today').textContent()).includes('Evening Zone 2'),'TODAY updates after meaningful manual source reconciliation');
 
   await page.locator('[data-page="train"]:visible').first().click();
   await page.waitForSelector('[data-rich-training-lens="ALL"]',{timeout:5000});
@@ -95,7 +100,7 @@ try{
   await page.locator('[data-page="today"]:visible').first().click();
   await page.locator('.fz2-sync-workouts:visible').click();
   await page.waitForTimeout(350);
-  assert(sourceSyncRequests===2,'manual Sync workouts performs an explicit source refresh');
+  assert(sourceSyncRequests===2,'a second manual Sync workouts request remains available on demand');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1),'mobile training detail and sync controls introduce no horizontal overflow');
   console.log('PASS training auto-sync browser acceptance');
 }finally{
