@@ -4,6 +4,7 @@ import { buildCurrentAthleteState } from '../lib/athlete-current-state.js';
 import { readinessModifierFromAthleteContext } from '../lib/readiness-engine.js';
 import { affectedNodes, assertKnownChangedNodes, unknownDependencyNodes, validateDependencyGraph } from '../lib/runtime-dependency-graph.js';
 import { CANONICAL_MUTATION_CONVERGENCE_SLA_MINUTES, canonicalMutationLagState } from '../lib/systemic-reconciliation-sweep.js';
+import { buildTemporalContext } from '../lib/adaptive-context-v44.js';
 
 function materiality(reasonCodes = []) {
   return { materiality: { reasonCodes, level: 'RECORD_ONLY', shouldRecomputeRecommendation: false } };
@@ -137,6 +138,10 @@ assert.equal(CANONICAL_MUTATION_CONVERGENCE_SLA_MINUTES,45,'live mutation conver
 assert.equal(canonicalMutationLagState({pendingCount:0},{now:new Date('2026-10-02T06:30:00Z')}).state,'CLEAR','empty outbox must be clear');
 assert.equal(canonicalMutationLagState({pendingCount:1,oldestPendingAt:'2026-10-02T06:20:00Z'},{now:new Date('2026-10-02T06:30:00Z')}).state,'IN_FLIGHT','recent live writes must be visible as bounded in-flight propagation rather than systemic failure');
 assert.equal(canonicalMutationLagState({pendingCount:1,oldestPendingAt:'2026-10-02T05:40:00Z'},{now:new Date('2026-10-02T06:30:00Z')}).state,'OVERDUE','stuck propagation beyond the SLA must fail integrity');
+
+assert.equal(buildTemporalContext(new Date('2026-10-02T05:59:00+02:00')).decisionWindowKey,'2026-10-02T00','early-morning clock movement stays inside one bounded decision window');
+assert.equal(buildTemporalContext(new Date('2026-10-02T06:00:00+02:00')).decisionWindowKey,'2026-10-02T06','meaningful six-hour boundary advances temporal decision context');
+assert.equal(buildTemporalContext(new Date('2026-10-02T11:59:00+02:00')).decisionWindowKey,'2026-10-02T06','hourly clock ticks must not manufacture propagation churn');
 
 const athleteClosure = affectedNodes('source.athlete.feedback');
 for (const required of ['athlete.memory','athlete.state.current','readiness.current','adaptive.context','recommendation.shadow','ui.today','ui.train','ui.trends','ui.system']) {
