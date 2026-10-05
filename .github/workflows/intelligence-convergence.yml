@@ -3,7 +3,7 @@ name: intelligence-convergence
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/30 * * * *'
   pull_request:
     branches: [main]
     paths:
@@ -30,6 +30,10 @@ jobs:
           const statusUrl = base + '/api/system/status';
           const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+          function neonQuotaBlocked(text = '') {
+            return /HTTP status 402|exceeded the quota|neon:retryable/i.test(String(text));
+          }
+
           async function refresh() {
             const response = await fetch(refreshUrl, {
               method: 'POST',
@@ -43,6 +47,10 @@ jobs:
             let body = null;
             try { body = JSON.parse(text); } catch {}
             if (!response.ok && response.status !== 202) {
+              if (neonQuotaBlocked(text)) {
+                console.warn('NEON_QUOTA_BLOCKED: convergence skipped until database service resumes.');
+                process.exit(0);
+              }
               throw new Error('intelligence refresh failed: HTTP ' + response.status + ' ' + text.slice(0, 1000));
             }
             return body || {};
@@ -58,7 +66,7 @@ jobs:
           }
 
           let last = null;
-          for (let attempt = 1; attempt <= 8; attempt += 1) {
+          for (let attempt = 1; attempt <= 2; attempt += 1) {
             const refreshed = await refresh();
             await sleep(1200);
             const current = await status();
@@ -90,7 +98,7 @@ jobs:
             await sleep(1200);
           }
 
-          console.error('Canonical intelligence did not converge within retry window');
+          console.error('Canonical intelligence did not converge within bounded retry window');
           console.error(JSON.stringify(last));
           process.exit(1);
           NODE
