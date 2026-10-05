@@ -1,4 +1,7 @@
 const FZ={runtime:null,wellness:null,training:null,trends:null,system:null,page:'today',athleteCategory:'ALL',athleteRelationship:'ALL',trainingLens:'RESPONSE',trainingLimit:12,athleteLimit:12};
+let lastCanonicalLoadAt=0;
+let canonicalLoadPromise=null;
+const FZ_CANONICAL_WAKE_MS=30*60*1000;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
@@ -13,17 +16,25 @@ function statusTone(v=''){const s=String(v).toUpperCase();if(/PASS|STRONG|REAL P
 async function getJson(url,timeout=15000){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:'no-store',signal:ctrl.signal});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return await r.json();}finally{clearTimeout(t)}}
 function result(v){return v.status==='fulfilled'?v.value:null}
 async function loadAll(){
-  setShellState('SYNCING CANONICAL STATE');
-  const [runtime,wellness,training,trends,system]=await Promise.allSettled([
-    getJson('/api/runtime-state'),
-    getJson('/api/wellness/today?refresh=0'),
-    getJson('/api/training/memory?backDays=45&forwardDays=0'),
-    getJson('/api/trends/current?days=45'),
-    getJson('/api/system/status')
-  ]);
-  FZ.runtime=result(runtime);FZ.wellness=result(wellness);FZ.training=result(training);FZ.trends=result(trends);FZ.system=result(system);
-  renderAll();
-  setShellState('CANONICAL RUNTIME · LIVE WELLNESS · TRAINING MEMORY');
+  if(canonicalLoadPromise)return canonicalLoadPromise;
+  canonicalLoadPromise=(async()=>{
+    setShellState('SYNCING CANONICAL STATE');
+    const [runtime,wellness,training,trends,system]=await Promise.allSettled([
+      getJson('/api/runtime-state'),
+      getJson('/api/wellness/today?refresh=0'),
+      getJson('/api/training/memory?backDays=45&forwardDays=0'),
+      getJson('/api/trends/current?days=45'),
+      getJson('/api/system/status')
+    ]);
+    FZ.runtime=result(runtime);FZ.wellness=result(wellness);FZ.training=result(training);FZ.trends=result(trends);FZ.system=result(system);
+    renderAll();
+    lastCanonicalLoadAt=Date.now();
+    setShellState('CANONICAL RUNTIME · LIVE WELLNESS · TRAINING MEMORY');
+  })();
+  try{return await canonicalLoadPromise;}finally{canonicalLoadPromise=null;}
+}
+function maybeLoadAll(){
+  if(Date.now()-lastCanonicalLoadAt>=FZ_CANONICAL_WAKE_MS)loadAll();
 }
 
 function setShellState(text){const el=$('stateStamp');if(el)el.textContent=text}
@@ -118,5 +129,9 @@ function installScrub(el,data,label){const tip=el.querySelector('.fz-chart-toolt
 function renderAll(){renderDate();renderToday();renderTrends();renderTrain();renderSystem();showPage(FZ.page)}
 function showPage(page){FZ.page=page;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id===page));document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));window.scrollTo({top:0,behavior:'instant'})}
 document.addEventListener('click',e=>{const page=e.target.closest('[data-page],[data-open-page]');if(page){const p=page.dataset.page||page.dataset.openPage;showPage(p);if(page.dataset.scrollAthlete)setTimeout(()=>$('athleteMemory')?.scrollIntoView({behavior:'smooth'}),80);return}const ac=e.target.closest('[data-athlete-category]');if(ac){FZ.athleteCategory=ac.dataset.athleteCategory;FZ.athleteLimit=12;renderTrain();return}const ar=e.target.closest('[data-athlete-relationship]');if(ar){FZ.athleteRelationship=ar.dataset.athleteRelationship;FZ.athleteLimit=12;renderTrain();return}if(e.target.closest('[data-athlete-more]')){FZ.athleteLimit+=12;renderTrain();return}const tl=e.target.closest('[data-training-lens]');if(tl){FZ.trainingLens=tl.dataset.trainingLens;FZ.trainingLimit=12;renderTrain();return}if(e.target.closest('[data-training-more]')){FZ.trainingLimit+=12;renderTrain()}});
-window.addEventListener('focus',()=>loadAll());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadAll()});window.addEventListener('online',()=>loadAll());
-renderDate();tickCountdown();setInterval(tickCountdown,1000);loadAll();setInterval(()=>{if(document.visibilityState==='visible')loadAll()},300000);
+document.addEventListener('fz:source-persisted',()=>loadAll());
+document.addEventListener('fz:intelligence-reconciled',()=>loadAll());
+window.addEventListener('focus',maybeLoadAll);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeLoadAll()});
+window.addEventListener('online',maybeLoadAll);
+renderDate();tickCountdown();setInterval(tickCountdown,1000);loadAll();
